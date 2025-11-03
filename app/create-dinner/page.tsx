@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 
 export default function CreateDinnerPage() {
   const router = useRouter();
@@ -59,13 +58,13 @@ export default function CreateDinnerPage() {
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       <header className="bg-black/20 backdrop-blur-lg border-b border-white/10">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-          <Link
-            href="/dinners"
+          <button
+            onClick={() => router.back()}
             className="text-white/80 hover:text-white flex items-center gap-2 text-base"
           >
             <span>←</span>
             <span className="font-semibold">Voltar</span>
-          </Link>
+          </button>
           <div className="text-white text-xl">🍷</div>
         </div>
       </header>
@@ -108,7 +107,8 @@ export default function CreateDinnerPage() {
                 value={eventDate}
                 onChange={(e) => setEventDate(e.target.value)}
                 required
-                className="w-full bg-white/10 border-2 border-white/20 rounded-2xl px-4 py-2.5 text-white focus:outline-none focus:border-purple-400 text-base"
+                className="w-full max-w-full bg-white/10 border-2 border-white/20 rounded-2xl px-4 py-2.5 text-white focus:outline-none focus:border-purple-400 text-base scheme-dark"
+                style={{ colorScheme: "dark" }}
               />
             </div>
 
@@ -157,7 +157,7 @@ export default function CreateDinnerPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white px-5 py-4 rounded-2xl font-bold text-lg shadow-lg hover:shadow-purple-500/50 transform hover:scale-[1.02] transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-linear-to-r from-purple-600 to-pink-600 text-white px-5 py-4 rounded-2xl font-bold text-lg shadow-lg hover:shadow-purple-500/50 transform hover:scale-[1.02] transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? "A criar..." : "Criar Jantar 🍽️"}
             </button>

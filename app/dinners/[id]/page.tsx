@@ -33,6 +33,7 @@ interface Dinner {
   status: string;
   host_id: string;
   created_by: string;
+  is_extra_dinner?: boolean;
 }
 
 // Deterministic shuffle function - same seed = same order for all users
@@ -221,13 +222,13 @@ export default function DinnerDetailPage({
       {/* Header */}
       <header className="bg-black/20 backdrop-blur-lg border-b border-white/10 sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link
-            href="/dinners"
+          <button
+            onClick={() => router.back()}
             className="text-white/80 hover:text-white flex items-center gap-2 text-lg"
           >
             <span>←</span>
-            <span className="font-semibold">Back</span>
-          </Link>
+            <span className="font-semibold">Voltar</span>
+          </button>
           <div className="text-white text-2xl">🍷</div>
         </div>
       </header>
@@ -241,40 +242,52 @@ export default function DinnerDetailPage({
                 {dinner.name}
               </h1>
               <div className="flex flex-wrap gap-2 mb-3">
-                {dinner.is_blind && (
-                  <div className="inline-flex items-center gap-2 bg-purple-500/30 text-purple-200 text-xs font-bold px-3 py-1.5 rounded-full border border-purple-400/30">
-                    <span>🎭</span>
-                    <span>BLIND TASTING</span>
+                {dinner.is_extra_dinner && (
+                  <div className="inline-flex items-center gap-2 bg-amber-500/30 text-amber-200 text-xs font-bold px-3 py-1.5 rounded-full border border-amber-400/30">
+                    <span>🎁</span>
+                    <span>EXTRA</span>
                   </div>
                 )}
 
-                {/* Status Badge */}
-                <div
-                  className={`inline-flex items-center gap-2 text-xs font-bold px-3 py-1.5 rounded-full border ${
-                    dinner.status === "setup"
-                      ? "bg-blue-500/30 text-blue-200 border-blue-400/30"
-                      : dinner.status === "active"
-                      ? "bg-green-500/30 text-green-200 border-green-400/30"
-                      : dinner.status === "ended"
-                      ? "bg-orange-500/30 text-orange-200 border-orange-400/30"
-                      : dinner.status === "revealing"
-                      ? "bg-amber-500/30 text-amber-200 border-amber-400/30"
-                      : "bg-purple-500/30 text-purple-200 border-purple-400/30"
-                  }`}
-                >
-                  <span>
-                    {dinner.status === "setup"
-                      ? "⚙️"
-                      : dinner.status === "active"
-                      ? "🎯"
-                      : dinner.status === "ended"
-                      ? "⏸️"
-                      : dinner.status === "revealing"
-                      ? "🎭"
-                      : "✅"}
-                  </span>
-                  <span className="uppercase">{dinner.status}</span>
-                </div>
+                {/* Only show other badges if NOT extra dinner */}
+                {!dinner.is_extra_dinner && (
+                  <>
+                    {dinner.is_blind && (
+                      <div className="inline-flex items-center gap-2 bg-purple-500/30 text-purple-200 text-xs font-bold px-3 py-1.5 rounded-full border border-purple-400/30">
+                        <span>🎭</span>
+                        <span>PROVA CEGA</span>
+                      </div>
+                    )}
+
+                    {/* Status Badge */}
+                    <div
+                      className={`inline-flex items-center gap-2 text-xs font-bold px-3 py-1.5 rounded-full border ${
+                        dinner.status === "setup"
+                          ? "bg-blue-500/30 text-blue-200 border-blue-400/30"
+                          : dinner.status === "active"
+                          ? "bg-green-500/30 text-green-200 border-green-400/30"
+                          : dinner.status === "ended"
+                          ? "bg-orange-500/30 text-orange-200 border-orange-400/30"
+                          : dinner.status === "revealing"
+                          ? "bg-amber-500/30 text-amber-200 border-amber-400/30"
+                          : "bg-purple-500/30 text-purple-200 border-purple-400/30"
+                      }`}
+                    >
+                      <span>
+                        {dinner.status === "setup"
+                          ? "⚙️"
+                          : dinner.status === "active"
+                          ? "🎯"
+                          : dinner.status === "ended"
+                          ? "⏸️"
+                          : dinner.status === "revealing"
+                          ? "🎭"
+                          : "✅"}
+                      </span>
+                      <span className="uppercase">{dinner.status}</span>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -377,8 +390,8 @@ export default function DinnerDetailPage({
           </div>
         )}
 
-        {/* Add Bottle Button - Only in Setup Mode */}
-        {dinner.status === "setup" && isHost && (
+        {/* Add Bottle Button - Only in Setup Mode AND NOT Extra Dinner */}
+        {dinner.status === "setup" && isHost && !dinner.is_extra_dinner && (
           <div className="mb-6">
             <Link
               href={`/dinners/${id}/add-bottle`}
@@ -387,6 +400,22 @@ export default function DinnerDetailPage({
               <span className="text-2xl">+</span>
               <span>Add Wine Bottle</span>
             </Link>
+          </div>
+        )}
+
+        {/* Extra Dinner Warning - No Bottles Allowed */}
+        {dinner.status === "setup" && dinner.is_extra_dinner && (
+          <div className="mb-6 bg-amber-500/20 backdrop-blur-sm rounded-3xl p-4 border border-amber-400/30">
+            <div className="flex items-center gap-3">
+              <span className="text-3xl">🎁</span>
+              <div>
+                <p className="text-white font-semibold">Jantar Extra</p>
+                <p className="text-amber-200 text-sm">
+                  Este é um jantar especial apenas para fotos e convívio. Não é
+                  permitido adicionar garrafas.
+                </p>
+              </div>
+            </div>
           </div>
         )}
 
@@ -401,105 +430,112 @@ export default function DinnerDetailPage({
           </Link>
         </div>
 
-        {displayBottles.length === 0 ? (
-          <div className="bg-white/5 backdrop-blur-sm rounded-3xl p-12 text-center border border-white/10">
-            <div className="text-6xl mb-4">🍾</div>
-            <p className="text-white/60 text-lg">No bottles yet</p>
-            <p className="text-white/40 text-sm mt-2">Add bottles via API</p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {displayBottles.map((bottle) => (
-              <div
-                key={bottle.id || `temp-${bottle.displayPosition}`}
-                className="relative"
-              >
-                {/* Clickable Card Wrapper */}
-                <Link href={`/bottles/${bottle.id}`} className="block">
-                  <div className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-lg rounded-3xl p-6 border border-white/20 shadow-xl hover:border-purple-400/50 hover:shadow-purple-500/20 transition-all cursor-pointer">
-                    {/* Position Badge */}
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="bg-gradient-to-br from-purple-500 to-pink-500 text-white w-14 h-14 rounded-2xl flex items-center justify-center font-bold text-2xl shadow-lg">
-                        {bottle.displayLabel}
-                      </div>
-                      {bottle.stats &&
-                        bottle.stats.total_ratings > 0 &&
-                        !isBlindActive && (
-                          <div className="text-right">
-                            <div className="text-3xl font-bold text-amber-400">
-                              {bottle.stats.average_score}
-                            </div>
-                            <div className="text-xs text-white/60">
-                              {bottle.stats.total_ratings} rating
-                              {bottle.stats.total_ratings !== 1 ? "s" : ""}
-                            </div>
+        {/* Bottles Section - Only show if NOT extra dinner */}
+        {!dinner.is_extra_dinner && (
+          <>
+            {displayBottles.length === 0 ? (
+              <div className="bg-white/5 backdrop-blur-sm rounded-3xl p-12 text-center border border-white/10">
+                <div className="text-6xl mb-4">🍾</div>
+                <p className="text-white/60 text-lg">No bottles yet</p>
+                <p className="text-white/40 text-sm mt-2">
+                  Add bottles via API
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {displayBottles.map((bottle) => (
+                  <div
+                    key={bottle.id || `temp-${bottle.displayPosition}`}
+                    className="relative"
+                  >
+                    {/* Clickable Card Wrapper */}
+                    <Link href={`/bottles/${bottle.id}`} className="block">
+                      <div className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-lg rounded-3xl p-6 border border-white/20 shadow-xl hover:border-purple-400/50 hover:shadow-purple-500/20 transition-all cursor-pointer">
+                        {/* Position Badge */}
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="bg-gradient-to-br from-purple-500 to-pink-500 text-white w-14 h-14 rounded-2xl flex items-center justify-center font-bold text-2xl shadow-lg">
+                            {bottle.displayLabel}
                           </div>
-                        )}
-                    </div>
-
-                    {/* Wine Info - Hidden in Blind Mode */}
-                    {isBlindActive ? (
-                      <div>
-                        <h3 className="text-2xl font-bold text-white mb-3">
-                          Wine {bottle.displayLabel}
-                        </h3>
-                        <p className="text-purple-200 text-sm mb-4">
-                          🎭 Wine details hidden until reveal
-                        </p>
-                      </div>
-                    ) : (
-                      <div>
-                        <h3 className="text-2xl font-bold text-white mb-3">
-                          {bottle.name}
-                        </h3>
-
-                        <div className="space-y-1.5 text-purple-200 mb-4">
-                          {bottle.producer && (
-                            <div className="flex items-center gap-2 text-sm">
-                              <span>🏛️</span>
-                              <span>{bottle.producer}</span>
-                            </div>
-                          )}
-                          {bottle.vintage && (
-                            <div className="flex items-center gap-2 text-sm">
-                              <span>📅</span>
-                              <span>{bottle.vintage}</span>
-                            </div>
-                          )}
-                          {bottle.wine_type && (
-                            <div className="flex items-center gap-2 text-sm capitalize">
-                              <span>🍷</span>
-                              <span>{bottle.wine_type}</span>
-                            </div>
-                          )}
+                          {bottle.stats &&
+                            bottle.stats.total_ratings > 0 &&
+                            !isBlindActive && (
+                              <div className="text-right">
+                                <div className="text-3xl font-bold text-amber-400">
+                                  {bottle.stats.average_score}
+                                </div>
+                                <div className="text-xs text-white/60">
+                                  {bottle.stats.total_ratings} rating
+                                  {bottle.stats.total_ratings !== 1 ? "s" : ""}
+                                </div>
+                              </div>
+                            )}
                         </div>
 
-                        {bottle.description && (
-                          <p className="text-white/80 text-sm mb-4 italic leading-relaxed">
-                            "{bottle.description}"
-                          </p>
+                        {/* Wine Info - Hidden in Blind Mode */}
+                        {isBlindActive ? (
+                          <div>
+                            <h3 className="text-2xl font-bold text-white mb-3">
+                              Wine {bottle.displayLabel}
+                            </h3>
+                            <p className="text-purple-200 text-sm mb-4">
+                              🎭 Wine details hidden until reveal
+                            </p>
+                          </div>
+                        ) : (
+                          <div>
+                            <h3 className="text-2xl font-bold text-white mb-3">
+                              {bottle.name}
+                            </h3>
+
+                            <div className="space-y-1.5 text-purple-200 mb-4">
+                              {bottle.producer && (
+                                <div className="flex items-center gap-2 text-sm">
+                                  <span>🏛️</span>
+                                  <span>{bottle.producer}</span>
+                                </div>
+                              )}
+                              {bottle.vintage && (
+                                <div className="flex items-center gap-2 text-sm">
+                                  <span>📅</span>
+                                  <span>{bottle.vintage}</span>
+                                </div>
+                              )}
+                              {bottle.wine_type && (
+                                <div className="flex items-center gap-2 text-sm capitalize">
+                                  <span>🍷</span>
+                                  <span>{bottle.wine_type}</span>
+                                </div>
+                              )}
+                            </div>
+
+                            {bottle.description && (
+                              <p className="text-white/80 text-sm mb-4 italic leading-relaxed">
+                                "{bottle.description}"
+                              </p>
+                            )}
+                          </div>
                         )}
                       </div>
+                    </Link>
+
+                    {/* Rate Button - Only show if dinner is active AND bottle has valid ID */}
+                    {dinner.status === "active" && bottle.id && (
+                      <Link
+                        href={`/bottles/${bottle.id}/rate`}
+                        className="block w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white text-center px-6 py-4 rounded-2xl font-bold text-lg shadow-lg hover:shadow-purple-500/50 transform hover:scale-[1.02] transition-all duration-200 active:scale-[0.98] mt-4"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="flex items-center justify-center gap-2">
+                          <span>⭐</span>
+                          <span>Rate This Wine</span>
+                        </div>
+                      </Link>
                     )}
                   </div>
-                </Link>
-
-                {/* Rate Button - Only show if dinner is active AND bottle has valid ID */}
-                {dinner.status === "active" && bottle.id && (
-                  <Link
-                    href={`/bottles/${bottle.id}/rate`}
-                    className="block w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white text-center px-6 py-4 rounded-2xl font-bold text-lg shadow-lg hover:shadow-purple-500/50 transform hover:scale-[1.02] transition-all duration-200 active:scale-[0.98] mt-4"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <div className="flex items-center justify-center gap-2">
-                      <span>⭐</span>
-                      <span>Rate This Wine</span>
-                    </div>
-                  </Link>
-                )}
+                ))}
               </div>
-            ))}
-          </div>
+            )}
+          </>
         )}
 
         {/* View Rankings Button - Only when completed */}

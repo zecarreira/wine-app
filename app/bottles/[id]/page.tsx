@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { use } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 interface Rating {
   id: string;
@@ -54,7 +55,8 @@ export default function BottleDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  const [bottle, setBottle] = useState<Bottle | null>(null);
+  const router = useRouter();
+  const [bottle, setBottle] = useState<BottleWithDetails | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -105,13 +107,13 @@ export default function BottleDetailPage({
       {/* Header */}
       <header className="bg-black/20 backdrop-blur-lg border-b border-white/10 sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link
-            href={`/dinners/${bottle.dinner.id}`}
+          <button
+            onClick={() => router.back()}
             className="text-white/80 hover:text-white flex items-center gap-2 text-lg"
           >
             <span>←</span>
-            <span className="font-semibold">Back to Dinner</span>
-          </Link>
+            <span className="font-semibold">Voltar</span>
+          </button>
           <div className="text-white text-2xl">🍷</div>
         </div>
       </header>
