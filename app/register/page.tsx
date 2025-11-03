@@ -42,7 +42,7 @@ export default function RegisterPage() {
       } else {
         setError(data.error || "Registration failed");
       }
-    } catch (error) {
+    } catch {
       setError("Network error. Please try again.");
     } finally {
       setLoading(false);
@@ -50,13 +50,13 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-linear-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Logo/Title */}
         <div className="text-center mb-8">
           <div className="text-7xl mb-4">🍷</div>
           <h1 className="text-4xl font-bold text-white mb-2">VinoRate</h1>
-          <p className="text-purple-200">Create your account</p>
+          <p className="text-purple-200">Cria a tua conta</p>
         </div>
 
         {/* Register Form */}
@@ -65,13 +65,13 @@ export default function RegisterPage() {
             {/* Name */}
             <div>
               <label className="block text-white font-semibold mb-2">
-                Name
+                Nome
               </label>
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Your name"
+                placeholder="O teu nome"
                 required
                 className="w-full bg-white/10 border-2 border-white/20 rounded-2xl px-4 py-4 text-white placeholder:text-white/40 focus:outline-none focus:border-purple-400 text-lg"
               />
@@ -86,7 +86,7 @@ export default function RegisterPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="your@email.com"
+                placeholder="teu@email.com"
                 required
                 className="w-full bg-white/10 border-2 border-white/20 rounded-2xl px-4 py-4 text-white placeholder:text-white/40 focus:outline-none focus:border-purple-400 text-lg"
               />
@@ -95,7 +95,7 @@ export default function RegisterPage() {
             {/* Password */}
             <div>
               <label className="block text-white font-semibold mb-2">
-                Password
+                Palavra-passe
               </label>
               <input
                 type="password"
@@ -106,7 +106,7 @@ export default function RegisterPage() {
                 minLength={6}
                 className="w-full bg-white/10 border-2 border-white/20 rounded-2xl px-4 py-4 text-white placeholder:text-white/40 focus:outline-none focus:border-purple-400 text-lg"
               />
-              <p className="text-white/40 text-xs mt-2">Minimum 6 characters</p>
+              <p className="text-white/40 text-xs mt-2">Mínimo 6 caracteres</p>
             </div>
 
             {/* Error Message */}
@@ -118,34 +118,34 @@ export default function RegisterPage() {
 
             {/* Info Box */}
             <div className="bg-blue-500/20 border-2 border-blue-500/50 rounded-2xl p-4 text-blue-200 text-sm">
-              <p className="font-semibold mb-1">ℹ️ New Account Info:</p>
+              <p className="font-semibold mb-1">ℹ️ Info Nova Conta:</p>
               <p>
-                • You'll start as a <strong>Guest</strong>
+                • Vais começar como <strong>Guest</strong>
               </p>
               <p>
-                • Admin can promote you to <strong>Founder</strong>
+                • O Admin pode promover-te a <strong>Fundador</strong>
               </p>
-              <p>• Founders can create dinners</p>
+              <p>• Apenas o Admin pode criar jantares.</p>
             </div>
 
             {/* Submit Button */}
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-5 rounded-2xl font-bold text-xl shadow-lg hover:shadow-purple-500/50 transform hover:scale-[1.02] transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-linear-to-r from-purple-600 to-pink-600 text-white px-6 py-5 rounded-2xl font-bold text-xl shadow-lg hover:shadow-purple-500/50 transform hover:scale-[1.02] transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? "Creating account..." : "Register 🍷"}
+              {loading ? "A criar conta..." : "Registar 🍷"}
             </button>
 
             {/* Login Link */}
             <div className="text-center">
               <p className="text-white/60">
-                Already have an account?{" "}
+                Já tens conta?{" "}
                 <Link
                   href="/login"
                   className="text-purple-300 hover:text-white font-semibold underline"
                 >
-                  Login here
+                  Entra aqui
                 </Link>
               </p>
             </div>
