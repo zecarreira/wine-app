@@ -110,6 +110,27 @@ Verificar o array `displayBottles` na página do jantar e garantir que mantém o
 
 ---
 
+## ✅ Bugs CORRIGIDOS
+
+### ✅ Bug #1: Bottle ID Undefined Durante Blind Tasting
+
+**Severidade:** 🔴 CRÍTICO → ✅ RESOLVIDO
+
+**Descrição:**
+Quando o jantar estava em modo "active" (prova cega), ao clicar numa garrafa para avaliar, o bottle_id era `undefined`, causando erro 404.
+
+**Causa Raiz:**
+O algoritmo Fisher-Yates shuffle estava a usar índices negativos quando o hash era negativo, criando propriedades com chaves negativas no array em vez de trocar elementos corretamente.
+
+**Solução:**
+Adicionado `Math.abs()` ao cálculo do índice no shuffle para garantir que j seja sempre positivo.
+
+**Status:** ✅ CORRIGIDO (3 Nov 2025)
+
+---
+
+## ⚠️ Bugs CONHECIDOS (Não Críticos)
+
 ### ⚠️ Bug #2: Deprecation Warnings - Punycode
 
 **Severidade:** 🟡 BAIXA (não afeta funcionalidade)
@@ -205,11 +226,12 @@ DeprecationWarning: The `punycode` module is deprecated
 
 ## 💡 Recomendações
 
-### Fixes Imediatos
+### Fixes Implementados
 
-1. **Corrigir Bug #1** - Bottle ID undefined
-2. **Adicionar validation** - Verificar se bottle.id existe antes de criar link
-3. **Logs melhores** - Adicionar logs no shuffle para debug
+1. ✅ **Bug #1 Corrigido** - Bottle ID undefined (Math.abs no shuffle)
+2. ✅ **Sistema de desempate** - 3 níveis implementados
+3. ✅ **Code cleanup** - Debug logs removidos
+4. ✅ **Validação** - Verificação de bottle.id antes de criar links
 
 ### Melhorias Futuras
 

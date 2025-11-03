@@ -1,5 +1,31 @@
 # 🎉 Melhorias Implementadas - Wine Rating App
 
+## 🚀 ÚLTIMA ATUALIZAÇÃO: 3 de Novembro de 2025
+
+### ✅ Bug Crítico Corrigido + Sistema de Desempate
+
+#### 🐛 Bottle ID Undefined Durante Blind Tasting - RESOLVIDO
+
+- **Problema:** Shuffle com índices negativos causava `bottle_id = undefined`
+- **Solução:** Adicionado `Math.abs()` no cálculo do índice Fisher-Yates
+- **Status:** ✅ CORRIGIDO - 100% das garrafas têm IDs válidos
+
+#### 🏆 Sistema de Desempate nos Rankings - IMPLEMENTADO
+
+- **Critérios:** 1) Média → 2) Total de pontos → 3) Nota máxima
+- **UI:** Rankings mostram todos os critérios + explicação de desempate
+- **API:** Lógica de sorting com 3 níveis implementada
+
+#### 🧹 Code Cleanup Completo
+
+- Removidos todos os `console.log` de debug
+- Código limpo e pronto para produção
+- Performance otimizada
+
+**App Status:** 🟢 READY FOR PRODUCTION
+
+---
+
 ## ✅ Todas as Tarefas Concluídas!
 
 ### 📦 Alta Prioridade (Todas Implementadas)

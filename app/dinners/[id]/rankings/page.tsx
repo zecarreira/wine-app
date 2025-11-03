@@ -23,7 +23,8 @@ interface BottleWithRatings {
   stats: {
     total_ratings: number;
     average_score: number;
-    total_points: number; // ADICIONADO
+    total_points: number;
+    highest_rating: number;
   };
 }
 
@@ -139,6 +140,9 @@ export default function RankingsPage({
                     <div className="text-amber-300/50 text-xs mt-1">
                       📊 {bottle.stats.total_points} pts
                     </div>
+                    <div className="text-amber-300/40 text-xs">
+                      ⭐ Max: {bottle.stats.highest_rating}
+                    </div>
                   </div>
                 </div>
 
@@ -180,7 +184,12 @@ export default function RankingsPage({
               Average Score: {rankings[0].stats.average_score}/10
             </p>
             <p className="text-amber-300/60 text-sm">
-              📊 Total: {rankings[0].stats.total_points} points
+              📊 Total: {rankings[0].stats.total_points} points • ⭐ Highest
+              Rating: {rankings[0].stats.highest_rating}/10
+            </p>
+            <p className="text-white/40 text-xs mt-3">
+              Tiebreaker rules: 1. Average score → 2. Total points → 3. Highest
+              individual rating
             </p>
           </div>
         )}

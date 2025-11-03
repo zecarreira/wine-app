@@ -37,13 +37,7 @@ interface Dinner {
 
 // Deterministic shuffle function - same seed = same order for all users
 function shuffleArray<T>(array: T[], seed: string): T[] {
-  console.log("🎲 shuffleArray INPUT:", array.length, "elements");
-
   const arr = [...array];
-
-  console.log("🎲 Array copy created:", arr.length, "elements");
-  console.log("🎲 First 3 elements:", arr.slice(0, 3));
-
   let hash = 0;
 
   // Generate hash from seed
@@ -52,26 +46,12 @@ function shuffleArray<T>(array: T[], seed: string): T[] {
     hash = hash & hash;
   }
 
-  console.log("🎲 Hash generated:", hash);
-
   // Fisher-Yates shuffle with deterministic randomness
   for (let i = arr.length - 1; i > 0; i--) {
     hash = (hash * 9301 + 49297) % 233280;
     // Ensure j is always positive by using Math.abs
     const j = Math.abs(hash) % (i + 1);
-    console.log(`🎲 Swap ${i} ↔ ${j}`);
     [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-
-  console.log("🎲 shuffleArray OUTPUT:", arr.length, "elements");
-  console.log("🎲 First 3 shuffled:", arr.slice(0, 3));
-
-  // Check for undefined
-  const undefinedCount = arr.filter((item) => item == null).length;
-  if (undefinedCount > 0) {
-    console.error(
-      `🎲 ❌ CRITICAL: ${undefinedCount} undefined items in shuffled array!`
-    );
   }
 
   return arr;
@@ -126,42 +106,6 @@ export default function DinnerDetailPage({
       const bottlesData = await bottlesResponse.json();
 
       if (bottlesData.success) {
-        // Debug: verificar se todas as garrafas têm ID e position
-        console.log(
-          "📦 Total de garrafas recebidas da API:",
-          bottlesData.bottles.length
-        );
-
-        // Check if any bottle is missing ID
-        const missingIds = bottlesData.bottles.filter((b: any) => !b.id);
-        if (missingIds.length > 0) {
-          console.error(
-            "❌ CRITICAL: Garrafas sem ID recebidas da API:",
-            missingIds
-          );
-        }
-
-        bottlesData.bottles.forEach((bottle: any, index: number) => {
-          console.log(`Garrafa ${index}:`, {
-            id: bottle.id,
-            position: bottle.position,
-            name: bottle.name,
-            hasId: !!bottle.id,
-            hasPosition: bottle.position != null,
-          });
-          if (!bottle.id) {
-            console.error(
-              `⚠️ Garrafa sem ID encontrada na posição ${index}:`,
-              bottle
-            );
-          }
-          if (bottle.position == null) {
-            console.error(`⚠️ Garrafa sem position encontrada:`, {
-              id: bottle.id,
-              name: bottle.name,
-            });
-          }
-        });
         setBottles(bottlesData.bottles);
       }
 
@@ -285,67 +229,19 @@ export default function DinnerDetailPage({
     .filter((b) => b.id && b.position != null)
     .sort((a, b) => a.position - b.position);
 
-  console.log(
-    "✅ validBottles BEFORE shuffle:",
-    validBottles.length,
-    validBottles.map((b) => ({ id: b.id, name: b.name, position: b.position }))
-  );
-
   const displayBottles: DisplayBottle[] = isBlindActive
-    ? (() => {
-        const shuffled = shuffleArray(validBottles, id);
-        console.log("🔀 AFTER shuffleArray:", shuffled.length, "items");
-
-        // Safety check: filter out any undefined/null elements
-        const safeShuffled = shuffled.filter((b) => b != null && b.id);
-
-        if (safeShuffled.length !== shuffled.length) {
-          console.error(
-            `⚠️ CRITICAL: shuffleArray returned ${
-              shuffled.length - safeShuffled.length
-            } undefined/null elements!`
-          );
-          console.error("Original shuffled array:", shuffled);
-        }
-
-        console.log(
-          "✅ safeShuffled:",
-          safeShuffled.length,
-          safeShuffled.map((b) => ({ id: b.id, name: b.name }))
-        );
-
-        return safeShuffled.map((bottle, index) => {
-          console.log(`🔍 Shuffle - Bottle ${index}:`, {
-            id: bottle.id,
-            name: bottle.name,
-            position: bottle.position,
-            displayLabel: String.fromCharCode(65 + index),
-          });
-          return {
-            ...bottle,
-            displayPosition: index + 1,
-            displayLabel: String.fromCharCode(65 + index), // A, B, C, D...
-          };
-        });
-      })()
+    ? shuffleArray(validBottles, id)
+        .filter((b) => b != null && b.id) // Safety check: filter out any undefined/null elements
+        .map((bottle, index) => ({
+          ...bottle,
+          displayPosition: index + 1,
+          displayLabel: String.fromCharCode(65 + index), // A, B, C, D...
+        }))
     : validBottles.map((bottle) => ({
         ...bottle,
         displayPosition: bottle.position,
         displayLabel: bottle.position?.toString() || "?",
       }));
-
-  // Debug: Verify all displayBottles have IDs
-  console.log("🎯 displayBottles final check:");
-  displayBottles.forEach((bottle, index) => {
-    console.log(`  ${index}. ${bottle.displayLabel}:`, {
-      id: bottle.id,
-      hasId: !!bottle.id,
-      name: isBlindActive ? `Wine ${bottle.displayLabel}` : bottle.name,
-    });
-    if (!bottle.id) {
-      console.error(`❌ CRITICAL: Bottle ${bottle.displayLabel} has NO ID!`);
-    }
-  });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
