@@ -274,14 +274,16 @@ export default function DinnersPage() {
                 : "Aguarda que o administrador crie uma nova temporada"}
             </p>
             {userRole === "admin" && (
-              <Button
-                variant="success"
-                size="md"
-                icon="✨"
-                onClick={handleCreateSeason}
-              >
-                Criar Nova Temporada
-              </Button>
+              <div className="flex justify-center mt-4">
+                <Button
+                  variant="success"
+                  size="md"
+                  icon="✨"
+                  onClick={handleCreateSeason}
+                >
+                  Criar Nova Temporada
+                </Button>
+              </div>
             )}
           </Card>
         ) : dinners.length === 0 ? (

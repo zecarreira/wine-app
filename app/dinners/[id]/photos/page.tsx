@@ -146,12 +146,12 @@ export default function DinnerPhotosPage({
       {/* Header */}
       <header className="bg-black/20 backdrop-blur-lg border-b border-white/10 sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <button
-            onClick={() => router.back()}
+          <Link
+            href={`/dinners/${id}`}
             className="text-white/80 hover:text-white text-2xl"
           >
             ←
-          </button>
+          </Link>
           <Link href="/" className="text-white/80 hover:text-white text-2xl">
             🏠
           </Link>

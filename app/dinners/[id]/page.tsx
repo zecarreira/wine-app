@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { use } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 
 interface Bottle {
   id: string;
@@ -38,7 +37,13 @@ interface Dinner {
 
 // Deterministic shuffle function - same seed = same order for all users
 function shuffleArray<T>(array: T[], seed: string): T[] {
+  console.log("🎲 shuffleArray INPUT:", array.length, "elements");
+
   const arr = [...array];
+
+  console.log("🎲 Array copy created:", arr.length, "elements");
+  console.log("🎲 First 3 elements:", arr.slice(0, 3));
+
   let hash = 0;
 
   // Generate hash from seed
@@ -47,11 +52,26 @@ function shuffleArray<T>(array: T[], seed: string): T[] {
     hash = hash & hash;
   }
 
+  console.log("🎲 Hash generated:", hash);
+
   // Fisher-Yates shuffle with deterministic randomness
   for (let i = arr.length - 1; i > 0; i--) {
     hash = (hash * 9301 + 49297) % 233280;
-    const j = hash % (i + 1);
+    // Ensure j is always positive by using Math.abs
+    const j = Math.abs(hash) % (i + 1);
+    console.log(`🎲 Swap ${i} ↔ ${j}`);
     [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+
+  console.log("🎲 shuffleArray OUTPUT:", arr.length, "elements");
+  console.log("🎲 First 3 shuffled:", arr.slice(0, 3));
+
+  // Check for undefined
+  const undefinedCount = arr.filter((item) => item == null).length;
+  if (undefinedCount > 0) {
+    console.error(
+      `🎲 ❌ CRITICAL: ${undefinedCount} undefined items in shuffled array!`
+    );
   }
 
   return arr;
@@ -63,7 +83,6 @@ export default function DinnerDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  const router = useRouter();
   const [bottles, setBottles] = useState<Bottle[]>([]);
   const [dinner, setDinner] = useState<Dinner | null>(null);
   const [loading, setLoading] = useState(true);
@@ -107,13 +126,40 @@ export default function DinnerDetailPage({
       const bottlesData = await bottlesResponse.json();
 
       if (bottlesData.success) {
-        // Debug: verificar se todas as garrafas têm ID
+        // Debug: verificar se todas as garrafas têm ID e position
+        console.log(
+          "📦 Total de garrafas recebidas da API:",
+          bottlesData.bottles.length
+        );
+
+        // Check if any bottle is missing ID
+        const missingIds = bottlesData.bottles.filter((b: any) => !b.id);
+        if (missingIds.length > 0) {
+          console.error(
+            "❌ CRITICAL: Garrafas sem ID recebidas da API:",
+            missingIds
+          );
+        }
+
         bottlesData.bottles.forEach((bottle: any, index: number) => {
+          console.log(`Garrafa ${index}:`, {
+            id: bottle.id,
+            position: bottle.position,
+            name: bottle.name,
+            hasId: !!bottle.id,
+            hasPosition: bottle.position != null,
+          });
           if (!bottle.id) {
             console.error(
-              `Garrafa sem ID encontrada na posição ${index}:`,
+              `⚠️ Garrafa sem ID encontrada na posição ${index}:`,
               bottle
             );
+          }
+          if (bottle.position == null) {
+            console.error(`⚠️ Garrafa sem position encontrada:`, {
+              id: bottle.id,
+              name: bottle.name,
+            });
           }
         });
         setBottles(bottlesData.bottles);
@@ -239,31 +285,81 @@ export default function DinnerDetailPage({
     .filter((b) => b.id && b.position != null)
     .sort((a, b) => a.position - b.position);
 
+  console.log(
+    "✅ validBottles BEFORE shuffle:",
+    validBottles.length,
+    validBottles.map((b) => ({ id: b.id, name: b.name, position: b.position }))
+  );
+
   const displayBottles: DisplayBottle[] = isBlindActive
-    ? shuffleArray(validBottles, id).map((bottle, index) => ({
-        ...bottle,
-        displayPosition: index + 1,
-        displayLabel: String.fromCharCode(65 + index), // A, B, C, D...
-      }))
+    ? (() => {
+        const shuffled = shuffleArray(validBottles, id);
+        console.log("🔀 AFTER shuffleArray:", shuffled.length, "items");
+
+        // Safety check: filter out any undefined/null elements
+        const safeShuffled = shuffled.filter((b) => b != null && b.id);
+
+        if (safeShuffled.length !== shuffled.length) {
+          console.error(
+            `⚠️ CRITICAL: shuffleArray returned ${
+              shuffled.length - safeShuffled.length
+            } undefined/null elements!`
+          );
+          console.error("Original shuffled array:", shuffled);
+        }
+
+        console.log(
+          "✅ safeShuffled:",
+          safeShuffled.length,
+          safeShuffled.map((b) => ({ id: b.id, name: b.name }))
+        );
+
+        return safeShuffled.map((bottle, index) => {
+          console.log(`🔍 Shuffle - Bottle ${index}:`, {
+            id: bottle.id,
+            name: bottle.name,
+            position: bottle.position,
+            displayLabel: String.fromCharCode(65 + index),
+          });
+          return {
+            ...bottle,
+            displayPosition: index + 1,
+            displayLabel: String.fromCharCode(65 + index), // A, B, C, D...
+          };
+        });
+      })()
     : validBottles.map((bottle) => ({
         ...bottle,
         displayPosition: bottle.position,
         displayLabel: bottle.position?.toString() || "?",
       }));
 
+  // Debug: Verify all displayBottles have IDs
+  console.log("🎯 displayBottles final check:");
+  displayBottles.forEach((bottle, index) => {
+    console.log(`  ${index}. ${bottle.displayLabel}:`, {
+      id: bottle.id,
+      hasId: !!bottle.id,
+      name: isBlindActive ? `Wine ${bottle.displayLabel}` : bottle.name,
+    });
+    if (!bottle.id) {
+      console.error(`❌ CRITICAL: Bottle ${bottle.displayLabel} has NO ID!`);
+    }
+  });
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       {/* Header */}
       <header className="bg-black/20 backdrop-blur-lg border-b border-white/10 sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <button
-            onClick={() => router.back()}
+          <Link
+            href="/dinners"
             className="text-white/80 hover:text-white text-2xl"
           >
             ←
-          </button>
+          </Link>
           <Link href="/" className="text-white/80 hover:text-white text-2xl">
-            �
+            🏠
           </Link>
         </div>
       </header>
@@ -436,7 +532,7 @@ export default function DinnerDetailPage({
         )}
 
         {/* Add Bottle Button - Only in Setup Mode AND NOT Extra Dinner */}
-        {dinner.status === "setup" && isHost && !dinner.is_extra_dinner && (
+        {dinner.status === "setup" && !dinner.is_extra_dinner && (
           <div className="mb-6">
             <Link
               href={`/dinners/${id}/add-bottle`}
@@ -493,78 +589,99 @@ export default function DinnerDetailPage({
                     key={bottle.id || `temp-${bottle.displayPosition}`}
                     className="relative"
                   >
-                    {/* Clickable Card Wrapper */}
-                    <Link href={`/bottles/${bottle.id}`} className="block">
-                      <div className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-lg rounded-3xl p-6 border border-white/20 shadow-xl hover:border-purple-400/50 hover:shadow-purple-500/20 transition-all cursor-pointer">
-                        {/* Position Badge */}
-                        <div className="flex items-start justify-between mb-4">
-                          <div className="bg-gradient-to-br from-purple-500 to-pink-500 text-white w-14 h-14 rounded-2xl flex items-center justify-center font-bold text-2xl shadow-lg">
-                            {bottle.displayLabel}
+                    {/* Clickable Card Wrapper - Only if bottle has valid ID */}
+                    {bottle.id ? (
+                      <Link href={`/bottles/${bottle.id}`} className="block">
+                        <div className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-lg rounded-3xl p-6 border border-white/20 shadow-xl hover:border-purple-400/50 hover:shadow-purple-500/20 transition-all cursor-pointer">
+                          {/* Position Badge */}
+                          <div className="flex items-start justify-between mb-4">
+                            <div className="bg-gradient-to-br from-purple-500 to-pink-500 text-white w-14 h-14 rounded-2xl flex items-center justify-center font-bold text-2xl shadow-lg">
+                              {bottle.displayLabel}
+                            </div>
+                            {bottle.stats &&
+                              bottle.stats.total_ratings > 0 &&
+                              !isBlindActive && (
+                                <div className="text-right">
+                                  <div className="text-3xl font-bold text-amber-400">
+                                    {bottle.stats.average_score}
+                                  </div>
+                                  <div className="text-xs text-white/60">
+                                    {bottle.stats.total_ratings} rating
+                                    {bottle.stats.total_ratings !== 1
+                                      ? "s"
+                                      : ""}
+                                  </div>
+                                </div>
+                              )}
                           </div>
-                          {bottle.stats &&
-                            bottle.stats.total_ratings > 0 &&
-                            !isBlindActive && (
-                              <div className="text-right">
-                                <div className="text-3xl font-bold text-amber-400">
-                                  {bottle.stats.average_score}
-                                </div>
-                                <div className="text-xs text-white/60">
-                                  {bottle.stats.total_ratings} rating
-                                  {bottle.stats.total_ratings !== 1 ? "s" : ""}
-                                </div>
+
+                          {/* Wine Info - Hidden in Blind Mode */}
+                          {isBlindActive ? (
+                            <div>
+                              <h3 className="text-2xl font-bold text-white mb-3">
+                                Wine {bottle.displayLabel}
+                              </h3>
+                              <p className="text-purple-200 text-sm mb-4">
+                                🎭 Wine details hidden until reveal
+                              </p>
+                            </div>
+                          ) : (
+                            <div>
+                              <h3 className="text-2xl font-bold text-white mb-3">
+                                {bottle.name}
+                              </h3>
+
+                              <div className="space-y-1.5 text-purple-200 mb-4">
+                                {bottle.producer && (
+                                  <div className="flex items-center gap-2 text-sm">
+                                    <span>🏛️</span>
+                                    <span>{bottle.producer}</span>
+                                  </div>
+                                )}
+                                {bottle.vintage && (
+                                  <div className="flex items-center gap-2 text-sm">
+                                    <span>📅</span>
+                                    <span>{bottle.vintage}</span>
+                                  </div>
+                                )}
+                                {bottle.wine_type && (
+                                  <div className="flex items-center gap-2 text-sm capitalize">
+                                    <span>🍷</span>
+                                    <span>{bottle.wine_type}</span>
+                                  </div>
+                                )}
                               </div>
-                            )}
-                        </div>
 
-                        {/* Wine Info - Hidden in Blind Mode */}
-                        {isBlindActive ? (
-                          <div>
-                            <h3 className="text-2xl font-bold text-white mb-3">
-                              Wine {bottle.displayLabel}
-                            </h3>
-                            <p className="text-purple-200 text-sm mb-4">
-                              🎭 Wine details hidden until reveal
-                            </p>
-                          </div>
-                        ) : (
-                          <div>
-                            <h3 className="text-2xl font-bold text-white mb-3">
-                              {bottle.name}
-                            </h3>
-
-                            <div className="space-y-1.5 text-purple-200 mb-4">
-                              {bottle.producer && (
-                                <div className="flex items-center gap-2 text-sm">
-                                  <span>🏛️</span>
-                                  <span>{bottle.producer}</span>
-                                </div>
-                              )}
-                              {bottle.vintage && (
-                                <div className="flex items-center gap-2 text-sm">
-                                  <span>📅</span>
-                                  <span>{bottle.vintage}</span>
-                                </div>
-                              )}
-                              {bottle.wine_type && (
-                                <div className="flex items-center gap-2 text-sm capitalize">
-                                  <span>🍷</span>
-                                  <span>{bottle.wine_type}</span>
-                                </div>
+                              {bottle.description && (
+                                <p className="text-white/80 text-sm mb-4 italic leading-relaxed">
+                                  &quot;{bottle.description}&quot;
+                                </p>
                               )}
                             </div>
-
-                            {bottle.description && (
-                              <p className="text-white/80 text-sm mb-4 italic leading-relaxed">
-                                "{bottle.description}"
-                              </p>
-                            )}
+                          )}
+                        </div>
+                      </Link>
+                    ) : (
+                      /* No ID - Display error card without link */
+                      <div className="bg-red-500/10 backdrop-blur-lg rounded-3xl p-6 border-2 border-red-400/50 shadow-xl">
+                        <div className="flex items-center gap-4 mb-4">
+                          <div className="bg-red-500 text-white w-14 h-14 rounded-2xl flex items-center justify-center font-bold text-2xl">
+                            ⚠️
                           </div>
-                        )}
+                          <div>
+                            <h3 className="text-xl font-bold text-red-200">
+                              Error Loading Bottle
+                            </h3>
+                            <p className="text-red-300 text-sm">
+                              Bottle ID is missing. Please refresh the page.
+                            </p>
+                          </div>
+                        </div>
                       </div>
-                    </Link>
+                    )}
 
                     {/* Rate Button - Only show if dinner is active AND bottle has valid ID */}
-                    {dinner.status === "active" && bottle.id && (
+                    {dinner.status === "active" && bottle.id ? (
                       <Link
                         href={`/bottles/${bottle.id}/rate`}
                         className="block w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white text-center px-6 py-4 rounded-2xl font-bold text-lg shadow-lg hover:shadow-purple-500/50 transform hover:scale-[1.02] transition-all duration-200 active:scale-[0.98] mt-4"
@@ -575,7 +692,14 @@ export default function DinnerDetailPage({
                           <span>Rate This Wine</span>
                         </div>
                       </Link>
-                    )}
+                    ) : dinner.status === "active" && !bottle.id ? (
+                      <div className="mt-4 bg-red-500/20 backdrop-blur-sm rounded-2xl p-4 border border-red-400/30">
+                        <div className="flex items-center gap-2 text-red-200 text-sm">
+                          <span>⚠️</span>
+                          <span>Error: Bottle ID missing. Please refresh.</span>
+                        </div>
+                      </div>
+                    ) : null}
                   </div>
                 ))}
               </div>

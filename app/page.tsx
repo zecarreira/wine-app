@@ -66,18 +66,6 @@ export default function Home() {
                   </div>
                 </Link>
 
-                {user.role === "founder" && (
-                  <Link
-                    href="/create-dinner"
-                    className="block w-full bg-linear-to-r from-green-600 to-emerald-600 text-white text-center px-5 py-3.5 rounded-xl font-bold text-base shadow-xl hover:shadow-green-500/50 transform hover:scale-105 transition-all duration-200 active:scale-95"
-                  >
-                    <div className="flex items-center justify-center gap-2">
-                      <span className="text-lg">✨</span>
-                      <span>Criar Novo Jantar</span>
-                    </div>
-                  </Link>
-                )}
-
                 <Link
                   href="/profile"
                   className="block w-full bg-white/10 backdrop-blur-lg text-white text-center px-5 py-3.5 rounded-xl font-semibold text-base border border-white/20 hover:bg-white/20 transform hover:scale-105 transition-all duration-200 active:scale-95"

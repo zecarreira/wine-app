@@ -3,7 +3,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { use } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 
 interface Rating {
   score: number;
@@ -34,8 +33,7 @@ export default function RankingsPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  const router = useRouter();
-  const [rankings, setRankings] = useState<RankedBottle[]>([]);
+  const [rankings, setRankings] = useState<BottleWithRatings[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchRankings = useCallback(async () => {
@@ -75,14 +73,14 @@ export default function RankingsPage({
       {/* Header */}
       <header className="bg-black/20 backdrop-blur-lg border-b border-white/10 sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <button
-            onClick={() => router.back()}
+          <Link
+            href={`/dinners/${id}`}
             className="text-white/80 hover:text-white text-2xl"
           >
             ←
-          </button>
+          </Link>
           <Link href="/" className="text-white/80 hover:text-white text-2xl">
-            �
+            🏠
           </Link>
         </div>
       </header>
