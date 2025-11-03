@@ -58,69 +58,71 @@ export default function CreateDinnerPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       <header className="bg-black/20 backdrop-blur-lg border-b border-white/10">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
           <Link
             href="/dinners"
-            className="text-white/80 hover:text-white flex items-center gap-2 text-lg"
+            className="text-white/80 hover:text-white flex items-center gap-2 text-base"
           >
             <span>←</span>
-            <span className="font-semibold">Back</span>
+            <span className="font-semibold">Voltar</span>
           </Link>
-          <div className="text-white text-2xl">🍷</div>
+          <div className="text-white text-xl">🍷</div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8 max-w-2xl">
-        <div className="text-center mb-8">
-          <div className="text-6xl mb-4">🍽️</div>
-          <h1 className="text-4xl font-bold text-white mb-2">
-            Create New Dinner
+      <main className="container mx-auto px-4 py-6 max-w-2xl">
+        <div className="text-center mb-6">
+          <div className="text-5xl mb-3">🍽️</div>
+          <h1 className="text-3xl font-bold text-white mb-2">
+            Criar Novo Jantar
           </h1>
-          <p className="text-purple-200">Set up your wine tasting event</p>
+          <p className="text-purple-200 text-sm">
+            Configura o teu evento de prova de vinhos
+          </p>
         </div>
 
-        <div className="bg-white/10 backdrop-blur-lg rounded-3xl p-8 border border-white/20 shadow-2xl">
-          <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="bg-white/10 backdrop-blur-lg rounded-3xl p-6 border border-white/20 shadow-2xl">
+          <form onSubmit={handleSubmit} className="space-y-4">
             {/* Dinner Name */}
             <div>
-              <label className="block text-white font-semibold mb-2">
-                Dinner Name *
+              <label className="block text-white font-semibold mb-2 text-sm">
+                Nome do Jantar *
               </label>
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Italian Wine Night"
+                placeholder="Noite de Vinhos Italianos"
                 required
-                className="w-full bg-white/10 border-2 border-white/20 rounded-2xl px-4 py-4 text-white placeholder:text-white/40 focus:outline-none focus:border-purple-400 text-lg"
+                className="w-full bg-white/10 border-2 border-white/20 rounded-2xl px-4 py-2.5 text-white placeholder:text-white/40 focus:outline-none focus:border-purple-400 text-base"
               />
             </div>
 
             {/* Event Date */}
             <div>
-              <label className="block text-white font-semibold mb-2">
-                Event Date *
+              <label className="block text-white font-semibold mb-2 text-sm">
+                Data do Evento *
               </label>
               <input
                 type="date"
                 value={eventDate}
                 onChange={(e) => setEventDate(e.target.value)}
                 required
-                className="w-full bg-white/10 border-2 border-white/20 rounded-2xl px-4 py-4 text-white focus:outline-none focus:border-purple-400 text-lg"
+                className="w-full bg-white/10 border-2 border-white/20 rounded-2xl px-4 py-2.5 text-white focus:outline-none focus:border-purple-400 text-base"
               />
             </div>
 
             {/* Location */}
             <div>
-              <label className="block text-white font-semibold mb-2">
-                Location (Optional)
+              <label className="block text-white font-semibold mb-2 text-sm">
+                Localização (Opcional)
               </label>
               <input
                 type="text"
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
-                placeholder="Lisbon, Portugal"
-                className="w-full bg-white/10 border-2 border-white/20 rounded-2xl px-4 py-4 text-white placeholder:text-white/40 focus:outline-none focus:border-purple-400 text-lg"
+                placeholder="Lisboa, Portugal"
+                className="w-full bg-white/10 border-2 border-white/20 rounded-2xl px-4 py-2.5 text-white placeholder:text-white/40 focus:outline-none focus:border-purple-400 text-base"
               />
             </div>
 
@@ -128,11 +130,11 @@ export default function CreateDinnerPage() {
             <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
               <label className="flex items-center justify-between cursor-pointer">
                 <div>
-                  <div className="text-white font-semibold mb-1">
-                    🎭 Blind Tasting Mode
+                  <div className="text-white font-semibold mb-1 text-sm">
+                    🎭 Modo Prova Cega
                   </div>
-                  <div className="text-purple-200 text-sm">
-                    Hide wine names during rating
+                  <div className="text-purple-200 text-xs">
+                    Esconde os nomes dos vinhos durante a avaliação
                   </div>
                 </div>
                 <input
@@ -146,7 +148,7 @@ export default function CreateDinnerPage() {
 
             {/* Error Message */}
             {error && (
-              <div className="bg-red-500/20 border-2 border-red-500/50 rounded-2xl p-4 text-red-200 text-center">
+              <div className="bg-red-500/20 border-2 border-red-500/50 rounded-2xl p-3 text-red-200 text-center text-sm">
                 {error}
               </div>
             )}
@@ -155,9 +157,9 @@ export default function CreateDinnerPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-5 rounded-2xl font-bold text-xl shadow-lg hover:shadow-purple-500/50 transform hover:scale-[1.02] transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white px-5 py-4 rounded-2xl font-bold text-lg shadow-lg hover:shadow-purple-500/50 transform hover:scale-[1.02] transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? "Creating..." : "Create Dinner 🍽️"}
+              {loading ? "A criar..." : "Criar Jantar 🍽️"}
             </button>
           </form>
         </div>

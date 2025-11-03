@@ -53,18 +53,18 @@ export default function RegisterPage() {
     <div className="min-h-screen bg-linear-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Logo/Title */}
-        <div className="text-center mb-8">
-          <div className="text-7xl mb-4">🍷</div>
-          <h1 className="text-4xl font-bold text-white mb-2">VinoRate</h1>
+        <div className="text-center mb-6">
+          <div className="text-5xl mb-3">🍷</div>
+          <h1 className="text-3xl font-bold text-white mb-2">VinoRate</h1>
           <p className="text-purple-200">Cria a tua conta</p>
         </div>
 
         {/* Register Form */}
-        <div className="bg-white/10 backdrop-blur-lg rounded-3xl p-8 border border-white/20 shadow-2xl">
-          <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="bg-white/10 backdrop-blur-lg rounded-3xl p-6 border border-white/20 shadow-2xl">
+          <form onSubmit={handleSubmit} className="space-y-4">
             {/* Name */}
             <div>
-              <label className="block text-white font-semibold mb-2">
+              <label className="block text-white font-semibold mb-2 text-sm">
                 Nome
               </label>
               <input
@@ -73,13 +73,13 @@ export default function RegisterPage() {
                 onChange={(e) => setName(e.target.value)}
                 placeholder="O teu nome"
                 required
-                className="w-full bg-white/10 border-2 border-white/20 rounded-2xl px-4 py-4 text-white placeholder:text-white/40 focus:outline-none focus:border-purple-400 text-lg"
+                className="w-full bg-white/10 border-2 border-white/20 rounded-2xl px-4 py-2.5 text-white placeholder:text-white/40 focus:outline-none focus:border-purple-400 text-base"
               />
             </div>
 
             {/* Email */}
             <div>
-              <label className="block text-white font-semibold mb-2">
+              <label className="block text-white font-semibold mb-2 text-sm">
                 Email
               </label>
               <input
@@ -88,13 +88,13 @@ export default function RegisterPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="teu@email.com"
                 required
-                className="w-full bg-white/10 border-2 border-white/20 rounded-2xl px-4 py-4 text-white placeholder:text-white/40 focus:outline-none focus:border-purple-400 text-lg"
+                className="w-full bg-white/10 border-2 border-white/20 rounded-2xl px-4 py-2.5 text-white placeholder:text-white/40 focus:outline-none focus:border-purple-400 text-base"
               />
             </div>
 
             {/* Password */}
             <div>
-              <label className="block text-white font-semibold mb-2">
+              <label className="block text-white font-semibold mb-2 text-sm">
                 Palavra-passe
               </label>
               <input
@@ -104,20 +104,20 @@ export default function RegisterPage() {
                 placeholder="••••••••"
                 required
                 minLength={6}
-                className="w-full bg-white/10 border-2 border-white/20 rounded-2xl px-4 py-4 text-white placeholder:text-white/40 focus:outline-none focus:border-purple-400 text-lg"
+                className="w-full bg-white/10 border-2 border-white/20 rounded-2xl px-4 py-2.5 text-white placeholder:text-white/40 focus:outline-none focus:border-purple-400 text-base"
               />
-              <p className="text-white/40 text-xs mt-2">Mínimo 6 caracteres</p>
+              <p className="text-white/40 text-xs mt-1">Mínimo 6 caracteres</p>
             </div>
 
             {/* Error Message */}
             {error && (
-              <div className="bg-red-500/20 border-2 border-red-500/50 rounded-2xl p-4 text-red-200 text-center">
+              <div className="bg-red-500/20 border-2 border-red-500/50 rounded-2xl p-3 text-red-200 text-center text-sm">
                 {error}
               </div>
             )}
 
             {/* Info Box */}
-            <div className="bg-blue-500/20 border-2 border-blue-500/50 rounded-2xl p-4 text-blue-200 text-sm">
+            <div className="bg-blue-500/20 border-2 border-blue-500/50 rounded-2xl p-3 text-blue-200 text-xs">
               <p className="font-semibold mb-1">ℹ️ Info Nova Conta:</p>
               <p>
                 • Vais começar como <strong>Guest</strong>
@@ -132,14 +132,14 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-linear-to-r from-purple-600 to-pink-600 text-white px-6 py-5 rounded-2xl font-bold text-xl shadow-lg hover:shadow-purple-500/50 transform hover:scale-[1.02] transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-linear-to-r from-purple-600 to-pink-600 text-white px-6 py-4 rounded-2xl font-bold text-lg shadow-lg hover:shadow-purple-500/50 transform hover:scale-[1.02] transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? "A criar conta..." : "Registar 🍷"}
             </button>
 
             {/* Login Link */}
             <div className="text-center">
-              <p className="text-white/60">
+              <p className="text-white/60 text-sm">
                 Já tens conta?{" "}
                 <Link
                   href="/login"

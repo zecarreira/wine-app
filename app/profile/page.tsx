@@ -64,8 +64,8 @@ export default function ProfilePage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="text-6xl mb-4 animate-spin">👤</div>
-          <div className="text-white text-xl">Loading profile...</div>
+          <div className="text-5xl mb-3 animate-spin">👤</div>
+          <div className="text-white text-lg">A carregar perfil...</div>
         </div>
       </div>
     );
@@ -75,8 +75,8 @@ export default function ProfilePage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="text-6xl mb-4">❌</div>
-          <div className="text-white text-xl">Profile not found</div>
+          <div className="text-5xl mb-3">❌</div>
+          <div className="text-white text-lg">Perfil não encontrado</div>
         </div>
       </div>
     );
@@ -86,36 +86,36 @@ export default function ProfilePage() {
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       {/* Header */}
       <header className="bg-black/20 backdrop-blur-lg border-b border-white/10 sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
           <button
             onClick={() => router.back()}
-            className="text-white/80 hover:text-white flex items-center gap-2 text-lg"
+            className="text-white/80 hover:text-white flex items-center gap-2 text-base"
           >
             <span>←</span>
-            <span className="font-semibold">Back</span>
+            <span className="font-semibold">Voltar</span>
           </button>
-          <div className="text-white text-2xl">👤</div>
+          <div className="text-white text-xl">👤</div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8 pb-24 max-w-4xl">
+      <main className="container mx-auto px-4 py-6 pb-24 max-w-4xl">
         {/* Profile Header */}
-        <div className="bg-gradient-to-br from-white/15 to-white/5 backdrop-blur-lg rounded-3xl p-8 mb-6 border border-white/20 shadow-2xl">
-          <div className="flex flex-col md:flex-row items-center md:items-start gap-6 mb-6">
+        <div className="bg-gradient-to-br from-white/15 to-white/5 backdrop-blur-lg rounded-3xl p-6 mb-4 border border-white/20 shadow-2xl">
+          <div className="flex flex-col md:flex-row items-center md:items-start gap-4 mb-4">
             {/* Avatar */}
-            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-5xl font-bold text-white flex-shrink-0">
+            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-4xl font-bold text-white flex-shrink-0">
               {user.name.charAt(0).toUpperCase()}
             </div>
 
             {/* Info */}
             <div className="flex-1 text-center md:text-left">
-              <h1 className="text-3xl font-bold text-white mb-1">
+              <h1 className="text-2xl font-bold text-white mb-1">
                 {user.name}
               </h1>
-              <p className="text-purple-200 mb-3">{user.email}</p>
-              <div className="mb-4">
+              <p className="text-purple-200 text-sm mb-2">{user.email}</p>
+              <div className="mb-3">
                 <span
-                  className={`inline-block px-4 py-2 rounded-full text-sm font-bold ${
+                  className={`inline-block px-3 py-1.5 rounded-full text-xs font-bold ${
                     user.role === "admin"
                       ? "bg-red-500/30 text-red-200 border border-red-400/30"
                       : user.role === "founder"
@@ -126,8 +126,8 @@ export default function ProfilePage() {
                   {user.role === "admin"
                     ? "👑 Admin"
                     : user.role === "founder"
-                    ? "🍷 Founder"
-                    : "👤 Guest"}
+                    ? "🍷 Fundador"
+                    : "👤 Convidado"}
                 </span>
               </div>
             </div>
@@ -137,7 +137,7 @@ export default function ProfilePage() {
               {user.role === "admin" && (
                 <Link
                   href="/admin"
-                  className="bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 px-4 py-2 rounded-xl font-semibold transition-colors flex items-center gap-2"
+                  className="bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 px-3 py-1.5 rounded-xl text-sm font-semibold transition-colors flex items-center gap-2"
                 >
                   <span>Backend</span>
                 </Link>
@@ -146,78 +146,78 @@ export default function ProfilePage() {
           </div>
 
           {/* Stats Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-white/5 rounded-2xl p-4 text-center">
-              <div className="text-3xl mb-2">🍽️</div>
-              <div className="text-2xl font-bold text-white">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="bg-white/5 rounded-2xl p-3 text-center">
+              <div className="text-2xl mb-1">🍽️</div>
+              <div className="text-xl font-bold text-white">
                 {user.stats.total_dinners}
               </div>
-              <div className="text-white/60 text-sm">Dinners</div>
+              <div className="text-white/60 text-xs">Jantares</div>
             </div>
 
-            <div className="bg-white/5 rounded-2xl p-4 text-center">
-              <div className="text-3xl mb-2">⭐</div>
-              <div className="text-2xl font-bold text-white">
+            <div className="bg-white/5 rounded-2xl p-3 text-center">
+              <div className="text-2xl mb-1">⭐</div>
+              <div className="text-xl font-bold text-white">
                 {user.stats.total_ratings}
               </div>
-              <div className="text-white/60 text-sm">Ratings</div>
+              <div className="text-white/60 text-xs">Avaliações</div>
             </div>
 
-            <div className="bg-white/5 rounded-2xl p-4 text-center">
-              <div className="text-3xl mb-2">🍷</div>
-              <div className="text-2xl font-bold text-white">
+            <div className="bg-white/5 rounded-2xl p-3 text-center">
+              <div className="text-2xl mb-1">🍷</div>
+              <div className="text-xl font-bold text-white">
                 {user.stats.total_bottles_brought}
               </div>
-              <div className="text-white/60 text-sm">Bottles</div>
+              <div className="text-white/60 text-xs">Garrafas</div>
             </div>
 
-            <div className="bg-white/5 rounded-2xl p-4 text-center">
-              <div className="text-3xl mb-2">📊</div>
-              <div className="text-2xl font-bold text-white">
+            <div className="bg-white/5 rounded-2xl p-3 text-center">
+              <div className="text-2xl mb-1">📊</div>
+              <div className="text-xl font-bold text-white">
                 {user.stats.average_rating || "N/A"}
               </div>
-              <div className="text-white/60 text-sm">Avg Rating</div>
+              <div className="text-white/60 text-xs">Média</div>
             </div>
           </div>
-          <div className="flex justify-center mt-[1cm]">
+          <div className="flex justify-center mt-4">
             <button
               onClick={handleLogout}
-              className="bg-red-500/20 hover:bg-red-500/30 text-red-200 px-4 py-2 rounded-xl font-semibold transition-colors"
+              className="bg-red-500/20 hover:bg-red-500/30 text-red-200 px-4 py-2 rounded-xl text-sm font-semibold transition-colors"
             >
-              Logout
+              Sair
             </button>
           </div>
         </div>
 
         {/* Favorite Wine */}
         {user.favorite_wine && (
-          <div className="bg-gradient-to-br from-amber-500/20 to-orange-500/10 backdrop-blur-lg rounded-3xl p-6 mb-6 border-2 border-amber-400/30 shadow-2xl">
-            <div className="flex items-center gap-3 mb-4">
-              <span className="text-3xl">⭐</span>
-              <h2 className="text-2xl font-bold text-white">
-                Your Favorite Wine
+          <div className="bg-gradient-to-br from-amber-500/20 to-orange-500/10 backdrop-blur-lg rounded-3xl p-5 mb-4 border-2 border-amber-400/30 shadow-2xl">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-2xl">⭐</span>
+              <h2 className="text-xl font-bold text-white">
+                O Teu Vinho Favorito
               </h2>
             </div>
 
             <Link
               href={`/bottles/${user.favorite_wine.bottle.id}`}
-              className="block bg-white/5 rounded-2xl p-4 hover:bg-white/10 transition-colors"
+              className="block bg-white/5 rounded-2xl p-3 hover:bg-white/10 transition-colors"
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-xl font-bold text-white mb-1">
+                  <h3 className="text-lg font-bold text-white mb-1">
                     {user.favorite_wine.bottle.name}
                   </h3>
                   {user.favorite_wine.bottle.producer && (
-                    <p className="text-purple-200 text-sm">
+                    <p className="text-purple-200 text-xs">
                       {user.favorite_wine.bottle.producer}
                     </p>
                   )}
-                  <p className="text-white/60 text-xs mt-2">
-                    From: {user.favorite_wine.bottle.dinner.name}
+                  <p className="text-white/60 text-xs mt-1">
+                    De: {user.favorite_wine.bottle.dinner.name}
                   </p>
                 </div>
-                <div className="text-4xl font-bold text-amber-400">
+                <div className="text-3xl font-bold text-amber-400">
                   {user.favorite_wine.score}
                 </div>
               </div>
@@ -227,35 +227,37 @@ export default function ProfilePage() {
 
         {/* Recent Ratings */}
         {user.recent_ratings.length > 0 && (
-          <div className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-lg rounded-3xl p-6 mb-6 border border-white/20 shadow-xl">
-            <div className="flex items-center gap-3 mb-4">
-              <span className="text-3xl">📝</span>
-              <h2 className="text-2xl font-bold text-white">Recent Ratings</h2>
+          <div className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-lg rounded-3xl p-5 mb-4 border border-white/20 shadow-xl">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-2xl">📝</span>
+              <h2 className="text-xl font-bold text-white">
+                Avaliações Recentes
+              </h2>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-2.5">
               {user.recent_ratings.map((rating) => (
                 <Link
                   key={rating.id}
                   href={`/bottles/${rating.bottle.id}`}
-                  className="block bg-white/5 rounded-2xl p-4 hover:bg-white/10 transition-colors"
+                  className="block bg-white/5 rounded-2xl p-3 hover:bg-white/10 transition-colors"
                 >
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-lg font-semibold text-white">
+                  <div className="flex items-center justify-between mb-1">
+                    <h3 className="text-base font-semibold text-white">
                       {rating.bottle.name}
                     </h3>
-                    <div className="text-2xl font-bold text-amber-400">
+                    <div className="text-xl font-bold text-amber-400">
                       {rating.score}
                     </div>
                   </div>
-                  <p className="text-white/60 text-sm">
+                  <p className="text-white/60 text-xs">
                     {rating.bottle.dinner.name} •{" "}
                     {new Date(rating.created_at).toLocaleDateString()}
                   </p>
                   {rating.tasting_notes && (
-                    <p className="text-white/70 text-sm mt-2 italic">
-                      "{rating.tasting_notes.substring(0, 100)}
-                      {rating.tasting_notes.length > 100 ? "..." : ""}"
+                    <p className="text-white/70 text-xs mt-1.5 italic">
+                      &quot;{rating.tasting_notes.substring(0, 100)}
+                      {rating.tasting_notes.length > 100 ? "..." : ""}&quot;
                     </p>
                   )}
                 </Link>
@@ -266,24 +268,24 @@ export default function ProfilePage() {
 
         {/* Bottles Brought */}
         {user.bottles_brought.length > 0 && (
-          <div className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-lg rounded-3xl p-6 border border-white/20 shadow-xl">
-            <div className="flex items-center gap-3 mb-4">
-              <span className="text-3xl">🍾</span>
-              <h2 className="text-2xl font-bold text-white">
-                Bottles You Brought
+          <div className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-lg rounded-3xl p-5 border border-white/20 shadow-xl">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-2xl">🍾</span>
+              <h2 className="text-xl font-bold text-white">
+                Garrafas que Trouxeste
               </h2>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {user.bottles_brought.map((bottle) => (
                 <Link
                   key={bottle.id}
                   href={`/bottles/${bottle.id}`}
-                  className="block bg-white/5 rounded-2xl p-4 hover:bg-white/10 transition-colors"
+                  className="block bg-white/5 rounded-2xl p-3 hover:bg-white/10 transition-colors"
                 >
-                  <div className="flex gap-3">
+                  <div className="flex gap-2">
                     {bottle.photo_url && (
-                      <div className="relative w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
+                      <div className="relative w-14 h-14 rounded-lg overflow-hidden flex-shrink-0">
                         <Image
                           src={bottle.photo_url}
                           alt={bottle.name}
@@ -293,15 +295,15 @@ export default function ProfilePage() {
                       </div>
                     )}
                     <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-white mb-1">
+                      <h3 className="text-base font-semibold text-white mb-0.5">
                         {bottle.name}
                       </h3>
                       {bottle.producer && (
-                        <p className="text-purple-200 text-sm">
+                        <p className="text-purple-200 text-xs">
                           {bottle.producer}
                         </p>
                       )}
-                      <p className="text-white/60 text-xs mt-1">
+                      <p className="text-white/60 text-xs mt-0.5">
                         {bottle.dinner.name}
                       </p>
                     </div>
