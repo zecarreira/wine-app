@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { use } from "react";
 import Link from "next/link";
 
@@ -36,11 +36,7 @@ export default function RankingsPage({
   const [rankings, setRankings] = useState<BottleWithRatings[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchRankings();
-  }, [id]);
-
-  async function fetchRankings() {
+  const fetchRankings = useCallback(async () => {
     try {
       const response = await fetch(`/api/dinners/${id}/ratings`);
       const data = await response.json();
@@ -48,12 +44,16 @@ export default function RankingsPage({
       if (data.success) {
         setRankings(data.rankings);
       }
-    } catch (error) {
-      console.error("Error fetching rankings:", error);
+    } catch {
+      console.error("Error fetching rankings");
     } finally {
       setLoading(false);
     }
-  }
+  }, [id]);
+
+  useEffect(() => {
+    fetchRankings();
+  }, [fetchRankings]);
 
   if (loading) {
     return (
@@ -156,7 +156,7 @@ export default function RankingsPage({
                         </div>
                         {rating.tasting_notes && (
                           <p className="text-white/70 text-sm italic">
-                            "{rating.tasting_notes}"
+                            &quot;{rating.tasting_notes}&quot;
                           </p>
                         )}
                       </div>

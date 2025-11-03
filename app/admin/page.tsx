@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -20,11 +20,7 @@ export default function AdminPanelPage() {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
 
-  useEffect(() => {
-    checkAdminAndFetchUsers();
-  }, []);
-
-  async function checkAdminAndFetchUsers() {
+  const checkAdminAndFetchUsers = useCallback(async () => {
     try {
       const userStr = localStorage.getItem("user");
       if (!userStr) {
@@ -55,12 +51,16 @@ export default function AdminPanelPage() {
       } else {
         alert("Failed to load users");
       }
-    } catch (error) {
-      console.error("Error:", error);
+    } catch {
+      console.error("Error loading users");
     } finally {
       setLoading(false);
     }
-  }
+  }, [router]);
+
+  useEffect(() => {
+    checkAdminAndFetchUsers();
+  }, [checkAdminAndFetchUsers]);
 
   async function updateUserRole(userId: string, newRole: string) {
     const roleText = newRole === "founder" ? "Founder" : "Guest";
@@ -86,7 +86,7 @@ export default function AdminPanelPage() {
       } else {
         alert(data.error || "Failed to update role");
       }
-    } catch (error) {
+    } catch {
       alert("Error updating role");
     } finally {
       setUpdating(null);

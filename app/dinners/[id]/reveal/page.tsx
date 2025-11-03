@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { use } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -38,6 +38,14 @@ interface RevealStatus {
   canReveal: boolean;
 }
 
+interface LastRevealedData {
+  bottle: RevealedBottle;
+  medal: string;
+  message: string;
+  isWinner: boolean;
+  isComplete: boolean;
+}
+
 export default function RevealCeremonyPage({
   params,
 }: {
@@ -49,13 +57,11 @@ export default function RevealCeremonyPage({
   const [revealStatus, setRevealStatus] = useState<RevealStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [revealing, setRevealing] = useState(false);
-  const [lastRevealed, setLastRevealed] = useState<any>(null);
+  const [lastRevealed, setLastRevealed] = useState<LastRevealedData | null>(
+    null
+  );
 
-  useEffect(() => {
-    fetchRevealStatus();
-  }, [id]);
-
-  async function fetchRevealStatus() {
+  const fetchRevealStatus = useCallback(async () => {
     try {
       const response = await fetch(`/api/dinners/${id}/reveal-status`);
       const data = await response.json();
@@ -63,12 +69,16 @@ export default function RevealCeremonyPage({
       if (data.success) {
         setRevealStatus(data);
       }
-    } catch (error) {
-      console.error("Error fetching reveal status:", error);
+    } catch {
+      console.error("Error fetching reveal status");
     } finally {
       setLoading(false);
     }
-  }
+  }, [id]);
+
+  useEffect(() => {
+    fetchRevealStatus();
+  }, [fetchRevealStatus]);
 
   async function handleRevealNext() {
     setRevealing(true);
@@ -97,7 +107,7 @@ export default function RevealCeremonyPage({
       } else {
         alert(data.error || "Failed to reveal");
       }
-    } catch (error) {
+    } catch {
       alert("Error revealing bottle");
     } finally {
       setRevealing(false);
@@ -225,7 +235,7 @@ export default function RevealCeremonyPage({
 
                 {lastRevealed.bottle.description && (
                   <p className="text-white/80 italic text-center">
-                    "{lastRevealed.bottle.description}"
+                    &quot;{lastRevealed.bottle.description}&quot;
                   </p>
                 )}
               </div>
@@ -251,7 +261,7 @@ export default function RevealCeremonyPage({
                       Individual Ratings:
                     </div>
                     {lastRevealed.bottle.ratings.map(
-                      (rating: any, index: number) => (
+                      (rating, index: number) => (
                         <div key={index} className="bg-white/5 rounded-xl p-3">
                           <div className="flex justify-between items-center mb-1">
                             <span className="text-white font-semibold">
@@ -263,7 +273,7 @@ export default function RevealCeremonyPage({
                           </div>
                           {rating.tasting_notes && (
                             <p className="text-white/70 text-sm italic">
-                              "{rating.tasting_notes}"
+                              &quot;{rating.tasting_notes}&quot;
                             </p>
                           )}
                         </div>

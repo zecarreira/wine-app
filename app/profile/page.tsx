@@ -87,13 +87,13 @@ export default function ProfilePage() {
       {/* Header */}
       <header className="bg-black/20 backdrop-blur-lg border-b border-white/10 sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link
-            href="/dinners"
+          <button
+            onClick={() => router.back()}
             className="text-white/80 hover:text-white flex items-center gap-2 text-lg"
           >
             <span>←</span>
             <span className="font-semibold">Back</span>
-          </Link>
+          </button>
           <div className="text-white text-2xl">👤</div>
         </div>
       </header>

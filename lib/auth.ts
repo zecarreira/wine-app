@@ -1,5 +1,6 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { env } from "./env";
 
 // Type for JWT payload
 interface JWTPayload {
@@ -23,21 +24,17 @@ export async function comparePassword(
 
 // Create JWT token
 export function createToken(userId: string, role: string): string {
-  const secret = process.env.JWT_SECRET!;
-
   return jwt.sign(
     { userId, role },
-    secret,
+    env.JWT_SECRET,
     { expiresIn: "7d" } // Token expires in 7 days
   );
 }
 
 // Verify JWT token
 export function verifyToken(token: string): JWTPayload | null {
-  const secret = process.env.JWT_SECRET!;
-
   try {
-    return jwt.verify(token, secret) as JWTPayload;
+    return jwt.verify(token, env.JWT_SECRET) as JWTPayload;
   } catch {
     // Token is invalid or expired
     return null;

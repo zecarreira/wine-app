@@ -37,8 +37,8 @@ export default function RegisterPage() {
         localStorage.setItem("token", data.token);
         localStorage.setItem("user", JSON.stringify(data.user));
 
-        // Redirect to dinners
-        router.push("/dinners");
+        // Redirect to home page
+        router.push("/");
       } else {
         setError(data.error || "Registration failed");
       }
