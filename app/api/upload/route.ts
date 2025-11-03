@@ -60,7 +60,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!bucket || !["bottle-photos", "dinner-photos"].includes(bucket)) {
+    if (
+      !bucket ||
+      !["bottle-photos", "dinner-photos", "profile-photos"].includes(bucket)
+    ) {
       return NextResponse.json(
         { success: false, error: "Invalid bucket" },
         { status: 400 }

@@ -5,15 +5,11 @@ import { useRouter } from "next/navigation";
 
 interface HeaderProps {
   backUrl?: string;
-  backText?: string;
-  icon?: string;
   useBackButton?: boolean;
 }
 
 export default function Header({
   backUrl,
-  backText = "Back",
-  icon = "🍷",
   useBackButton = false,
 }: HeaderProps) {
   const router = useRouter();
@@ -24,21 +20,21 @@ export default function Header({
         {useBackButton ? (
           <button
             onClick={() => router.back()}
-            className="text-white/80 hover:text-white flex items-center gap-2 text-lg"
+            className="text-white/80 hover:text-white text-2xl"
           >
-            <span>←</span>
-            <span className="font-semibold">{backText}</span>
+            ←
           </button>
         ) : (
           <Link
             href={backUrl || "/"}
-            className="text-white/80 hover:text-white flex items-center gap-2 text-lg"
+            className="text-white/80 hover:text-white text-2xl"
           >
-            <span>←</span>
-            <span className="font-semibold">{backText}</span>
+            ←
           </Link>
         )}
-        <div className="text-white text-2xl">{icon}</div>
+        <Link href="/" className="text-white/80 hover:text-white text-2xl">
+          🏠
+        </Link>
       </div>
     </header>
   );

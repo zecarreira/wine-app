@@ -80,6 +80,13 @@ export default function RevealCeremonyPage({
     fetchRevealStatus();
   }, [fetchRevealStatus]);
 
+  // Se já está tudo revelado, redireciona para rankings
+  useEffect(() => {
+    if (revealStatus?.remainingCount === 0 && revealStatus) {
+      router.push(`/dinners/${id}/rankings`);
+    }
+  }, [revealStatus, id, router]);
+
   async function handleRevealNext() {
     setRevealing(true);
     try {
@@ -125,6 +132,8 @@ export default function RevealCeremonyPage({
     );
   }
 
+  const isComplete = revealStatus?.remainingCount === 0;
+
   if (!revealStatus || !revealStatus.canReveal) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
@@ -137,14 +146,12 @@ export default function RevealCeremonyPage({
             onClick={() => router.back()}
             className="text-purple-300 hover:text-white underline"
           >
-            ← Voltar
+            ←
           </button>
         </div>
       </div>
     );
   }
-
-  const isComplete = revealStatus.remainingCount === 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
@@ -153,12 +160,13 @@ export default function RevealCeremonyPage({
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <button
             onClick={() => router.back()}
-            className="text-white/80 hover:text-white flex items-center gap-2 text-lg"
+            className="text-white/80 hover:text-white text-2xl"
           >
-            <span>←</span>
-            <span className="font-semibold">Voltar</span>
+            ←
           </button>
-          <div className="text-white text-2xl">🎭</div>
+          <Link href="/" className="text-white/80 hover:text-white text-2xl">
+            �
+          </Link>
         </div>
       </header>
 

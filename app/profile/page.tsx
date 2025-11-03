@@ -11,6 +11,7 @@ interface User {
   email: string;
   role: string;
   created_at: string;
+  profile_photo_url?: string;
   stats: {
     total_dinners: number;
     total_ratings: number;
@@ -26,6 +27,7 @@ export default function ProfilePage() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
   useEffect(() => {
     fetchProfile();
@@ -34,6 +36,7 @@ export default function ProfilePage() {
   async function fetchProfile() {
     try {
       const userStr = localStorage.getItem("user");
+
       if (!userStr) {
         router.push("/login");
         return;
@@ -46,6 +49,8 @@ export default function ProfilePage() {
 
       if (data.success) {
         setUser(data.user);
+      } else {
+        console.error("API error:", data.error);
       }
     } catch (error) {
       console.error("Error fetching profile:", error);
@@ -53,11 +58,82 @@ export default function ProfilePage() {
       setLoading(false);
     }
   }
-
   function handleLogout() {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     router.push("/login");
+  }
+
+  async function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert("A foto deve ter no máximo 5MB");
+      return;
+    }
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      alert("Por favor, selecione uma imagem válida");
+      return;
+    }
+
+    setUploadingPhoto(true);
+
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        router.push("/login");
+        return;
+      }
+
+      // Upload photo to storage
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("bucket", "profile-photos");
+
+      const uploadResponse = await fetch("/api/upload", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      const uploadData = await uploadResponse.json();
+
+      if (!uploadData.success) {
+        throw new Error(uploadData.error || "Failed to upload photo");
+      }
+
+      // Update user profile with photo URL
+      const updateResponse = await fetch(`/api/users/${user?.id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          profile_photo_url: uploadData.url,
+        }),
+      });
+
+      const updateData = await updateResponse.json();
+
+      if (updateData.success) {
+        // Refresh profile
+        await fetchProfile();
+      } else {
+        throw new Error(updateData.error || "Failed to update profile");
+      }
+    } catch (error) {
+      console.error("Photo upload error:", error);
+      alert("Erro ao fazer upload da foto. Tenta novamente.");
+    } finally {
+      setUploadingPhoto(false);
+    }
   }
 
   if (loading) {
@@ -89,12 +165,13 @@ export default function ProfilePage() {
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
           <button
             onClick={() => router.back()}
-            className="text-white/80 hover:text-white flex items-center gap-2 text-base"
+            className="text-white/80 hover:text-white text-2xl"
           >
-            <span>←</span>
-            <span className="font-semibold">Voltar</span>
+            ←
           </button>
-          <div className="text-white text-xl">👤</div>
+          <Link href="/" className="text-white/80 hover:text-white text-2xl">
+            🏠
+          </Link>
         </div>
       </header>
 
@@ -103,8 +180,44 @@ export default function ProfilePage() {
         <div className="bg-gradient-to-br from-white/15 to-white/5 backdrop-blur-lg rounded-3xl p-6 mb-4 border border-white/20 shadow-2xl">
           <div className="flex flex-col md:flex-row items-center md:items-start gap-4 mb-4">
             {/* Avatar */}
-            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-4xl font-bold text-white flex-shrink-0">
-              {user.name.charAt(0).toUpperCase()}
+            <div className="relative group">
+              {user.profile_photo_url ? (
+                <div className="relative w-20 h-20 rounded-full overflow-hidden border-4 border-purple-500/30">
+                  <Image
+                    src={user.profile_photo_url}
+                    alt={user.name}
+                    fill
+                    sizes="80px"
+                    className="object-cover"
+                  />
+                </div>
+              ) : (
+                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-4xl font-bold text-white">
+                  {user.name.charAt(0).toUpperCase()}
+                </div>
+              )}
+
+              {/* Upload button overlay */}
+              <label
+                htmlFor="profile-photo-upload"
+                className={`absolute inset-0 flex items-center justify-center bg-black/60 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer ${
+                  uploadingPhoto ? "opacity-100" : ""
+                }`}
+              >
+                {uploadingPhoto ? (
+                  <span className="text-white text-2xl animate-spin">⏳</span>
+                ) : (
+                  <span className="text-white text-2xl">📸</span>
+                )}
+              </label>
+              <input
+                id="profile-photo-upload"
+                type="file"
+                accept="image/*"
+                onChange={handlePhotoUpload}
+                disabled={uploadingPhoto}
+                className="hidden"
+              />
             </div>
 
             {/* Info */}
@@ -113,6 +226,9 @@ export default function ProfilePage() {
                 {user.name}
               </h1>
               <p className="text-purple-200 text-sm mb-2">{user.email}</p>
+              <p className="text-white/40 text-xs mb-2 italic">
+                💡 Clica na foto para alterar
+              </p>
               <div className="mb-3">
                 <span
                   className={`inline-block px-3 py-1.5 rounded-full text-xs font-bold ${
@@ -190,40 +306,44 @@ export default function ProfilePage() {
         </div>
 
         {/* Favorite Wine */}
-        {user.favorite_wine && (
-          <div className="bg-gradient-to-br from-amber-500/20 to-orange-500/10 backdrop-blur-lg rounded-3xl p-5 mb-4 border-2 border-amber-400/30 shadow-2xl">
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-2xl">⭐</span>
-              <h2 className="text-xl font-bold text-white">
-                O Teu Vinho Favorito
-              </h2>
-            </div>
-
-            <Link
-              href={`/bottles/${user.favorite_wine.bottle.id}`}
-              className="block bg-white/5 rounded-2xl p-3 hover:bg-white/10 transition-colors"
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-bold text-white mb-1">
-                    {user.favorite_wine.bottle.name}
-                  </h3>
-                  {user.favorite_wine.bottle.producer && (
-                    <p className="text-purple-200 text-xs">
-                      {user.favorite_wine.bottle.producer}
-                    </p>
-                  )}
-                  <p className="text-white/60 text-xs mt-1">
-                    De: {user.favorite_wine.bottle.dinner.name}
-                  </p>
-                </div>
-                <div className="text-3xl font-bold text-amber-400">
-                  {user.favorite_wine.score}
-                </div>
+        {user.favorite_wine &&
+          !(
+            user.favorite_wine.bottle.dinner.status === "active" &&
+            user.favorite_wine.bottle.dinner.is_blind
+          ) && (
+            <div className="bg-gradient-to-br from-amber-500/20 to-orange-500/10 backdrop-blur-lg rounded-3xl p-5 mb-4 border-2 border-amber-400/30 shadow-2xl">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-2xl">⭐</span>
+                <h2 className="text-xl font-bold text-white">
+                  O Teu Vinho Favorito
+                </h2>
               </div>
-            </Link>
-          </div>
-        )}
+
+              <Link
+                href={`/bottles/${user.favorite_wine.bottle.id}`}
+                className="block bg-white/5 rounded-2xl p-3 hover:bg-white/10 transition-colors"
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-bold text-white mb-1">
+                      {user.favorite_wine.bottle.name}
+                    </h3>
+                    {user.favorite_wine.bottle.producer && (
+                      <p className="text-purple-200 text-xs">
+                        {user.favorite_wine.bottle.producer}
+                      </p>
+                    )}
+                    <p className="text-white/60 text-xs mt-1">
+                      De: {user.favorite_wine.bottle.dinner.name}
+                    </p>
+                  </div>
+                  <div className="text-3xl font-bold text-amber-400">
+                    {user.favorite_wine.score}
+                  </div>
+                </div>
+              </Link>
+            </div>
+          )}
 
         {/* Recent Ratings */}
         {user.recent_ratings.length > 0 && (
@@ -236,32 +356,40 @@ export default function ProfilePage() {
             </div>
 
             <div className="space-y-2.5">
-              {user.recent_ratings.map((rating) => (
-                <Link
-                  key={rating.id}
-                  href={`/bottles/${rating.bottle.id}`}
-                  className="block bg-white/5 rounded-2xl p-3 hover:bg-white/10 transition-colors"
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <h3 className="text-base font-semibold text-white">
-                      {rating.bottle.name}
-                    </h3>
-                    <div className="text-xl font-bold text-amber-400">
-                      {rating.score}
+              {user.recent_ratings.map((rating) => {
+                const isBlindActive =
+                  rating.bottle.dinner.status === "active" &&
+                  rating.bottle.dinner.is_blind;
+
+                return (
+                  <Link
+                    key={rating.id}
+                    href={`/bottles/${rating.bottle.id}`}
+                    className="block bg-white/5 rounded-2xl p-3 hover:bg-white/10 transition-colors"
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <h3 className="text-base font-semibold text-white">
+                        {isBlindActive
+                          ? "🎭 Vinho em Prova Cega"
+                          : rating.bottle.name}
+                      </h3>
+                      <div className="text-xl font-bold text-amber-400">
+                        {rating.score}
+                      </div>
                     </div>
-                  </div>
-                  <p className="text-white/60 text-xs">
-                    {rating.bottle.dinner.name} •{" "}
-                    {new Date(rating.created_at).toLocaleDateString()}
-                  </p>
-                  {rating.tasting_notes && (
-                    <p className="text-white/70 text-xs mt-1.5 italic">
-                      &quot;{rating.tasting_notes.substring(0, 100)}
-                      {rating.tasting_notes.length > 100 ? "..." : ""}&quot;
+                    <p className="text-white/60 text-xs">
+                      {rating.bottle.dinner.name} •{" "}
+                      {new Date(rating.created_at).toLocaleDateString()}
                     </p>
-                  )}
-                </Link>
-              ))}
+                    {rating.tasting_notes && (
+                      <p className="text-white/70 text-xs mt-1.5 italic">
+                        &quot;{rating.tasting_notes.substring(0, 100)}
+                        {rating.tasting_notes.length > 100 ? "..." : ""}&quot;
+                      </p>
+                    )}
+                  </Link>
+                );
+              })}
             </div>
           </div>
         )}

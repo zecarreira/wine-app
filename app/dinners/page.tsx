@@ -144,7 +144,7 @@ export default function DinnersPage() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-linear-to-br from-slate-900 via-purple-900 to-slate-900">
-        <Header useBackButton backText="Voltar" />
+        <Header useBackButton />
 
         <div className="container mx-auto px-4 py-8">
           <div className="flex items-end justify-between mb-8">
@@ -169,7 +169,7 @@ export default function DinnersPage() {
 
   return (
     <div className="min-h-screen bg-linear-to-br from-slate-900 via-purple-900 to-slate-900">
-      <Header useBackButton backText="Voltar" />
+      <Header useBackButton />
 
       <div className="container mx-auto px-4 py-6">
         {/* Header Actions */}

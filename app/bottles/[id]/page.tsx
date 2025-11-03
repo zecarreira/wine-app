@@ -109,12 +109,13 @@ export default function BottleDetailPage({
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <button
             onClick={() => router.back()}
-            className="text-white/80 hover:text-white flex items-center gap-2 text-lg"
+            className="text-white/80 hover:text-white text-2xl"
           >
-            <span>←</span>
-            <span className="font-semibold">Voltar</span>
+            ←
           </button>
-          <div className="text-white text-2xl">🍷</div>
+          <Link href="/" className="text-white/80 hover:text-white text-2xl">
+            �
+          </Link>
         </div>
       </header>
 

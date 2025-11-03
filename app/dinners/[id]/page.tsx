@@ -69,6 +69,9 @@ export default function DinnerDetailPage({
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [isHost, setIsHost] = useState(false);
+  const [participants, setParticipants] = useState<
+    Array<{ id: string; name: string }>
+  >([]);
 
   useEffect(() => {
     fetchDinnerAndBottles();
@@ -104,7 +107,38 @@ export default function DinnerDetailPage({
       const bottlesData = await bottlesResponse.json();
 
       if (bottlesData.success) {
+        // Debug: verificar se todas as garrafas têm ID
+        bottlesData.bottles.forEach((bottle: any, index: number) => {
+          if (!bottle.id) {
+            console.error(
+              `Garrafa sem ID encontrada na posição ${index}:`,
+              bottle
+            );
+          }
+        });
         setBottles(bottlesData.bottles);
+      }
+
+      // Fetch participants (users who rated bottles)
+      const ratingsResponse = await fetch(`/api/dinners/${id}/ratings`);
+      const ratingsData = await ratingsResponse.json();
+
+      if (ratingsData.success && ratingsData.bottles) {
+        const uniqueParticipants = new Map<
+          string,
+          { id: string; name: string }
+        >();
+        ratingsData.bottles.forEach((bottle: any) => {
+          bottle.ratings?.forEach((rating: any) => {
+            if (rating.user) {
+              uniqueParticipants.set(rating.user.id, {
+                id: rating.user.id,
+                name: rating.user.name,
+              });
+            }
+          });
+        });
+        setParticipants(Array.from(uniqueParticipants.values()));
       }
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -224,12 +258,13 @@ export default function DinnerDetailPage({
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <button
             onClick={() => router.back()}
-            className="text-white/80 hover:text-white flex items-center gap-2 text-lg"
+            className="text-white/80 hover:text-white text-2xl"
           >
-            <span>←</span>
-            <span className="font-semibold">Voltar</span>
+            ←
           </button>
-          <div className="text-white text-2xl">🍷</div>
+          <Link href="/" className="text-white/80 hover:text-white text-2xl">
+            �
+          </Link>
         </div>
       </header>
 
@@ -308,6 +343,16 @@ export default function DinnerDetailPage({
               <div className="flex items-center gap-2">
                 <span className="text-xl">📍</span>
                 <span className="text-base">{dinner.location}</span>
+              </div>
+            )}
+            {participants.length > 0 && (
+              <div className="flex items-center gap-2">
+                <span className="text-xl">👥</span>
+                <span className="text-base">
+                  {participants.length} Participante
+                  {participants.length !== 1 ? "s" : ""}:{" "}
+                  {participants.map((p) => p.name).join(", ")}
+                </span>
               </div>
             )}
           </div>

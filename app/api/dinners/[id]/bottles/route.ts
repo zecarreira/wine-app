@@ -127,6 +127,13 @@ export async function POST(
 
     if (insertError) throw insertError;
 
+    // Debug: verificar se a garrafa tem ID
+    console.log("✅ Garrafa criada na API:", {
+      id: newBottle?.id,
+      position: newBottle?.position,
+      name: newBottle?.name,
+    });
+
     return NextResponse.json(
       {
         success: true,
