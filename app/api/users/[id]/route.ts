@@ -15,7 +15,7 @@ export async function GET(
     // Get user basic info
     const { data: user, error: userError } = await supabase
       .from("users")
-      .select("id, name, email, role, created_at")
+      .select("id, name, email, role, created_at, profile_photo_url")
       .eq("id", userId)
       .single();
 
@@ -24,26 +24,27 @@ export async function GET(
         { success: false, error: "User not found" },
         { status: 404 }
       );
-    }
-
-    // Get dinners attended (as creator or participant with ratings)
-    const { data: attendedDinners } = await supabase
+    } // Get dinners created by user
+    const { data: createdDinners } = await supabase
       .from("dinners")
-      .select(
-        `
-        id,
-        name,
-        event_date,
-        location,
-        status,
-        created_by,
-        bottles!inner(
-          id,
-          ratings!inner(user_id)
-        )
-      `
-      )
-      .or(`created_by.eq.${userId},bottles.ratings.user_id.eq.${userId}`);
+      .select("id")
+      .eq("created_by", userId);
+
+    // Get dinners where user has rated bottles
+    const { data: ratedBottles } = await supabase
+      .from("ratings")
+      .select("bottle:bottles(dinner_id)")
+      .eq("user_id", userId);
+
+    const dinnerIdsFromRatings =
+      ratedBottles?.map((r: any) => r.bottle?.dinner_id).filter(Boolean) || [];
+
+    const uniqueDinnerIds = new Set([
+      ...(createdDinners?.map((d) => d.id) || []),
+      ...dinnerIdsFromRatings,
+    ]);
+
+    const totalDinners = uniqueDinnerIds.size;
 
     // Get all ratings by user
     const { data: userRatings } = await supabase
@@ -60,7 +61,7 @@ export async function GET(
           producer,
           vintage,
           photo_url,
-          dinner:dinners(id, name, event_date)
+          dinner:dinners(id, name, event_date, status, is_blind)
         )
       `
       )
@@ -83,7 +84,6 @@ export async function GET(
       .eq("brought_by", userId);
 
     // Calculate stats
-    const totalDinners = attendedDinners?.length || 0;
     const totalRatings = userRatings?.length || 0;
     const totalBottlesBrought = bottlesBrought?.length || 0;
 
@@ -93,6 +93,44 @@ export async function GET(
             userRatings!.reduce((sum, r) => sum + r.score, 0) / totalRatings
           ).toFixed(1)
         : null;
+
+    // Calculate total spent (only for non-guest users)
+    let totalSpent = 0;
+    if (user.role !== "guest") {
+      // Get all payments for this user
+      const { data: payments } = await supabase
+        .from("payments")
+        .select("base_amount, status")
+        .eq("user_id", userId);
+
+      // Get all fines for this user's payments
+      const paymentIds = payments?.map((p: any) => p.id) || [];
+      let totalFines = 0;
+
+      if (paymentIds.length > 0) {
+        const { data: finesData } = await supabase
+          .from("payments")
+          .select(
+            `
+            id,
+            fines:fines(amount)
+          `
+          )
+          .eq("user_id", userId);
+
+        totalFines =
+          finesData?.reduce((sum: number, payment: any) => {
+            const paymentFines = payment.fines || [];
+            return (
+              sum + paymentFines.reduce((s: number, f: any) => s + f.amount, 0)
+            );
+          }, 0) || 0;
+      }
+
+      totalSpent =
+        (payments?.reduce((sum: any, p: any) => sum + p.base_amount, 0) || 0) +
+        totalFines;
+    }
 
     // Find favorite wine (highest rated)
     const favoriteWine =
@@ -111,11 +149,63 @@ export async function GET(
           total_ratings: totalRatings,
           total_bottles_brought: totalBottlesBrought,
           average_rating: averageRating,
+          total_spent: totalSpent,
         },
         favorite_wine: favoriteWine,
         recent_ratings: userRatings?.slice(0, 5) || [],
         bottles_brought: bottlesBrought || [],
       },
+    });
+  } catch (error: any) {
+    console.error("Error:", error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Internal server error",
+      },
+      { status: 500 }
+    );
+  }
+}
+
+// PATCH /api/users/:id - Update user profile photo
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id: userId } = await params;
+    const body = await request.json();
+    const { profile_photo_url } = body;
+
+    if (!profile_photo_url) {
+      return NextResponse.json(
+        { success: false, error: "Profile photo URL is required" },
+        { status: 400 }
+      );
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Update user profile photo
+    const { data: updatedUser, error } = await supabase
+      .from("users")
+      .update({ profile_photo_url })
+      .eq("id", userId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Update error:", error);
+      return NextResponse.json(
+        { success: false, error: "Failed to update profile photo" },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      user: updatedUser,
     });
   } catch (error: any) {
     console.error("Error:", error);

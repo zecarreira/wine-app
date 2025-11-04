@@ -1,8 +1,21 @@
 import { createClient } from "@supabase/supabase-js";
+import { env } from "./env";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+export const supabase = createClient(
+  env.NEXT_PUBLIC_SUPABASE_URL,
+  env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+);
 
-export const supabase = createClient(supabaseUrl, supabaseKey);
+// Service role client - bypasses RLS, use ONLY on server-side
+export const supabaseAdmin = createClient(
+  env.NEXT_PUBLIC_SUPABASE_URL,
+  env.SUPABASE_SERVICE_ROLE_KEY,
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  }
+);
 
 export default supabase;

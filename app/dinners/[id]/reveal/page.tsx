@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { use } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -38,6 +38,14 @@ interface RevealStatus {
   canReveal: boolean;
 }
 
+interface LastRevealedData {
+  bottle: RevealedBottle;
+  medal: string;
+  message: string;
+  isWinner: boolean;
+  isComplete: boolean;
+}
+
 export default function RevealCeremonyPage({
   params,
 }: {
@@ -49,13 +57,11 @@ export default function RevealCeremonyPage({
   const [revealStatus, setRevealStatus] = useState<RevealStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [revealing, setRevealing] = useState(false);
-  const [lastRevealed, setLastRevealed] = useState<any>(null);
+  const [lastRevealed, setLastRevealed] = useState<LastRevealedData | null>(
+    null
+  );
 
-  useEffect(() => {
-    fetchRevealStatus();
-  }, [id]);
-
-  async function fetchRevealStatus() {
+  const fetchRevealStatus = useCallback(async () => {
     try {
       const response = await fetch(`/api/dinners/${id}/reveal-status`);
       const data = await response.json();
@@ -63,12 +69,23 @@ export default function RevealCeremonyPage({
       if (data.success) {
         setRevealStatus(data);
       }
-    } catch (error) {
-      console.error("Error fetching reveal status:", error);
+    } catch {
+      console.error("Error fetching reveal status");
     } finally {
       setLoading(false);
     }
-  }
+  }, [id]);
+
+  useEffect(() => {
+    fetchRevealStatus();
+  }, [fetchRevealStatus]);
+
+  // Se já está tudo revelado, redireciona para rankings
+  useEffect(() => {
+    if (revealStatus?.remainingCount === 0 && revealStatus) {
+      router.push(`/dinners/${id}/rankings`);
+    }
+  }, [revealStatus, id, router]);
 
   async function handleRevealNext() {
     setRevealing(true);
@@ -97,7 +114,7 @@ export default function RevealCeremonyPage({
       } else {
         alert(data.error || "Failed to reveal");
       }
-    } catch (error) {
+    } catch {
       alert("Error revealing bottle");
     } finally {
       setRevealing(false);
@@ -115,6 +132,8 @@ export default function RevealCeremonyPage({
     );
   }
 
+  const isComplete = revealStatus?.remainingCount === 0;
+
   if (!revealStatus || !revealStatus.canReveal) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
@@ -123,31 +142,31 @@ export default function RevealCeremonyPage({
           <div className="text-white text-xl mb-4">
             Dinner must be ended before revealing
           </div>
-          <Link
-            href={`/dinners/${id}`}
+          <button
+            onClick={() => router.back()}
             className="text-purple-300 hover:text-white underline"
           >
-            ← Back to Dinner
-          </Link>
+            ←
+          </button>
         </div>
       </div>
     );
   }
 
-  const isComplete = revealStatus.remainingCount === 0;
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+      {/* Header */}
       <header className="bg-black/20 backdrop-blur-lg border-b border-white/10 sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link
-            href={`/dinners/${id}`}
-            className="text-white/80 hover:text-white flex items-center gap-2 text-lg"
+          <button
+            onClick={() => router.back()}
+            className="text-white/80 hover:text-white text-2xl"
           >
-            <span>←</span>
-            <span className="font-semibold">Back</span>
+            ←
+          </button>
+          <Link href="/" className="text-white/80 hover:text-white text-2xl">
+            �
           </Link>
-          <div className="text-white text-2xl">🎭</div>
         </div>
       </header>
 
@@ -225,7 +244,7 @@ export default function RevealCeremonyPage({
 
                 {lastRevealed.bottle.description && (
                   <p className="text-white/80 italic text-center">
-                    "{lastRevealed.bottle.description}"
+                    &quot;{lastRevealed.bottle.description}&quot;
                   </p>
                 )}
               </div>
@@ -251,7 +270,7 @@ export default function RevealCeremonyPage({
                       Individual Ratings:
                     </div>
                     {lastRevealed.bottle.ratings.map(
-                      (rating: any, index: number) => (
+                      (rating, index: number) => (
                         <div key={index} className="bg-white/5 rounded-xl p-3">
                           <div className="flex justify-between items-center mb-1">
                             <span className="text-white font-semibold">
@@ -263,7 +282,7 @@ export default function RevealCeremonyPage({
                           </div>
                           {rating.tasting_notes && (
                             <p className="text-white/70 text-sm italic">
-                              "{rating.tasting_notes}"
+                              &quot;{rating.tasting_notes}&quot;
                             </p>
                           )}
                         </div>

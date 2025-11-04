@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Button, Input, Card } from "@/components";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -32,12 +33,12 @@ export default function LoginPage() {
         localStorage.setItem("token", data.token);
         localStorage.setItem("user", JSON.stringify(data.user));
 
-        // Redirect to dinners
-        router.push("/dinners");
+        // Redirect to home page
+        router.push("/");
       } else {
         setError(data.error || "Login failed");
       }
-    } catch (error) {
+    } catch {
       setError("Network error. Please try again.");
     } finally {
       setLoading(false);
@@ -45,89 +46,72 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-linear-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center px-4">
       <div className="w-full max-w-md">
         {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="text-6xl mb-4">🍷</div>
-          <h1 className="text-4xl font-bold text-white mb-2">
+        <div className="text-center mb-6">
+          <div className="text-5xl mb-3">🍷</div>
+          <h1 className="text-3xl font-bold text-white mb-2">
             Jantar do Vinho
           </h1>
-          <p className="text-purple-200">Bemvindo de volta</p>
+          <p className="text-purple-200">Bem-vindo de volta</p>
         </div>
 
         {/* Login Card */}
-        <div className="bg-white/10 backdrop-blur-lg rounded-3xl p-8 border border-white/20 shadow-2xl">
-          <form onSubmit={handleLogin} className="space-y-6">
+        <Card padding="lg">
+          <form onSubmit={handleLogin} className="space-y-4">
             {/* Email */}
-            <div>
-              <label className="block text-white font-semibold mb-2">
-                Email
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="josecarreira@gmail.com"
-                required
-                className="w-full bg-white/10 border-2 border-white/20 rounded-2xl px-4 py-4 text-white placeholder:text-white/40 focus:outline-none focus:border-purple-400 text-lg"
-              />
-            </div>
+            <Input
+              type="email"
+              label="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="josecarreira@gmail.com"
+              required
+            />
 
             {/* Password */}
-            <div>
-              <label className="block text-white font-semibold mb-2">
-                Password
-              </label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-                className="w-full bg-white/10 border-2 border-white/20 rounded-2xl px-4 py-4 text-white placeholder:text-white/40 focus:outline-none focus:border-purple-400 text-lg"
-              />
-            </div>
+            <Input
+              type="password"
+              label="Palavra-passe"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              required
+            />
 
             {/* Error Message */}
             {error && (
-              <div className="bg-red-500/20 border-2 border-red-500/50 rounded-2xl p-4 text-red-200 text-center">
+              <div className="bg-red-500/20 border-2 border-red-500/50 rounded-2xl p-3 text-red-200 text-center text-sm">
                 {error}
               </div>
             )}
 
             {/* Submit Button */}
-            <button
+            <Button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-5 rounded-2xl font-bold text-xl shadow-lg hover:shadow-purple-500/50 transform hover:scale-[1.02] transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+              fullWidth
+              size="lg"
+              icon="🍷"
             >
-              {loading ? "Logging in..." : "Login 🍷"}
-            </button>
+              {loading ? "A entrar..." : "Entrar"}
+            </Button>
 
-            {/* Register Link - ADICIONA ISTO */}
+            {/* Register Link */}
             <div className="text-center">
-              <p className="text-white/60">
-                Don't have an account?{" "}
+              <p className="text-white/60 text-sm">
+                Não tens conta?{" "}
                 <Link
                   href="/register"
                   className="text-purple-300 hover:text-white font-semibold underline"
                 >
-                  Register here
+                  Regista-te aqui
                 </Link>
               </p>
             </div>
           </form>
-          {/* Demo Credentials */}
-          {/* <div className="mt-6 pt-6 border-t border-white/10">
-            <p className="text-white/60 text-sm text-center mb-2">
-              Demo credentials:
-            </p>
-            <p className="text-purple-200 text-sm text-center font-mono">
-              john@example.com / password123
-            </p>
-          </div> */}
-        </div>
+        </Card>
 
         {/* Back Link */}
         <div className="text-center mt-6">

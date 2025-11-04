@@ -119,6 +119,13 @@ export default function AddBottlePage({
 
       const data = await response.json();
 
+      // Debug: verificar se a garrafa criada tem ID
+      console.log("✅ Garrafa criada:", data);
+      if (data.bottle) {
+        console.log("🆔 ID da garrafa:", data.bottle.id);
+        console.log("📍 Posição da garrafa:", data.bottle.position);
+      }
+
       if (data.success) {
         router.push(`/dinners/${id}`);
       } else {
@@ -135,14 +142,15 @@ export default function AddBottlePage({
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       <header className="bg-black/20 backdrop-blur-lg border-b border-white/10 sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link
-            href={`/dinners/${id}`}
-            className="text-white/80 hover:text-white flex items-center gap-2 text-lg"
+          <button
+            onClick={() => router.back()}
+            className="text-white/80 hover:text-white text-2xl"
           >
-            <span>←</span>
-            <span className="font-semibold">Back</span>
+            ←
+          </button>
+          <Link href="/" className="text-white/80 hover:text-white text-2xl">
+            �
           </Link>
-          <div className="text-white text-2xl">🍷</div>
         </div>
       </header>
 

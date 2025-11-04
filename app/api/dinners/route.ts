@@ -4,17 +4,41 @@ import { requireFounder, authenticate } from "@/lib/middleware";
 
 export async function GET(request: NextRequest) {
   try {
-    const auth = await authenticate(request);
+    await authenticate(request);
 
-    const { data: dinners, error } = await supabase
-      .from("dinners")
-      .select(
-        `
-        *,
-        created_by_user:users!created_by(id, name, email)
+    // Get query params to filter by season
+    const { searchParams } = new URL(request.url);
+    const seasonId = searchParams.get("seasonId");
+    const onlyActive = searchParams.get("onlyActive") === "true";
+
+    let query = supabase.from("dinners").select(
       `
-      )
-      .order("event_date", { ascending: false });
+        *,
+        created_by_user:users!created_by(id, name, email),
+        season:seasons(id, season_number, status)
+      `
+    );
+
+    if (seasonId) {
+      query = query.eq("season_id", seasonId);
+    }
+
+    if (onlyActive) {
+      // Get active season first
+      const { data: activeSeason } = await supabase
+        .from("seasons")
+        .select("id")
+        .eq("status", "active")
+        .single();
+
+      if (activeSeason) {
+        query = query.eq("season_id", activeSeason.id);
+      }
+    }
+
+    const { data: dinners, error } = await query.order("event_date", {
+      ascending: false,
+    });
 
     if (error) throw error;
 
@@ -44,7 +68,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, event_date, location, is_blind } = body;
+    const { name, event_date, location, is_blind, is_extra } = body;
 
     if (!name || !event_date) {
       return NextResponse.json(
@@ -61,6 +85,43 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Get active season
+    const { data: activeSeason, error: seasonError } = await supabase
+      .from("seasons")
+      .select("*")
+      .eq("status", "active")
+      .single();
+
+    if (seasonError || !activeSeason) {
+      return NextResponse.json(
+        {
+          error: "No active season found. Please create a new season first.",
+        },
+        { status: 400 }
+      );
+    }
+
+    // Count dinners in active season
+    const { count, error: countError } = await supabase
+      .from("dinners")
+      .select("*", { count: "exact", head: true })
+      .eq("season_id", activeSeason.id);
+
+    if (countError) throw countError;
+
+    if (count && count >= 8) {
+      return NextResponse.json(
+        {
+          error:
+            "Season is full (8 dinners maximum). Please close the current season and create a new one.",
+        },
+        { status: 400 }
+      );
+    }
+
+    const dinnerNumber = (count || 0) + 1;
+    const isExtraDinner = is_extra === true || dinnerNumber === 8;
+
     const { data: newDinner, error: insertError } = await supabase
       .from("dinners")
       .insert({
@@ -69,6 +130,9 @@ export async function POST(request: NextRequest) {
         location: location || null,
         is_blind: is_blind || false,
         created_by: auth.userId,
+        season_id: activeSeason.id,
+        dinner_number_in_season: dinnerNumber,
+        is_extra_dinner: isExtraDinner,
       })
       .select()
       .single();
@@ -78,7 +142,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: true,
-        message: "Dinner created successfully",
+        message: `Dinner created successfully (${dinnerNumber}/8 in Season ${activeSeason.season_number})`,
         dinner: newDinner,
       },
       { status: 201 }

@@ -61,21 +61,42 @@ export async function GET(
       const averageScore =
         bottleRatings.length > 0 ? totalPoints / bottleRatings.length : 0;
 
+      // Find highest individual rating for tiebreaker
+      const highestRating =
+        bottleRatings.length > 0
+          ? Math.max(...bottleRatings.map((r) => r.score))
+          : 0;
+
       return {
         ...bottle,
         ratings: bottleRatings,
         stats: {
           total_ratings: bottleRatings.length,
           average_score: Math.round(averageScore * 10) / 10,
-          total_points: Math.round(totalPoints * 10) / 10, // ADICIONADO
+          total_points: Math.round(totalPoints * 10) / 10,
+          highest_rating: highestRating,
         },
       };
     });
 
-    // Sort by average score (highest first)
-    const sortedBottles = [...bottlesWithRatings].sort(
-      (a, b) => b.stats.average_score - a.stats.average_score
-    );
+    // Sort with tiebreaker rules:
+    // 1. By average score (highest first)
+    // 2. If tied, by total points (highest first)
+    // 3. If still tied, by highest individual rating (highest first)
+    const sortedBottles = [...bottlesWithRatings].sort((a, b) => {
+      // First: Compare average scores
+      if (b.stats.average_score !== a.stats.average_score) {
+        return b.stats.average_score - a.stats.average_score;
+      }
+
+      // Second: Compare total points (tiebreaker #1)
+      if (b.stats.total_points !== a.stats.total_points) {
+        return b.stats.total_points - a.stats.total_points;
+      }
+
+      // Third: Compare highest individual rating (tiebreaker #2)
+      return b.stats.highest_rating - a.stats.highest_rating;
+    });
 
     return NextResponse.json({
       success: true,

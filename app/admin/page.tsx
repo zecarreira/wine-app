@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -20,11 +20,7 @@ export default function AdminPanelPage() {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
 
-  useEffect(() => {
-    checkAdminAndFetchUsers();
-  }, []);
-
-  async function checkAdminAndFetchUsers() {
+  const checkAdminAndFetchUsers = useCallback(async () => {
     try {
       const userStr = localStorage.getItem("user");
       if (!userStr) {
@@ -55,12 +51,16 @@ export default function AdminPanelPage() {
       } else {
         alert("Failed to load users");
       }
-    } catch (error) {
-      console.error("Error:", error);
+    } catch {
+      console.error("Error loading users");
     } finally {
       setLoading(false);
     }
-  }
+  }, [router]);
+
+  useEffect(() => {
+    checkAdminAndFetchUsers();
+  }, [checkAdminAndFetchUsers]);
 
   async function updateUserRole(userId: string, newRole: string) {
     const roleText = newRole === "founder" ? "Founder" : "Guest";
@@ -86,7 +86,7 @@ export default function AdminPanelPage() {
       } else {
         alert(data.error || "Failed to update role");
       }
-    } catch (error) {
+    } catch {
       alert("Error updating role");
     } finally {
       setUpdating(null);
@@ -109,14 +109,15 @@ export default function AdminPanelPage() {
       {/* Header */}
       <header className="bg-black/20 backdrop-blur-lg border-b border-white/10 sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link
-            href="/dinners"
-            className="text-white/80 hover:text-white flex items-center gap-2 text-lg"
+          <button
+            onClick={() => router.back()}
+            className="text-white/80 hover:text-white text-2xl"
           >
-            <span>←</span>
-            <span className="font-semibold">Back</span>
+            ←
+          </button>
+          <Link href="/" className="text-white/80 hover:text-white text-2xl">
+            🏠
           </Link>
-          <div className="text-white text-2xl">👑</div>
         </div>
       </header>
 

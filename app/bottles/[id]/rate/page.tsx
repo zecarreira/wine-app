@@ -136,7 +136,7 @@ export default function RateBottlePage({
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
         <div className="text-center">
           <div className="text-6xl mb-4 animate-spin">🍷</div>
-          <div className="text-white text-xl">Loading wine...</div>
+          <div className="text-white text-xl">A carregar vinho...</div>
         </div>
       </div>
     );
@@ -147,7 +147,7 @@ export default function RateBottlePage({
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
         <div className="text-center">
           <div className="text-6xl mb-4">❌</div>
-          <div className="text-white text-xl">Bottle not found</div>
+          <div className="text-white text-xl">Garrafa não encontrada</div>
         </div>
       </div>
     );
@@ -157,30 +157,31 @@ export default function RateBottlePage({
 
   const scoreLabels = [
     "",
-    "Poor",
-    "Fair",
-    "Decent",
-    "Good",
-    "Very Good",
-    "Great",
-    "Excellent",
-    "Outstanding",
-    "Exceptional",
-    "Perfect",
+    "É assim tão mau?",
+    "Pobre",
+    "Ninguém dá 3",
+    "Zurrapa do Mi",
+    "Zurrapa do Zé",
+    "Assim Assim",
+    "Já se bebe",
+    "Oláá.. é qualquer coisa",
+    "Pomada",
+    "Casava-me com este vinho",
   ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       <header className="bg-black/20 backdrop-blur-lg border-b border-white/10 sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link
-            href={`/dinners/${bottle.dinner.id}`}
-            className="text-white/80 hover:text-white flex items-center gap-2 text-lg"
+          <button
+            onClick={() => router.back()}
+            className="text-white/80 hover:text-white text-2xl"
           >
-            <span>←</span>
-            <span className="font-semibold">Back</span>
+            ←
+          </button>
+          <Link href="/" className="text-white/80 hover:text-white text-2xl">
+            🏠
           </Link>
-          <div className="text-white text-2xl">⭐</div>
         </div>
       </header>
 
@@ -295,14 +296,14 @@ export default function RateBottlePage({
             />
             <div className="flex justify-between mt-2 px-1">
               <span className="text-white/60 text-xs">1</span>
-              <span className="text-white/60 text-xs">5.5</span>
+              <span className="text-white/60 text-xs">5</span>
               <span className="text-white/60 text-xs">10</span>
             </div>
           </div>
 
           <div className="mb-8">
             <label className="block text-white font-semibold mb-3">
-              Tasting Notes (Optional)
+              Notas (Opcional)
             </label>
             <textarea
               value={tastingNotes}
