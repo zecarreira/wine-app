@@ -283,11 +283,12 @@ export function PaymentsSection({ dinnerId, isAdmin }: PaymentsSectionProps) {
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-4 mb-4 md:mb-6">
         <div className="bg-blue-500/20 border border-blue-400/30 rounded-xl p-3 md:p-4 text-center">
           <div className="text-blue-400 text-xs md:text-sm font-semibold mb-1">
-            👥 Pagamentos
+            💰 Pagamentos
           </div>
           <div className="text-white text-xl md:text-2xl font-bold">
             {stats.total_payments}
           </div>
+          <div className="text-blue-300 text-xs mt-1">{stats.base_amount}</div>
         </div>
 
         <div className="bg-green-500/20 border border-green-400/30 rounded-xl p-3 md:p-4 text-center">

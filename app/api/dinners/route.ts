@@ -15,6 +15,7 @@ export async function GET(request: NextRequest) {
       `
         *,
         created_by_user:users!created_by(id, name, email),
+        organizer:users!organizer_id(id, name),
         season:seasons(id, season_number, status)
       `
     );
@@ -68,11 +69,19 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, event_date, location, is_blind, is_extra } = body;
+    const { name, event_date, location, is_blind, is_extra, organizer_id } =
+      body;
 
     if (!name || !event_date) {
       return NextResponse.json(
         { error: "Name and event date are required" },
+        { status: 400 }
+      );
+    }
+
+    if (!organizer_id) {
+      return NextResponse.json(
+        { error: "Organizer is required" },
         { status: 400 }
       );
     }
@@ -96,6 +105,47 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error: "No active season found. Please create a new season first.",
+        },
+        { status: 400 }
+      );
+    }
+
+    // Validate that organizer is a founder or admin
+    const { data: organizer, error: organizerError } = await supabase
+      .from("users")
+      .select("id, role")
+      .eq("id", organizer_id)
+      .single();
+
+    if (organizerError || !organizer) {
+      return NextResponse.json(
+        { error: "Invalid organizer selected" },
+        { status: 400 }
+      );
+    }
+
+    if (organizer.role !== "founder" && organizer.role !== "admin") {
+      return NextResponse.json(
+        { error: "Organizer must be a founder or admin" },
+        { status: 400 }
+      );
+    }
+
+    // Check if this founder already organized a dinner in this season
+    const { data: existingDinner, error: checkError } = await supabase
+      .from("dinners")
+      .select("id")
+      .eq("season_id", activeSeason.id)
+      .eq("organizer_id", organizer_id)
+      .maybeSingle();
+
+    if (checkError) throw checkError;
+
+    if (existingDinner) {
+      return NextResponse.json(
+        {
+          error:
+            "Este founder já organizou um jantar nesta temporada. Por favor escolhe outro organizador.",
         },
         { status: 400 }
       );
@@ -130,6 +180,7 @@ export async function POST(request: NextRequest) {
         location: location || null,
         is_blind: is_blind || false,
         created_by: auth.userId,
+        organizer_id: organizer_id,
         season_id: activeSeason.id,
         dinner_number_in_season: dinnerNumber,
         is_extra_dinner: isExtraDinner,

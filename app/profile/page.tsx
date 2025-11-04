@@ -176,24 +176,24 @@ export default function ProfilePage() {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-6 pb-24 max-w-4xl">
+      <main className="container mx-auto px-3 md:px-4 py-4 md:py-6 pb-24 max-w-4xl">
         {/* Profile Header */}
-        <div className="bg-gradient-to-br from-white/15 to-white/5 backdrop-blur-lg rounded-3xl p-6 mb-4 border border-white/20 shadow-2xl">
+        <div className="bg-gradient-to-br from-white/15 to-white/5 backdrop-blur-lg rounded-3xl p-4 md:p-6 mb-4 border border-white/20 shadow-2xl">
           <div className="flex flex-col md:flex-row items-center md:items-start gap-4 mb-4">
             {/* Avatar */}
             <div className="relative group">
               {user.profile_photo_url ? (
-                <div className="relative w-20 h-20 rounded-full overflow-hidden border-4 border-purple-500/30">
+                <div className="relative w-20 h-20 md:w-24 md:h-24 rounded-full overflow-hidden border-4 border-purple-500/30">
                   <Image
                     src={user.profile_photo_url}
                     alt={user.name}
                     fill
-                    sizes="80px"
+                    sizes="(max-width: 768px) 80px, 96px"
                     className="object-cover"
                   />
                 </div>
               ) : (
-                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-4xl font-bold text-white">
+                <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-3xl md:text-4xl font-bold text-white">
                   {user.name.charAt(0).toUpperCase()}
                 </div>
               )}
@@ -206,9 +206,11 @@ export default function ProfilePage() {
                 }`}
               >
                 {uploadingPhoto ? (
-                  <span className="text-white text-2xl animate-spin">⏳</span>
+                  <span className="text-white text-xl md:text-2xl animate-spin">
+                    ⏳
+                  </span>
                 ) : (
-                  <span className="text-white text-2xl">📸</span>
+                  <span className="text-white text-xl md:text-2xl">📸</span>
                 )}
               </label>
               <input
@@ -223,16 +225,18 @@ export default function ProfilePage() {
 
             {/* Info */}
             <div className="flex-1 text-center md:text-left">
-              <h1 className="text-2xl font-bold text-white mb-1">
+              <h1 className="text-xl md:text-2xl font-bold text-white mb-1">
                 {user.name}
               </h1>
-              <p className="text-purple-200 text-sm mb-2">{user.email}</p>
-              <p className="text-white/40 text-xs mb-2 italic">
+              <p className="text-purple-200 text-xs md:text-sm mb-2">
+                {user.email}
+              </p>
+              <p className="text-white/40 text-[10px] md:text-xs mb-2 italic">
                 💡 Clica na foto para alterar
               </p>
               <div className="mb-3">
                 <span
-                  className={`inline-block px-3 py-1.5 rounded-full text-xs font-bold ${
+                  className={`inline-block px-2.5 md:px-3 py-1 md:py-1.5 rounded-full text-[10px] md:text-xs font-bold ${
                     user.role === "admin"
                       ? "bg-red-500/30 text-red-200 border border-red-400/30"
                       : user.role === "founder"
@@ -254,7 +258,7 @@ export default function ProfilePage() {
               {user.role === "admin" && (
                 <Link
                   href="/admin"
-                  className="bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 px-3 py-1.5 rounded-xl text-sm font-semibold transition-colors flex items-center gap-2"
+                  className="bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 px-3 py-1.5 rounded-xl text-xs md:text-sm font-semibold transition-colors flex items-center gap-2"
                 >
                   <span>Backend</span>
                 </Link>
@@ -263,53 +267,61 @@ export default function ProfilePage() {
           </div>
 
           {/* Stats Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-            <div className="bg-white/5 rounded-2xl p-3 text-center">
-              <div className="text-2xl mb-1">🍽️</div>
-              <div className="text-xl font-bold text-white">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-2 md:gap-3">
+            <div className="bg-white/5 rounded-2xl p-2.5 md:p-3 text-center">
+              <div className="text-xl md:text-2xl mb-1">🍽️</div>
+              <div className="text-lg md:text-xl font-bold text-white">
                 {user.stats.total_dinners}
               </div>
-              <div className="text-white/60 text-xs">Jantares</div>
+              <div className="text-white/60 text-[10px] md:text-xs">
+                Jantares
+              </div>
             </div>
 
-            <div className="bg-white/5 rounded-2xl p-3 text-center">
-              <div className="text-2xl mb-1">⭐</div>
-              <div className="text-xl font-bold text-white">
+            <div className="bg-white/5 rounded-2xl p-2.5 md:p-3 text-center">
+              <div className="text-xl md:text-2xl mb-1">⭐</div>
+              <div className="text-lg md:text-xl font-bold text-white">
                 {user.stats.total_ratings}
               </div>
-              <div className="text-white/60 text-xs">Avaliações</div>
+              <div className="text-white/60 text-[10px] md:text-xs">
+                Avaliações
+              </div>
             </div>
 
-            <div className="bg-white/5 rounded-2xl p-3 text-center">
-              <div className="text-2xl mb-1">🍷</div>
-              <div className="text-xl font-bold text-white">
+            <div className="bg-white/5 rounded-2xl p-2.5 md:p-3 text-center">
+              <div className="text-xl md:text-2xl mb-1">🍷</div>
+              <div className="text-lg md:text-xl font-bold text-white">
                 {user.stats.total_bottles_brought}
               </div>
-              <div className="text-white/60 text-xs">Garrafas</div>
+              <div className="text-white/60 text-[10px] md:text-xs">
+                Garrafas
+              </div>
             </div>
 
-            <div className="bg-white/5 rounded-2xl p-3 text-center">
-              <div className="text-2xl mb-1">📊</div>
-              <div className="text-xl font-bold text-white">
+            <div className="bg-white/5 rounded-2xl p-2.5 md:p-3 text-center">
+              <div className="text-xl md:text-2xl mb-1">📊</div>
+              <div className="text-lg md:text-xl font-bold text-white">
                 {user.stats.average_rating || "N/A"}
               </div>
-              <div className="text-white/60 text-xs">Média</div>
+              <div className="text-white/60 text-[10px] md:text-xs">Média</div>
             </div>
 
             {user.role !== "guest" && (
-              <div className="bg-white/5 rounded-2xl p-3 text-center">
-                <div className="text-2xl mb-1">💰</div>
-                <div className="text-xl font-bold text-white">
+              <div className="bg-white/5 rounded-2xl p-2.5 md:p-3 text-center">
+                <div className="text-xl md:text-2xl mb-1">💰</div>
+                <div className="text-lg md:text-xl font-bold text-white">
                   {user.stats.total_spent}
                 </div>
-                <div className="text-white/60 text-xs">Pipas</div>
+                <div className="text-white/60 text-[10px] md:text-xs">
+                  Pipas
+                </div>
               </div>
             )}
           </div>
           <div className="flex justify-center mt-4">
             <button
               onClick={handleLogout}
-              className="bg-red-500/20 hover:bg-red-500/30 text-red-200 px-4 py-2 rounded-xl text-sm font-semibold transition-colors"
+              className="bg-red-500/20 hover:bg-red-500/30 text-red-200 px-4 py-2 rounded-xl text-xs md:text-sm font-semibold transition-colors"
             >
               Sair
             </button>

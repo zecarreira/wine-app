@@ -112,10 +112,10 @@ export default function RevealCeremonyPage({
           }, 3000);
         }
       } else {
-        alert(data.error || "Failed to reveal");
+        alert(data.error || "Erro ao revelar");
       }
     } catch {
-      alert("Error revealing bottle");
+      alert("Erro ao revelar garrafa");
     } finally {
       setRevealing(false);
     }
@@ -126,7 +126,9 @@ export default function RevealCeremonyPage({
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
         <div className="text-center">
           <div className="text-6xl mb-4 animate-spin">🎭</div>
-          <div className="text-white text-xl">Loading reveal ceremony...</div>
+          <div className="text-white text-xl">
+            A carregar cerimónia de revelação...
+          </div>
         </div>
       </div>
     );
@@ -140,7 +142,7 @@ export default function RevealCeremonyPage({
         <div className="text-center">
           <div className="text-6xl mb-4">⚠️</div>
           <div className="text-white text-xl mb-4">
-            Dinner must be ended before revealing
+            O jantar deve ser terminado antes de revelar
           </div>
           <button
             onClick={() => router.back()}
@@ -173,14 +175,14 @@ export default function RevealCeremonyPage({
       <main className="container mx-auto px-4 py-6 pb-24">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-white mb-2">
-            🎭 Reveal Ceremony
+            🎭 Cerimónia de Revelação
           </h1>
           <p className="text-purple-200">
             {isComplete
-              ? "All wines revealed!"
-              : `${revealStatus.remainingCount} bottle${
+              ? "Todos os vinhos revelados!"
+              : `${revealStatus.remainingCount} garrafa${
                   revealStatus.remainingCount !== 1 ? "s" : ""
-                } remaining`}
+                } por revelar`}
           </p>
         </div>
 
@@ -210,7 +212,7 @@ export default function RevealCeremonyPage({
                 <div className="grid grid-cols-2 gap-4 text-purple-200 mb-4">
                   {lastRevealed.bottle.producer && (
                     <div>
-                      <div className="text-white/60 text-sm">Producer</div>
+                      <div className="text-white/60 text-sm">Produtor</div>
                       <div className="font-semibold">
                         {lastRevealed.bottle.producer}
                       </div>
@@ -218,7 +220,7 @@ export default function RevealCeremonyPage({
                   )}
                   {lastRevealed.bottle.vintage && (
                     <div>
-                      <div className="text-white/60 text-sm">Vintage</div>
+                      <div className="text-white/60 text-sm">Ano</div>
                       <div className="font-semibold">
                         {lastRevealed.bottle.vintage}
                       </div>
@@ -226,7 +228,7 @@ export default function RevealCeremonyPage({
                   )}
                   {lastRevealed.bottle.wine_type && (
                     <div>
-                      <div className="text-white/60 text-sm">Type</div>
+                      <div className="text-white/60 text-sm">Tipo</div>
                       <div className="font-semibold capitalize">
                         {lastRevealed.bottle.wine_type}
                       </div>
@@ -234,7 +236,7 @@ export default function RevealCeremonyPage({
                   )}
                   {lastRevealed.bottle.brought_by_user && (
                     <div>
-                      <div className="text-white/60 text-sm">Brought By</div>
+                      <div className="text-white/60 text-sm">Trazido Por</div>
                       <div className="font-semibold">
                         {lastRevealed.bottle.brought_by_user.name}
                       </div>
@@ -254,12 +256,12 @@ export default function RevealCeremonyPage({
                   {lastRevealed.bottle.stats.average_score}
                 </div>
                 <div className="text-white/80 mb-1">
-                  Average Score ({lastRevealed.bottle.stats.total_ratings}{" "}
-                  rating
-                  {lastRevealed.bottle.stats.total_ratings !== 1 ? "s" : ""})
+                  Média ({lastRevealed.bottle.stats.total_ratings} classificaç
+                  {lastRevealed.bottle.stats.total_ratings !== 1 ? "ões" : "ão"}
+                  )
                 </div>
                 <div className="text-amber-300/60 text-sm">
-                  📊 Total: {lastRevealed.bottle.stats.total_points} points
+                  📊 Total: {lastRevealed.bottle.stats.total_points} pontos
                 </div>
               </div>
 
@@ -267,7 +269,7 @@ export default function RevealCeremonyPage({
                 lastRevealed.bottle.ratings.length > 0 && (
                   <div className="mt-6 space-y-3">
                     <div className="text-white font-semibold text-center mb-3">
-                      Individual Ratings:
+                      Classificações Individuais:
                     </div>
                     {lastRevealed.bottle.ratings.map(
                       (rating, index: number) => (
@@ -299,17 +301,17 @@ export default function RevealCeremonyPage({
             <div className="bg-gradient-to-r from-amber-500/20 to-orange-500/20 backdrop-blur-lg rounded-3xl p-8 border-2 border-amber-400/30 mb-6">
               <div className="text-6xl mb-4">🎉</div>
               <h2 className="text-3xl font-bold text-white mb-2">
-                All Bottles Revealed!
+                Todas as Garrafas Reveladas!
               </h2>
               <p className="text-purple-200">
-                Redirecting to final rankings...
+                A redirecionar para os rankings finais...
               </p>
             </div>
             <Link
               href={`/dinners/${id}/rankings`}
               className="inline-block bg-gradient-to-r from-amber-500 to-orange-500 text-white px-8 py-4 rounded-2xl font-bold text-lg shadow-lg hover:shadow-amber-500/50 transform hover:scale-[1.02] transition-all"
             >
-              View Final Rankings 🏆
+              Ver Rankings Finais 🏆
             </Link>
           </div>
         ) : (
@@ -319,12 +321,12 @@ export default function RevealCeremonyPage({
             className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white px-8 py-6 rounded-3xl font-bold text-2xl shadow-2xl hover:shadow-purple-500/50 transform hover:scale-[1.02] transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {revealing ? (
-              <span>Revealing...</span>
+              <span>A revelar...</span>
             ) : (
               <span>
                 {revealStatus.remainingCount === revealStatus.totalBottles
-                  ? "🎭 Start Revealing"
-                  : "🎭 Reveal Next Bottle"}
+                  ? "🎭 Começar a Revelar"
+                  : "🎭 Revelar Próxima Garrafa"}
               </span>
             )}
           </button>
@@ -332,9 +334,7 @@ export default function RevealCeremonyPage({
 
         {revealedBottles.length > 0 && !isComplete && (
           <div className="mt-8">
-            <h3 className="text-xl font-bold text-white mb-4">
-              Already Revealed:
-            </h3>
+            <h3 className="text-xl font-bold text-white mb-4">Já Revelados:</h3>
             <div className="space-y-3">
               {revealedBottles.map((bottle) => (
                 <div
@@ -350,14 +350,14 @@ export default function RevealCeremonyPage({
                         {bottle.producer}
                       </div>
                       <div className="text-white/40 text-xs mt-1">
-                        📊 {bottle.stats.total_points} points total
+                        📊 {bottle.stats.total_points} pontos total
                       </div>
                     </div>
                     <div className="text-right">
                       <div className="text-amber-400 font-bold text-2xl">
                         {bottle.stats.average_score}
                       </div>
-                      <div className="text-white/60 text-xs">avg</div>
+                      <div className="text-white/60 text-xs">média</div>
                     </div>
                   </div>
                 </div>

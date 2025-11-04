@@ -98,7 +98,7 @@ export default function RateBottlePage({
       const token = localStorage.getItem("token");
 
       if (!token) {
-        setError("Please login first");
+        setError("Por favor faz login primeiro");
         setTimeout(() => {
           router.push("/login");
         }, 2000);
@@ -122,10 +122,10 @@ export default function RateBottlePage({
       if (data.success) {
         router.push(`/dinners/${bottle?.dinner.id}`);
       } else {
-        setError(data.error || "Failed to submit rating");
+        setError(data.error || "Erro ao submeter classificação");
       }
     } catch (error) {
-      setError("Network error. Please try again.");
+      setError("Erro de conexão. Tenta novamente.");
     } finally {
       setSubmitting(false);
     }
@@ -191,9 +191,11 @@ export default function RateBottlePage({
             <div className="flex items-center gap-3">
               <span className="text-3xl">✏️</span>
               <div>
-                <p className="text-white font-semibold">Editing Your Rating</p>
+                <p className="text-white font-semibold">
+                  A Editar a Tua Classificação
+                </p>
                 <p className="text-amber-200 text-sm">
-                  You already rated this wine. Update your score below.
+                  Já classificaste este vinho. Atualiza a tua pontuação abaixo.
                 </p>
               </div>
             </div>
@@ -205,13 +207,14 @@ export default function RateBottlePage({
             <div>
               <div className="inline-flex items-center gap-2 bg-purple-500/30 text-purple-200 text-xs font-bold px-3 py-1.5 rounded-full border border-purple-400/30 mb-4">
                 <span>🎭</span>
-                <span>BLIND TASTING</span>
+                <span>PROVA CEGA</span>
               </div>
               <h1 className="text-4xl font-bold text-white mb-4">
-                Mystery Wine
+                Vinho Mistério
               </h1>
               <p className="text-purple-200 text-lg">
-                Wine details are hidden. Rate based on taste, aroma, and finish!
+                Os detalhes do vinho estão escondidos. Classifica com base no
+                sabor, aroma e final!
               </p>
             </div>
           ) : (
@@ -250,10 +253,12 @@ export default function RateBottlePage({
 
         <div className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-lg rounded-3xl p-8 border border-white/20 shadow-2xl">
           <h2 className="text-2xl font-bold text-white mb-2 text-center">
-            {existingRating ? "Update Your Rating" : "Your Rating"}
+            {existingRating
+              ? "Atualiza a Tua Classificação"
+              : "A Tua Classificação"}
           </h2>
           <p className="text-purple-200 text-center mb-8">
-            Slide to rate this wine
+            Desliza para classificar este vinho
           </p>
 
           <div className="text-center mb-8">
@@ -308,7 +313,7 @@ export default function RateBottlePage({
             <textarea
               value={tastingNotes}
               onChange={(e) => setTastingNotes(e.target.value)}
-              placeholder="What flavors do you taste? How's the finish? Any standout characteristics?"
+              placeholder="Que sabores sentes? Como é o final? Características marcantes?"
               rows={4}
               className="w-full bg-white/10 border-2 border-white/20 rounded-2xl px-4 py-3 text-white placeholder:text-white/40 focus:outline-none focus:border-purple-400 resize-none"
             />
@@ -326,11 +331,11 @@ export default function RateBottlePage({
             className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white text-center px-6 py-5 rounded-2xl font-bold text-xl shadow-lg hover:shadow-purple-500/50 transform hover:scale-[1.02] transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {submitting ? (
-              <span>Submitting...</span>
+              <span>A submeter...</span>
             ) : existingRating ? (
-              <span>Update Rating ⭐</span>
+              <span>Atualizar Classificação ⭐</span>
             ) : (
-              <span>Submit Rating ⭐</span>
+              <span>Submeter Classificação ⭐</span>
             )}
           </button>
         </div>

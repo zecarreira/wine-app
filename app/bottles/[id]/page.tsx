@@ -49,6 +49,8 @@ interface Bottle {
   };
 }
 
+type BottleWithDetails = Bottle;
+
 export default function BottleDetailPage({
   params,
 }: {
@@ -58,8 +60,28 @@ export default function BottleDetailPage({
   const router = useRouter();
   const [bottle, setBottle] = useState<BottleWithDetails | null>(null);
   const [loading, setLoading] = useState(true);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [editForm, setEditForm] = useState({
+    name: "",
+    producer: "",
+    vintage: "",
+    wine_type: "",
+    description: "",
+    photo_url: "",
+  });
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
   useEffect(() => {
+    // Get current user
+    const userStr = localStorage.getItem("user");
+    if (userStr) {
+      const user = JSON.parse(userStr);
+      setCurrentUserId(user.id);
+    }
+
     fetchBottle();
   }, [id]);
 
@@ -70,6 +92,15 @@ export default function BottleDetailPage({
 
       if (data.success) {
         setBottle(data.bottle);
+        // Initialize edit form with bottle data
+        setEditForm({
+          name: data.bottle.name || "",
+          producer: data.bottle.producer || "",
+          vintage: data.bottle.vintage?.toString() || "",
+          wine_type: data.bottle.wine_type || "",
+          description: data.bottle.description || "",
+          photo_url: data.bottle.photo_url || "",
+        });
       }
     } catch (error) {
       console.error("Error fetching bottle:", error);
@@ -78,12 +109,162 @@ export default function BottleDetailPage({
     }
   }
 
+  function handleEdit() {
+    setIsEditing(true);
+  }
+
+  function handleCancelEdit() {
+    // Reset form to original values
+    if (bottle) {
+      setEditForm({
+        name: bottle.name || "",
+        producer: bottle.producer || "",
+        vintage: bottle.vintage?.toString() || "",
+        wine_type: bottle.wine_type || "",
+        description: bottle.description || "",
+        photo_url: bottle.photo_url || "",
+      });
+    }
+    setPhotoFile(null);
+    setPhotoPreview(null);
+    setIsEditing(false);
+  }
+
+  async function handlePhotoClick() {
+    if (!isEditing) return;
+
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert("Foto muito grande! Máximo 5MB");
+        return;
+      }
+
+      setUploadingPhoto(true);
+      try {
+        const token = localStorage.getItem("token");
+
+        // Create FormData with bucket parameter
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("bucket", "bottle-photos");
+
+        // Upload photo
+        const response = await fetch("/api/upload", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          body: formData,
+        });
+
+        const data = await response.json();
+
+        if (data.success && data.url) {
+          // Update bottle with new photo URL
+          const updateResponse = await fetch(`/api/bottles/${id}`, {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              photo_url: data.url,
+            }),
+          });
+
+          const updateData = await updateResponse.json();
+          if (updateData.success) {
+            alert("✅ Foto atualizada com sucesso!");
+            fetchBottle(); // Refresh to show new photo
+          } else {
+            alert(updateData.error || "Erro ao atualizar foto");
+          }
+        } else {
+          alert(data.error || "Erro ao fazer upload da foto");
+        }
+      } catch (_error) {
+        alert("Erro ao fazer upload da foto");
+      } finally {
+        setUploadingPhoto(false);
+      }
+    };
+
+    input.click();
+  }
+
+  async function handleSaveEdit() {
+    if (!editForm.name.trim()) {
+      alert("Nome da garrafa é obrigatório");
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`/api/bottles/${id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name: editForm.name,
+          producer: editForm.producer || null,
+          vintage: editForm.vintage ? parseInt(editForm.vintage) : null,
+          wine_type: editForm.wine_type || null,
+          description: editForm.description || null,
+        }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        alert("✅ Garrafa atualizada com sucesso!");
+        setIsEditing(false);
+        fetchBottle(); // Refresh data
+      } else {
+        alert(data.error || "Erro ao atualizar garrafa");
+      }
+    } catch (error) {
+      alert("Erro ao atualizar garrafa");
+    }
+  }
+
+  async function handleDeleteBottle() {
+    if (!confirm("Tens a certeza que queres apagar esta garrafa?")) return;
+
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`/api/bottles/${id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        alert("✅ Garrafa apagada com sucesso!");
+        router.push(`/dinners/${bottle?.dinner.id}`);
+      } else {
+        alert(data.error || "Erro ao apagar garrafa");
+      }
+    } catch (error) {
+      alert("Erro ao apagar garrafa");
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
         <div className="text-center">
           <div className="text-6xl mb-4 animate-spin">🍷</div>
-          <div className="text-white text-xl">Loading bottle...</div>
+          <div className="text-white text-xl">A carregar garrafa...</div>
         </div>
       </div>
     );
@@ -94,7 +275,7 @@ export default function BottleDetailPage({
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
         <div className="text-center">
           <div className="text-6xl mb-4">❌</div>
-          <div className="text-white text-xl">Bottle not found</div>
+          <div className="text-white text-xl">Garrafa não encontrada</div>
         </div>
       </div>
     );
@@ -114,7 +295,7 @@ export default function BottleDetailPage({
             ←
           </button>
           <Link href="/" className="text-white/80 hover:text-white text-2xl">
-            �
+            🏠
           </Link>
         </div>
       </header>
@@ -126,7 +307,34 @@ export default function BottleDetailPage({
             {/* Photo */}
             <div>
               {bottle.photo_url ? (
-                <div className="relative w-full aspect-[3/4] rounded-2xl overflow-hidden bg-black/20">
+                <div
+                  onClick={handlePhotoClick}
+                  className={`relative w-full aspect-[3/4] rounded-2xl overflow-hidden bg-black/20 ${
+                    isEditing
+                      ? "cursor-pointer hover:ring-4 hover:ring-purple-400 transition-all"
+                      : ""
+                  }`}
+                >
+                  {uploadingPhoto && (
+                    <div className="absolute inset-0 bg-black/70 flex items-center justify-center z-10">
+                      <div className="text-center">
+                        <div className="text-4xl mb-2">📤</div>
+                        <div className="text-white text-sm">
+                          A fazer upload...
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  {isEditing && !uploadingPhoto && (
+                    <div className="absolute inset-0 bg-black/0 hover:bg-black/30 flex items-center justify-center transition-all opacity-0 hover:opacity-100">
+                      <div className="text-center">
+                        <div className="text-4xl mb-2">📷</div>
+                        <div className="text-white text-sm font-medium">
+                          Clica para mudar foto
+                        </div>
+                      </div>
+                    </div>
+                  )}
                   <Image
                     src={bottle.photo_url}
                     alt={bottle.name}
@@ -135,11 +343,27 @@ export default function BottleDetailPage({
                   />
                 </div>
               ) : (
-                <div className="w-full aspect-[3/4] rounded-2xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center border-2 border-white/10">
-                  <div className="text-center">
-                    <div className="text-8xl mb-4">🍷</div>
-                    <div className="text-white/60">No photo</div>
-                  </div>
+                <div
+                  onClick={handlePhotoClick}
+                  className={`w-full aspect-[3/4] rounded-2xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center border-2 border-white/10 ${
+                    isEditing
+                      ? "cursor-pointer hover:ring-4 hover:ring-purple-400 transition-all"
+                      : ""
+                  }`}
+                >
+                  {uploadingPhoto ? (
+                    <div className="text-center">
+                      <div className="text-4xl mb-2">📤</div>
+                      <div className="text-white/60">A fazer upload...</div>
+                    </div>
+                  ) : (
+                    <div className="text-center">
+                      <div className="text-8xl mb-4">🍷</div>
+                      <div className="text-white/60">
+                        {isEditing ? "Clica para adicionar foto" : "Sem foto"}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -147,66 +371,200 @@ export default function BottleDetailPage({
             {/* Info */}
             <div className="flex flex-col justify-between">
               <div>
-                <h1 className="text-4xl font-bold text-white mb-4">
-                  {bottle.name}
-                </h1>
-
-                <div className="space-y-3 text-purple-200 mb-6">
-                  {bottle.producer && (
-                    <div className="flex items-center gap-3">
-                      <span className="text-2xl">🏛️</span>
-                      <div>
-                        <div className="text-white/60 text-xs">Producer</div>
-                        <div className="font-semibold text-lg">
-                          {bottle.producer}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {bottle.vintage && (
-                    <div className="flex items-center gap-3">
-                      <span className="text-2xl">📅</span>
-                      <div>
-                        <div className="text-white/60 text-xs">Vintage</div>
-                        <div className="font-semibold text-lg">
-                          {bottle.vintage}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {bottle.wine_type && (
-                    <div className="flex items-center gap-3">
-                      <span className="text-2xl">🍷</span>
-                      <div>
-                        <div className="text-white/60 text-xs">Type</div>
-                        <div className="font-semibold text-lg capitalize">
-                          {bottle.wine_type}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {bottle.brought_by_user && (
-                    <div className="flex items-center gap-3">
-                      <span className="text-2xl">👤</span>
-                      <div>
-                        <div className="text-white/60 text-xs">Brought By</div>
-                        <div className="font-semibold text-lg">
-                          {bottle.brought_by_user.name}
-                        </div>
-                      </div>
-                    </div>
+                {/* Title */}
+                <div className="mb-4">
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={editForm.name}
+                      onChange={(e) =>
+                        setEditForm({ ...editForm, name: e.target.value })
+                      }
+                      className="w-full bg-white/10 border-2 border-white/20 rounded-xl px-3 md:px-4 py-2 text-white text-xl md:text-2xl font-bold focus:outline-none focus:border-purple-400"
+                      placeholder="Nome da garrafa *"
+                    />
+                  ) : (
+                    <h1 className="text-2xl md:text-4xl font-bold text-white break-words">
+                      {bottle.name}
+                    </h1>
                   )}
                 </div>
 
-                {bottle.description && (
-                  <div className="bg-white/5 rounded-2xl p-4 mb-6">
-                    <p className="text-white/80 italic leading-relaxed">
-                      "{bottle.description}"
-                    </p>
+                {/* Edit/Delete Buttons - Only in setup and if owner */}
+                {bottle.dinner.status === "setup" &&
+                  bottle.brought_by_user.id === currentUserId && (
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {isEditing ? (
+                        <>
+                          <button
+                            onClick={handleSaveEdit}
+                            className="flex-1 min-w-[120px] bg-green-600 hover:bg-green-700 text-white px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-semibold transition-colors"
+                          >
+                            ✅ Guardar
+                          </button>
+                          <button
+                            onClick={handleCancelEdit}
+                            className="flex-1 min-w-[120px] bg-gray-600 hover:bg-gray-700 text-white px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-semibold transition-colors"
+                          >
+                            ❌ Cancelar
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            onClick={handleEdit}
+                            className="flex-1 min-w-[100px] bg-blue-600 hover:bg-blue-700 text-white px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-semibold transition-colors"
+                          >
+                            ✏️ Editar
+                          </button>
+                          <button
+                            onClick={handleDeleteBottle}
+                            className="flex-1 min-w-[100px] bg-red-600 hover:bg-red-700 text-white px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-semibold transition-colors"
+                          >
+                            🗑️ Apagar
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  )}
+
+                {isEditing ? (
+                  <div className="space-y-3 mb-6">
+                    <div>
+                      <label className="block text-white/60 text-xs mb-1">
+                        🏛️ Producer
+                      </label>
+                      <input
+                        type="text"
+                        value={editForm.producer}
+                        onChange={(e) =>
+                          setEditForm({ ...editForm, producer: e.target.value })
+                        }
+                        className="w-full bg-white/10 border-2 border-white/20 rounded-xl px-3 py-2 text-white text-sm md:text-base focus:outline-none focus:border-purple-400"
+                        placeholder="Produtor"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-white/60 text-xs mb-1">
+                          📅 Vintage
+                        </label>
+                        <input
+                          type="number"
+                          value={editForm.vintage}
+                          onChange={(e) =>
+                            setEditForm({
+                              ...editForm,
+                              vintage: e.target.value,
+                            })
+                          }
+                          className="w-full bg-white/10 border-2 border-white/20 rounded-xl px-3 py-2 text-white text-sm md:text-base focus:outline-none focus:border-purple-400"
+                          placeholder="Ano"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-white/60 text-xs mb-1">
+                          🍷 Type
+                        </label>
+                        <input
+                          type="text"
+                          value={editForm.wine_type}
+                          onChange={(e) =>
+                            setEditForm({
+                              ...editForm,
+                              wine_type: e.target.value,
+                            })
+                          }
+                          className="w-full bg-white/10 border-2 border-white/20 rounded-xl px-3 py-2 text-white text-sm md:text-base focus:outline-none focus:border-purple-400"
+                          placeholder="Tipo"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-white/60 text-xs mb-1">
+                        📝 Description
+                      </label>
+                      <textarea
+                        value={editForm.description}
+                        onChange={(e) =>
+                          setEditForm({
+                            ...editForm,
+                            description: e.target.value,
+                          })
+                        }
+                        rows={3}
+                        className="w-full bg-white/10 border-2 border-white/20 rounded-xl px-3 py-2 text-white text-sm md:text-base focus:outline-none focus:border-purple-400"
+                        placeholder="Descrição"
+                      />
+                    </div>
                   </div>
+                ) : (
+                  <>
+                    <div className="space-y-3 text-purple-200 mb-6">
+                      {bottle.producer && (
+                        <div className="flex items-center gap-3">
+                          <span className="text-2xl">🏛️</span>
+                          <div>
+                            <div className="text-white/60 text-xs">
+                              Producer
+                            </div>
+                            <div className="font-semibold text-lg">
+                              {bottle.producer}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {bottle.vintage && (
+                        <div className="flex items-center gap-3">
+                          <span className="text-2xl">📅</span>
+                          <div>
+                            <div className="text-white/60 text-xs">Vintage</div>
+                            <div className="font-semibold text-lg">
+                              {bottle.vintage}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {bottle.wine_type && (
+                        <div className="flex items-center gap-3">
+                          <span className="text-2xl">🍷</span>
+                          <div>
+                            <div className="text-white/60 text-xs">Type</div>
+                            <div className="font-semibold text-lg capitalize">
+                              {bottle.wine_type}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {bottle.brought_by_user && (
+                        <div className="flex items-center gap-3">
+                          <span className="text-2xl">👤</span>
+                          <div>
+                            <div className="text-white/60 text-xs">
+                              Brought By
+                            </div>
+                            <div className="font-semibold text-lg">
+                              {bottle.brought_by_user.name}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {bottle.description && (
+                      <div className="bg-white/5 rounded-2xl p-4 mb-6">
+                        <p className="text-white/80 italic leading-relaxed">
+                          "{bottle.description}"
+                        </p>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
 

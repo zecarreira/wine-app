@@ -36,25 +36,27 @@ export default function LoginPage() {
         // Redirect to home page
         router.push("/");
       } else {
-        setError(data.error || "Login failed");
+        setError(data.error || "Falha no login");
       }
     } catch {
-      setError("Network error. Please try again.");
+      setError("Erro de conexão. Tenta novamente.");
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-linear-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center px-4 py-8">
       <div className="w-full max-w-md">
         {/* Logo */}
-        <div className="text-center mb-6">
-          <div className="text-5xl mb-3">🍷</div>
-          <h1 className="text-3xl font-bold text-white mb-2">
+        <div className="text-center mb-6 md:mb-8">
+          <div className="text-5xl md:text-6xl mb-3">🍷</div>
+          <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">
             Jantar do Vinho
           </h1>
-          <p className="text-purple-200">Bem-vindo de volta</p>
+          <p className="text-sm md:text-base text-purple-200">
+            Bem-vindo de volta
+          </p>
         </div>
 
         {/* Login Card */}

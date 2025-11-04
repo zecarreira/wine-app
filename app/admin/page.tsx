@@ -31,7 +31,7 @@ export default function AdminPanelPage() {
       const currentUser = JSON.parse(userStr);
 
       if (currentUser.role !== "admin") {
-        alert("Admin access required");
+        alert("Acesso de admin necessário");
         router.push("/dinners");
         return;
       }
@@ -49,7 +49,7 @@ export default function AdminPanelPage() {
         setUsers(data.users);
         setFounderCount(data.founderCount);
       } else {
-        alert("Failed to load users");
+        alert("Erro ao carregar utilizadores");
       }
     } catch {
       console.error("Error loading users");
@@ -63,8 +63,8 @@ export default function AdminPanelPage() {
   }, [checkAdminAndFetchUsers]);
 
   async function updateUserRole(userId: string, newRole: string) {
-    const roleText = newRole === "founder" ? "Founder" : "Guest";
-    if (!confirm(`Promote this user to ${roleText}?`)) return;
+    const roleText = newRole === "founder" ? "Fundador" : "Convidado";
+    if (!confirm(`Promover este utilizador a ${roleText}?`)) return;
 
     setUpdating(userId);
     try {
@@ -82,12 +82,12 @@ export default function AdminPanelPage() {
 
       if (data.success) {
         await checkAdminAndFetchUsers();
-        alert(`✅ User promoted to ${roleText}!`);
+        alert(`✅ Utilizador promovido a ${roleText}!`);
       } else {
-        alert(data.error || "Failed to update role");
+        alert(data.error || "Erro ao atualizar role");
       }
     } catch {
-      alert("Error updating role");
+      alert("Erro ao atualizar role");
     } finally {
       setUpdating(null);
     }
@@ -98,7 +98,7 @@ export default function AdminPanelPage() {
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
         <div className="text-center">
           <div className="text-6xl mb-4 animate-spin">👑</div>
-          <div className="text-white text-xl">Loading admin panel...</div>
+          <div className="text-white text-xl">A carregar painel admin...</div>
         </div>
       </div>
     );
@@ -125,8 +125,10 @@ export default function AdminPanelPage() {
         {/* Title */}
         <div className="text-center mb-8">
           <div className="text-6xl mb-4">👑</div>
-          <h1 className="text-4xl font-bold text-white mb-2">Admin Panel</h1>
-          <p className="text-purple-200">Manage user roles and permissions</p>
+          <h1 className="text-4xl font-bold text-white mb-2">Painel Admin</h1>
+          <p className="text-purple-200">
+            Gerir roles e permissões dos utilizadores
+          </p>
         </div>
 
         {/* Stats */}
@@ -134,10 +136,10 @@ export default function AdminPanelPage() {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold text-white mb-2">
-                Founder Slots
+                Vagas de Fundadores
               </h2>
               <p className="text-amber-200">
-                {founderCount} / {maxFounders} slots used
+                {founderCount} / {maxFounders} vagas usadas
               </p>
             </div>
             <div className="text-5xl font-bold text-amber-400">
@@ -146,7 +148,8 @@ export default function AdminPanelPage() {
           </div>
           {founderCount >= maxFounders && (
             <div className="mt-4 bg-red-500/20 border-2 border-red-500/50 rounded-xl p-3 text-red-200 text-sm">
-              ⚠️ Maximum founders reached! Cannot promote more users.
+              ⚠️ Máximo de fundadores atingido! Não é possível promover mais
+              utilizadores.
             </div>
           )}
         </div>
@@ -154,7 +157,7 @@ export default function AdminPanelPage() {
         {/* Users List */}
         <div className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-lg rounded-3xl p-6 border border-white/20 shadow-xl">
           <h2 className="text-2xl font-bold text-white mb-6">
-            All Users ({users.length})
+            Todos os Utilizadores ({users.length})
           </h2>
 
           <div className="space-y-4">
@@ -187,10 +190,10 @@ export default function AdminPanelPage() {
                     </div>
                     <p className="text-purple-200 text-sm mb-1">{user.email}</p>
                     <p className="text-white/40 text-xs">
-                      Joined:{" "}
-                      {new Date(user.created_at).toLocaleDateString("en-US", {
-                        month: "short",
+                      Registado:{" "}
+                      {new Date(user.created_at).toLocaleDateString("pt-PT", {
                         day: "numeric",
+                        month: "short",
                         year: "numeric",
                       })}
                     </p>
@@ -210,12 +213,12 @@ export default function AdminPanelPage() {
                           {updating === user.id ? (
                             <>
                               <span className="animate-spin">⏳</span>
-                              <span>Updating...</span>
+                              <span>A atualizar...</span>
                             </>
                           ) : (
                             <>
                               <span>🍷</span>
-                              <span>Promote to Founder</span>
+                              <span>Promover a Fundador</span>
                             </>
                           )}
                         </button>
@@ -229,12 +232,12 @@ export default function AdminPanelPage() {
                           {updating === user.id ? (
                             <>
                               <span className="animate-spin">⏳</span>
-                              <span>Updating...</span>
+                              <span>A atualizar...</span>
                             </>
                           ) : (
                             <>
                               <span>👤</span>
-                              <span>Demote to Guest</span>
+                              <span>Despromover a Convidado</span>
                             </>
                           )}
                         </button>
@@ -245,7 +248,7 @@ export default function AdminPanelPage() {
                   {user.role === "admin" && (
                     <div className="flex-shrink-0">
                       <div className="bg-red-500/20 border-2 border-red-400/50 text-red-200 px-4 py-2 rounded-xl text-sm font-semibold">
-                        🔒 Protected Role
+                        🔒 Role Protegida
                       </div>
                     </div>
                   )}

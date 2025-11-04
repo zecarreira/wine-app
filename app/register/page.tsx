@@ -40,31 +40,35 @@ export default function RegisterPage() {
         // Redirect to home page
         router.push("/");
       } else {
-        setError(data.error || "Registration failed");
+        setError(data.error || "Falha no registo");
       }
     } catch {
-      setError("Network error. Please try again.");
+      setError("Erro de conexão. Tenta novamente.");
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-linear-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4 py-8">
       <div className="w-full max-w-md">
         {/* Logo/Title */}
-        <div className="text-center mb-6">
-          <div className="text-5xl mb-3">🍷</div>
-          <h1 className="text-3xl font-bold text-white mb-2">VinoRate</h1>
-          <p className="text-purple-200">Cria a tua conta</p>
+        <div className="text-center mb-6 md:mb-8">
+          <div className="text-5xl md:text-6xl mb-3">🍷</div>
+          <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">
+            VinoRate
+          </h1>
+          <p className="text-sm md:text-base text-purple-200">
+            Cria a tua conta
+          </p>
         </div>
 
         {/* Register Form */}
-        <div className="bg-white/10 backdrop-blur-lg rounded-3xl p-6 border border-white/20 shadow-2xl">
+        <div className="bg-white/10 backdrop-blur-lg rounded-3xl p-5 md:p-6 border border-white/20 shadow-2xl">
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Name */}
             <div>
-              <label className="block text-white font-semibold mb-2 text-sm">
+              <label className="block text-white font-semibold mb-2 text-xs md:text-sm">
                 Nome
               </label>
               <input
@@ -73,13 +77,13 @@ export default function RegisterPage() {
                 onChange={(e) => setName(e.target.value)}
                 placeholder="O teu nome"
                 required
-                className="w-full bg-white/10 border-2 border-white/20 rounded-2xl px-4 py-2.5 text-white placeholder:text-white/40 focus:outline-none focus:border-purple-400 text-base"
+                className="w-full bg-white/10 border-2 border-white/20 rounded-2xl px-4 py-2.5 md:py-3 text-white placeholder:text-white/40 focus:outline-none focus:border-purple-400 text-sm md:text-base"
               />
             </div>
 
             {/* Email */}
             <div>
-              <label className="block text-white font-semibold mb-2 text-sm">
+              <label className="block text-white font-semibold mb-2 text-xs md:text-sm">
                 Email
               </label>
               <input
@@ -88,13 +92,13 @@ export default function RegisterPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="teu@email.com"
                 required
-                className="w-full bg-white/10 border-2 border-white/20 rounded-2xl px-4 py-2.5 text-white placeholder:text-white/40 focus:outline-none focus:border-purple-400 text-base"
+                className="w-full bg-white/10 border-2 border-white/20 rounded-2xl px-4 py-2.5 md:py-3 text-white placeholder:text-white/40 focus:outline-none focus:border-purple-400 text-sm md:text-base"
               />
             </div>
 
             {/* Password */}
             <div>
-              <label className="block text-white font-semibold mb-2 text-sm">
+              <label className="block text-white font-semibold mb-2 text-xs md:text-sm">
                 Palavra-passe
               </label>
               <input
@@ -104,7 +108,7 @@ export default function RegisterPage() {
                 placeholder="••••••••"
                 required
                 minLength={6}
-                className="w-full bg-white/10 border-2 border-white/20 rounded-2xl px-4 py-2.5 text-white placeholder:text-white/40 focus:outline-none focus:border-purple-400 text-base"
+                className="w-full bg-white/10 border-2 border-white/20 rounded-2xl px-4 py-2.5 md:py-3 text-white placeholder:text-white/40 focus:outline-none focus:border-purple-400 text-sm md:text-base"
               />
               <p className="text-white/40 text-xs mt-1">Mínimo 6 caracteres</p>
             </div>
@@ -132,14 +136,14 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-linear-to-r from-purple-600 to-pink-600 text-white px-6 py-4 rounded-2xl font-bold text-lg shadow-lg hover:shadow-purple-500/50 transform hover:scale-[1.02] transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-linear-to-r from-purple-600 to-pink-600 text-white px-6 py-3.5 md:py-4 rounded-2xl font-bold text-base md:text-lg shadow-lg hover:shadow-purple-500/50 transform hover:scale-[1.02] transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? "A criar conta..." : "Registar 🍷"}
             </button>
 
             {/* Login Link */}
             <div className="text-center">
-              <p className="text-white/60 text-sm">
+              <p className="text-white/60 text-xs md:text-sm">
                 Já tens conta?{" "}
                 <Link
                   href="/login"

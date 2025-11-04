@@ -6,7 +6,7 @@ interface LoadingSpinnerProps {
 
 export default function LoadingSpinner({
   icon = "🍷",
-  message = "Loading...",
+  message = "A carregar...",
   size = "lg",
 }: LoadingSpinnerProps) {
   const sizeClasses = {

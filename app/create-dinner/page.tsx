@@ -1,8 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+
+interface Founder {
+  id: string;
+  name: string;
+  email: string;
+}
 
 export default function CreateDinnerPage() {
   const router = useRouter();
@@ -10,8 +16,47 @@ export default function CreateDinnerPage() {
   const [eventDate, setEventDate] = useState("");
   const [location, setLocation] = useState("");
   const [isBlind, setIsBlind] = useState(true);
+  const [organizerId, setOrganizerId] = useState("");
+  const [availableFounders, setAvailableFounders] = useState<Founder[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingFounders, setLoadingFounders] = useState(true);
   const [error, setError] = useState("");
+
+  // Fetch available founders on mount
+  useEffect(() => {
+    async function fetchFounders() {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          router.push("/login");
+          return;
+        }
+
+        const response = await fetch(
+          "/api/seasons/active/available-organizers",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        const data = await response.json();
+
+        if (data.success) {
+          setAvailableFounders(data.founders);
+        } else {
+          setError(data.error || "Erro ao carregar fundadores");
+        }
+      } catch (err) {
+        setError("Erro ao carregar fundadores");
+      } finally {
+        setLoadingFounders(false);
+      }
+    }
+
+    fetchFounders();
+  }, [router]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -22,7 +67,7 @@ export default function CreateDinnerPage() {
       const token = localStorage.getItem("token");
 
       if (!token) {
-        alert("Please login first");
+        alert("Por favor faz login primeiro");
         router.push("/login");
         return;
       }
@@ -38,6 +83,7 @@ export default function CreateDinnerPage() {
           event_date: eventDate,
           location: location || null,
           is_blind: isBlind,
+          organizer_id: organizerId,
         }),
       });
 
@@ -46,10 +92,10 @@ export default function CreateDinnerPage() {
       if (data.success) {
         router.push(`/dinners/${data.dinner.id}`);
       } else {
-        setError(data.error || "Failed to create dinner");
+        setError(data.error || "Erro ao criar jantar");
       }
     } catch (error) {
-      setError("Network error. Please try again.");
+      setError("Erro de conexão. Tenta novamente.");
     } finally {
       setLoading(false);
     }
@@ -126,6 +172,46 @@ export default function CreateDinnerPage() {
                 placeholder="Lisboa, Portugal"
                 className="w-full bg-white/10 border-2 border-white/20 rounded-2xl px-4 py-2.5 text-white placeholder:text-white/40 focus:outline-none focus:border-purple-400 text-base"
               />
+            </div>
+
+            {/* Organizer Selection */}
+            <div>
+              <label className="block text-white font-semibold mb-2 text-sm">
+                Organizador *
+              </label>
+              {loadingFounders ? (
+                <div className="w-full bg-white/10 border-2 border-white/20 rounded-2xl px-4 py-2.5 text-white/60 text-base">
+                  A carregar founders...
+                </div>
+              ) : availableFounders.length === 0 ? (
+                <div className="w-full bg-red-500/20 border-2 border-red-500/50 rounded-2xl px-4 py-2.5 text-red-200 text-sm">
+                  ⚠️ Todos os founders já organizaram um jantar nesta temporada
+                </div>
+              ) : (
+                <select
+                  value={organizerId}
+                  onChange={(e) => setOrganizerId(e.target.value)}
+                  required
+                  className="w-full bg-white/10 border-2 border-white/20 rounded-2xl px-4 py-2.5 text-white focus:outline-none focus:border-purple-400 text-base"
+                  style={{ colorScheme: "dark" }}
+                >
+                  <option value="" className="bg-slate-800">
+                    Seleciona quem organiza...
+                  </option>
+                  {availableFounders.map((founder) => (
+                    <option
+                      key={founder.id}
+                      value={founder.id}
+                      className="bg-slate-800"
+                    >
+                      {founder.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+              <p className="text-purple-200 text-xs mt-2">
+                Cada founder só pode organizar 1 jantar por temporada
+              </p>
             </div>
 
             {/* Blind Tasting Toggle */}

@@ -158,9 +158,9 @@ export default function AddBottlePage({
         <div className="text-center mb-8">
           <div className="text-6xl mb-4">🍾</div>
           <h1 className="text-4xl font-bold text-white mb-2">
-            Add Wine Bottle
+            Adicionar Garrafa
           </h1>
-          <p className="text-purple-200">Add a bottle to this dinner</p>
+          <p className="text-purple-200">Adiciona uma garrafa a este jantar</p>
         </div>
 
         <div className="bg-white/10 backdrop-blur-lg rounded-3xl p-8 border border-white/20 shadow-2xl">
@@ -168,14 +168,14 @@ export default function AddBottlePage({
             {/* Photo Upload */}
             <div>
               <label className="block text-white font-semibold mb-2">
-                Bottle Photo (Optional)
+                Foto da Garrafa (Opcional)
               </label>
 
               {photoPreview ? (
                 <div className="relative w-full h-64 mb-3 rounded-2xl overflow-hidden">
                   <Image
                     src={photoPreview}
-                    alt="Preview"
+                    alt="Pré-visualização"
                     fill
                     className="object-cover"
                   />
@@ -187,15 +187,15 @@ export default function AddBottlePage({
                     }}
                     className="absolute top-2 right-2 bg-red-500 text-white px-3 py-1 rounded-lg text-sm font-semibold"
                   >
-                    Remove
+                    Remover
                   </button>
                 </div>
               ) : (
                 <label className="block w-full bg-white/5 border-2 border-dashed border-white/20 rounded-2xl p-8 text-center cursor-pointer hover:border-purple-400 transition-colors">
                   <div className="text-5xl mb-2">📸</div>
-                  <div className="text-white/60">Click to upload photo</div>
+                  <div className="text-white/60">Clica para carregar foto</div>
                   <div className="text-white/40 text-sm mt-1">
-                    JPG, PNG up to 5MB
+                    JPG, PNG até 5MB
                   </div>
                   <input
                     type="file"
@@ -210,7 +210,7 @@ export default function AddBottlePage({
             {/* Wine Name */}
             <div>
               <label className="block text-white font-semibold mb-2">
-                Wine Name *
+                Nome do Vinho *
               </label>
               <input
                 type="text"
@@ -225,7 +225,7 @@ export default function AddBottlePage({
             {/* Producer */}
             <div>
               <label className="block text-white font-semibold mb-2">
-                Producer (Optional)
+                Produtor (Opcional)
               </label>
               <input
                 type="text"
@@ -240,7 +240,7 @@ export default function AddBottlePage({
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-white font-semibold mb-2">
-                  Vintage
+                  Ano
                 </label>
                 <input
                   type="number"
@@ -255,7 +255,7 @@ export default function AddBottlePage({
 
               <div>
                 <label className="block text-white font-semibold mb-2">
-                  Type
+                  Tipo
                 </label>
                 <select
                   value={wineType}
@@ -263,22 +263,22 @@ export default function AddBottlePage({
                   className="w-full bg-white/10 border-2 border-white/20 rounded-2xl px-4 py-4 text-white focus:outline-none focus:border-purple-400 text-lg appearance-none cursor-pointer"
                 >
                   <option value="red" className="bg-slate-800">
-                    Red
+                    Tinto
                   </option>
                   <option value="white" className="bg-slate-800">
-                    White
+                    Branco
                   </option>
                   <option value="rosé" className="bg-slate-800">
                     Rosé
                   </option>
                   <option value="sparkling" className="bg-slate-800">
-                    Sparkling
+                    Espumante
                   </option>
                   <option value="dessert" className="bg-slate-800">
-                    Dessert
+                    Sobremesa
                   </option>
                   <option value="fortified" className="bg-slate-800">
-                    Fortified
+                    Fortificado
                   </option>
                 </select>
               </div>
@@ -287,12 +287,12 @@ export default function AddBottlePage({
             {/* Description */}
             <div>
               <label className="block text-white font-semibold mb-2">
-                Description (Optional)
+                Descrição (Opcional)
               </label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Full-bodied red wine from Piedmont..."
+                placeholder="Full-bodied do Alentejo..."
                 rows={3}
                 className="w-full bg-white/10 border-2 border-white/20 rounded-2xl px-4 py-3 text-white placeholder:text-white/40 focus:outline-none focus:border-purple-400 resize-none"
               />
@@ -313,17 +313,17 @@ export default function AddBottlePage({
                 className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-5 rounded-2xl font-bold text-xl shadow-lg hover:shadow-purple-500/50 transform hover:scale-[1.02] transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {uploadingPhoto
-                  ? "📸 Uploading Photo..."
+                  ? "📸 A Carregar Foto..."
                   : loading
-                  ? "Adding..."
-                  : "Add Bottle 🍷"}
+                  ? "A Adicionar..."
+                  : "Adicionar Garrafa 🍷"}
               </button>
 
               <Link
                 href={`/dinners/${id}`}
                 className="block w-full text-center text-white/60 hover:text-white py-3"
               >
-                Cancel
+                Cancelar
               </Link>
             </div>
           </form>

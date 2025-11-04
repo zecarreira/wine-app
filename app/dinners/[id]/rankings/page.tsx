@@ -136,8 +136,8 @@ export default function RankingsPage({
                       {bottle.stats.average_score}
                     </div>
                     <div className="text-xs text-white/60">
-                      {bottle.stats.total_ratings} rating
-                      {bottle.stats.total_ratings !== 1 ? "s" : ""}
+                      {bottle.stats.total_ratings} classificaç
+                      {bottle.stats.total_ratings !== 1 ? "ões" : "ão"}
                     </div>
                     <div className="text-amber-300/50 text-xs mt-1">
                       📊 {bottle.stats.total_points} pts
@@ -186,8 +186,8 @@ export default function RankingsPage({
               Média: {rankings[0].stats.average_score}/10
             </p>
             <p className="text-amber-300/60 text-sm">
-              📊 Total: {rankings[0].stats.total_points} pontos • ⭐ Highest
-              Rating: {rankings[0].stats.highest_rating}/10
+              📊 Total: {rankings[0].stats.total_points} pontos • ⭐ Nota Mais
+              Alta: {rankings[0].stats.highest_rating}/10
             </p>
             <p className="text-white/40 text-xs mt-3">
               Tiebreaker rules: 1. Média → 2. Total de pontos → 3. Nota mais
