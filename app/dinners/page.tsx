@@ -183,9 +183,7 @@ export default function DinnersPage() {
               </h1>
               {activeSeason && stats && (
                 <p className="text-purple-200 text-sm">
-                  {stats.regular_dinners}/7 Jantares{" "}
-                  {stats.extra_dinners > 0 && "+ 1 Extra"} •{" "}
-                  {stats.total_dinners}/8
+                  {stats.total_dinners}/8 Jantares
                 </p>
               )}
               {!activeSeason && (
