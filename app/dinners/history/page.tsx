@@ -22,11 +22,7 @@ export default function DinnersHistoryPage() {
   const [isLoading, setIsLoading] = useState(true);
   const { showToast } = useToast();
 
-  useEffect(() => {
-    fetchSeasons();
-  }, []);
-
-  async function fetchSeasons() {
+  const fetchSeasons = async () => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch("/api/seasons", {
@@ -50,7 +46,12 @@ export default function DinnersHistoryPage() {
     } finally {
       setIsLoading(false);
     }
-  }
+  };
+
+  useEffect(() => {
+    fetchSeasons();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (isLoading) {
     return (
@@ -68,7 +69,7 @@ export default function DinnersHistoryPage() {
 
   return (
     <div className="min-h-screen bg-linear-to-br from-slate-900 via-purple-900 to-slate-900">
-      <Header useBackButton backText="Voltar" />
+      <Header useBackButton />
 
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
