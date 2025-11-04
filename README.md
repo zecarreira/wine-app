@@ -1,265 +1,398 @@
 # 🍷 Jantar do Vinho - Wine Rating App
 
-A sophisticated blind wine tasting app built with Next.js 16, React 19, and Supabase. Host wine dinners with friends, rate wines blind, and discover the winners in an interactive reveal ceremony.
+Uma aplicação sofisticada para jantares de prova de vinhos às cegas, construída com Next.js 16, React 19 e Supabase. Organiza jantares de vinho com amigos, classifica vinhos às cegas e descobre os vencedores numa cerimónia interativa de revelação.
 
 ![Next.js](https://img.shields.io/badge/Next.js-16.0-black?style=flat-square&logo=next.js)
 ![React](https://img.shields.io/badge/React-19.2-blue?style=flat-square&logo=react)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?style=flat-square&logo=typescript)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind-4.0-38B2AC?style=flat-square&logo=tailwind-css)
+![Supabase](https://img.shields.io/badge/Supabase-Database-3ECF8E?style=flat-square&logo=supabase)
 
-## ✨ Features
+## ✨ Funcionalidades Principais
 
-### 🎭 **Blind Tasting Mode**
+### 🎭 **Modo Prova Cega**
+- Vinhos embaralhados e etiquetados como A, B, C... durante a prova
+- Nomes e detalhes escondidos até à cerimónia de revelação
+- Embaralhamento determinístico garante a mesma ordem para todos
 
-- Wines are shuffled and labeled A, B, C... during tasting
-- Names and details hidden until the reveal ceremony
-- Deterministic shuffling ensures all guests see the same order
+### ⭐ **Sistema de Classificação**
+- Classifica vinhos de 1 a 10 com precisão de meio ponto
+- Adiciona notas de prova detalhadas para cada vinho
+- Edita as tuas classificações antes do jantar terminar
+- Sistema de pontuação customizado com labels divertidos
 
-### ⭐ **Rating System**
+### 🎪 **Cerimónia Interativa de Revelação**
+- Revelação progressiva garrafa a garrafa
+- Animações dramáticas e celebrações com emojis
+- Mostra todas as classificações e pontuações médias
+- Coroa o vencedor no final
 
-- Rate wines from 1-10 with half-point precision
-- Add detailed tasting notes for each wine
-- Edit your ratings before the dinner ends
+### 👥 **Sistema de Temporadas**
+- Organiza jantares em temporadas de 7 eventos
+- Cada fundador organiza 1 jantar por temporada
+- Sistema de rotação automática
+- Jantares extra para celebrar o fim da temporada
+- Histórico completo de todas as temporadas
 
-### 🎪 **Interactive Reveal Ceremony**
+### 💰 **Sistema de Pagamentos e Multas**
+- Gestão de "pipas" (moeda do grupo)
+- Taxa de participação: 10 pipas por jantar
+- Sistema de multas por infrações às regras
+- Fundo do vinho acumulado para evento extra
+- Dashboard de pagamentos por temporada
 
-- Progressive bottle-by-bottle reveal
-- Dramatic animations and emoji celebrations
-- Shows all ratings and average scores
-- Crowns the winner at the end
+### 📜 **Mandamentos do Vinho**
+- 13 fundamentos sagrados do grupo
+- 4 tipos de penalizações claramente definidas
+- Página dedicada com todas as regras
+- Design otimizado para consulta rápida
 
-### 👑 **Role-Based Access**
+### 👑 **Controlo de Acesso por Funções**
+- **Admin**: Controlo total do sistema
+- **Founder**: Cria jantares, gere garrafas (máximo 7 fundadores)
+- **Guest**: Participa em jantares e classifica vinhos
 
-- **Admin**: Full system control
-- **Founder**: Create dinners, manage bottles (max 7)
-- **Guest**: Join dinners and rate wines
+### 📊 **Estatísticas Completas**
+- Rankings finais com pontuações detalhadas
+- Estatísticas por temporada
+- Estatísticas gerais de todas as temporadas
+- Notas de prova individuais exibidas
+- Cálculo de pontos totais e médias
+- Dashboard de pagamentos e multas
 
-### 📊 **Statistics & Rankings**
+### 📸 **Galeria de Fotos**
+- Upload de fotos durante o jantar
+- Visualizador de imagens em ecrã completo
+- Lightbox interativo
+- Partilha de memórias com os participantes
 
-- Final leaderboard with detailed scores
-- Individual tasting notes displayed
-- Total points and average calculations
+### � **Design Mobile-First**
+- 100% otimizado para dispositivos móveis
+- Layout responsivo em todas as páginas
+- Touch-friendly interface
+- Performance otimizada para smartphones
 
-### 📸 **Photo Gallery**
+### 🌐 **Totalmente em Português (PT-PT)**
+- Interface 100% em Português de Portugal
+- Mensagens, labels e notificações traduzidas
+- Formato de datas em PT-PT
+- Linguagem adaptada ao contexto português
 
-- Upload photos during the dinner
-- Share memories with participants
+## 🚀 Início Rápido
 
-## 🚀 Quick Start
-
-### Prerequisites
+### Pré-requisitos
 
 - Node.js 20+
-- npm or pnpm
-- Supabase account
+- npm ou pnpm
+- Conta Supabase
 
-### Installation
+### Instalação
 
-1. **Clone the repository**
+1. **Clona o repositório**
 
 ```bash
 git clone https://github.com/zecarreira/wine-app.git
 cd wine-app
 ```
 
-2. **Install dependencies**
+2. **Instala as dependências**
 
 ```bash
 npm install
 ```
 
-3. **Set up environment variables**
+3. **Configura as variáveis de ambiente**
 
 ```bash
 cp .env.example .env.local
 ```
 
-Edit `.env.local` and add your credentials:
+Edita `.env.local` e adiciona as tuas credenciais:
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
 JWT_SECRET=your_jwt_secret_min_32_characters
 ```
 
-Generate a secure JWT secret:
+Gera um JWT secret seguro:
 
 ```bash
 openssl rand -base64 32
 ```
 
-4. **Set up Supabase database**
+4. **Configura a base de dados Supabase**
 
-Run these SQL commands in your Supabase SQL editor:
+Executa os scripts SQL na pasta `migrations/` pela ordem:
+- `create_payments_system.sql` - Sistema de pagamentos e multas
+- `create_profile_photos_bucket.sql` - Bucket para fotos de perfil
+- `add_organizer_to_dinners.sql` - Sistema de organizadores
+- `add_profile_photo_url.sql` - URLs de fotos de perfil
+- `add_fines_update_delete_policies.sql` - Políticas de multas
 
-```sql
--- Create users table
-CREATE TABLE users (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name TEXT NOT NULL,
-  email TEXT UNIQUE NOT NULL,
-  password_hash TEXT,
-  role TEXT NOT NULL DEFAULT 'guest' CHECK (role IN ('admin', 'founder', 'guest')),
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+Ou executa todos de uma vez no SQL Editor do Supabase.
 
--- Create dinners table
-CREATE TABLE dinners (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name TEXT NOT NULL,
-  event_date DATE NOT NULL,
-  location TEXT,
-  is_blind BOOLEAN DEFAULT TRUE,
-  status TEXT NOT NULL DEFAULT 'setup' CHECK (status IN ('setup', 'active', 'ended', 'revealing', 'completed')),
-  host_id UUID REFERENCES users(id),
-  created_by UUID REFERENCES users(id) NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+5. **Configura o Storage no Supabase**
 
--- Create bottles table
-CREATE TABLE bottles (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  dinner_id UUID REFERENCES dinners(id) ON DELETE CASCADE NOT NULL,
-  name TEXT NOT NULL,
-  producer TEXT,
-  vintage INTEGER,
-  wine_type TEXT CHECK (wine_type IN ('red', 'white', 'rosé', 'sparkling', 'dessert', 'other')),
-  description TEXT,
-  position INTEGER NOT NULL,
-  brought_by UUID REFERENCES users(id),
-  revealed BOOLEAN DEFAULT FALSE,
-  reveal_order INTEGER,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+Cria os seguintes buckets públicos:
+- `bottle-photos` - Para fotos de garrafas
+- `dinner-photos` - Para fotos de jantares
+- `profile-photos` - Para fotos de perfil
 
--- Create ratings table
-CREATE TABLE ratings (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  bottle_id UUID REFERENCES bottles(id) ON DELETE CASCADE NOT NULL,
-  user_id UUID REFERENCES users(id) NOT NULL,
-  score DECIMAL(3,1) NOT NULL CHECK (score >= 1 AND score <= 10),
-  tasting_notes TEXT,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  UNIQUE(bottle_id, user_id)
-);
-
--- Create photos table (optional)
-CREATE TABLE photos (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  dinner_id UUID REFERENCES dinners(id) ON DELETE CASCADE NOT NULL,
-  url TEXT NOT NULL,
-  uploaded_by UUID REFERENCES users(id),
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- Create indexes for better performance
-CREATE INDEX idx_dinners_created_by ON dinners(created_by);
-CREATE INDEX idx_bottles_dinner_id ON bottles(dinner_id);
-CREATE INDEX idx_ratings_bottle_id ON ratings(bottle_id);
-CREATE INDEX idx_ratings_user_id ON ratings(user_id);
-CREATE INDEX idx_photos_dinner_id ON photos(dinner_id);
-```
-
-5. **Run the development server**
+6. **Executa o servidor de desenvolvimento**
 
 ```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Abre [http://localhost:3000](http://localhost:3000) no teu browser.
 
-## 🏗️ Project Structure
+## 🏗️ Estrutura do Projeto
 
 ```
 wine-rating-app/
-├── app/                          # Next.js App Router
-│   ├── api/                      # API routes
-│   │   ├── auth/                 # Authentication endpoints
-│   │   ├── dinners/              # Dinner management
-│   │   ├── bottles/              # Bottle & ratings
-│   │   └── admin/                # Admin endpoints
-│   ├── dinners/                  # Dinner pages
-│   ├── bottles/                  # Bottle rating pages
-│   ├── login/                    # Auth pages
-│   └── admin/                    # Admin panel
-├── components/                   # Reusable UI components
-│   ├── Header.tsx
-│   ├── Button.tsx
-│   ├── Card.tsx
-│   ├── Input.tsx
-│   ├── LoadingSpinner.tsx
-│   ├── Skeletons.tsx
-│   ├── ToastProvider.tsx
-│   └── ReactQueryProvider.tsx
-├── lib/                          # Utilities & config
-│   ├── auth.ts                   # JWT authentication
-│   ├── auth-client.ts            # Client-side auth utils
-│   ├── db.ts                     # Supabase client
-│   ├── env.ts                    # Environment validation
-│   ├── middleware.ts             # API middleware
-│   ├── validations.ts            # Zod schemas
+├── app/                          # App Router do Next.js
+│   ├── page.tsx                  # Página inicial
+│   ├── layout.tsx                # Layout principal
+│   ├── globals.css               # Estilos globais
+│   │
+│   ├── api/                      # API Routes
+│   │   ├── auth/
+│   │   │   ├── login/            # Autenticação de utilizador
+│   │   │   └── register/         # Registo de utilizador
+│   │   ├── users/
+│   │   │   └── [id]/             # Operações sobre utilizadores
+│   │   ├── admin/
+│   │   │   └── users/            # Gestão de utilizadores (admin)
+│   │   ├── dinners/              # CRUD de jantares
+│   │   │   └── [id]/
+│   │   │       ├── start/        # Iniciar jantar
+│   │   │       ├── end/          # Terminar jantar
+│   │   │       ├── reveal-status/# Estado da revelação
+│   │   │       ├── reveal-next/  # Revelar próxima garrafa
+│   │   │       ├── bottles/      # Garrafas do jantar
+│   │   │       ├── ratings/      # Classificações do jantar
+│   │   │       ├── photos/       # Fotos do jantar
+│   │   │       └── payments/     # Pagamentos do jantar
+│   │   ├── bottles/              # CRUD de garrafas
+│   │   │   └── [id]/
+│   │   │       └── ratings/      # Classificações da garrafa
+│   │   ├── seasons/              # Sistema de temporadas
+│   │   │   ├── active/           # Temporada ativa
+│   │   │   └── [id]/
+│   │   │       ├── close/        # Fechar temporada
+│   │   │       └── stats/        # Estatísticas da temporada
+│   │   ├── stats/
+│   │   │   └── all-seasons/      # Estatísticas globais
+│   │   └── upload/               # Upload de imagens
+│   │
+│   ├── login/                    # Página de login
+│   ├── register/                 # Página de registo
+│   ├── profile/                  # Perfil do utilizador
+│   ├── admin/                    # Painel administrativo
+│   │
+│   ├── dinners/                  # Gestão de jantares
+│   │   ├── page.tsx              # Lista de jantares
+│   │   ├── history/              # Histórico de jantares
+│   │   └── [id]/
+│   │       ├── page.tsx          # Detalhes do jantar
+│   │       ├── add-bottle/       # Adicionar garrafa
+│   │       ├── photos/           # Galeria de fotos
+│   │       ├── rankings/         # Rankings das garrafas
+│   │       └── reveal/           # Cerimónia de revelação
+│   │
+│   ├── bottles/                  # Gestão de garrafas
+│   │   └── [id]/
+│   │       ├── page.tsx          # Detalhes da garrafa
+│   │       └── rate/             # Classificar garrafa
+│   │
+│   ├── seasons/                  # Sistema de temporadas
+│   │   └── [id]/
+│   │       └── payments/         # Gestão de pagamentos
+│   │
+│   ├── create-dinner/            # Criar novo jantar
+│   ├── stats/                    # Estatísticas globais
+│   └── mandamentos/              # Mandamentos do Vinho
+│
+├── components/                   # Componentes React reutilizáveis
+│   ├── Header.tsx                # Cabeçalho com navegação
+│   ├── Button.tsx                # Componente de botão
+│   ├── Input.tsx                 # Componente de input
+│   ├── Card.tsx                  # Componente de card
+│   ├── Badge.tsx                 # Componente de badge
+│   ├── LoadingSpinner.tsx        # Spinner de loading
+│   ├── Skeletons.tsx             # Skeleton loaders
+│   ├── Textarea.tsx              # Componente de textarea
+│   ├── PaymentsSection.tsx       # Secção de pagamentos
+│   ├── ToastProvider.tsx         # Provider de notificações
+│   └── ReactQueryProvider.tsx    # Provider do React Query
+│
+├── lib/                          # Utilitários e configuração
+│   ├── db.ts                     # Cliente Supabase
+│   ├── auth.ts                   # Lógica de autenticação JWT
+│   ├── auth-client.ts            # Auth client-side
+│   ├── middleware.ts             # Middleware de autenticação
+│   ├── validations.ts            # Schemas de validação Zod
+│   ├── env.ts                    # Variáveis de ambiente
 │   └── hooks/
-│       └── useApi.ts             # React Query hooks
-└── public/                       # Static assets
+│       └── useApi.ts             # Custom hook para chamadas API
+│
+├── types/                        # Definições TypeScript
+│   └── season.ts                 # Tipos do sistema de temporadas
+│
+├── migrations/                   # Scripts SQL do Supabase
+│   ├── create_payments_system.sql
+│   ├── create_profile_photos_bucket.sql
+│   ├── add_organizer_to_dinners.sql
+│   ├── add_profile_photo_url.sql
+│   ├── add_fines_update_delete_policies.sql
+│   └── MIGRATION_GUIDE.md
+│
+└── public/                       # Assets estáticos
 ```
 
-## 🎯 Usage Guide
+## 📖 Como Usar
 
-### For Founders
+### 1. Autenticação
 
-1. **Create a Dinner**
+**Registo**
+- Visita `/register` para criar uma nova conta
+- Apenas admins podem promover utilizadores a founder ou admin
+- Por defeito, novos utilizadores são guests
 
-   - Go to `/dinners`
-   - Click "Create New Dinner"
-   - Fill in details and enable blind tasting
+**Login**
+- Visita `/login`
+- Usa email e password
+- O token JWT é válido por 7 dias
 
-2. **Add Bottles**
+### 2. Sistema de Temporadas
 
-   - Enter dinner detail page
-   - Click "Add Wine Bottle"
-   - Add wine information
+As temporadas organizam os jantares em períodos (ex: "Temporada 2024"):
 
-3. **Start Tasting**
+**Criar Temporada** (Admin/Founder)
+- Acede a `/seasons`
+- Define nome, datas de início e fim
+- Define valor da quota
+- Adiciona membros à temporada
 
-   - When ready, click "Start Blind Tasting"
-   - Wines will be shuffled and hidden
-   - Share dinner link with guests
+**Gerir Temporada Ativa**
+- Apenas uma temporada pode estar ativa de cada vez
+- Jantares criados são automaticamente associados à temporada ativa
+- Controla o máximo de jantares que cada membro pode organizar
 
-4. **End & Reveal**
-   - When tasting is complete, click "End Dinner"
-   - Start the reveal ceremony
-   - Reveal bottles one by one
+### 3. Gerir Jantares
 
-### For Guests
+**Criar Jantar** (Founders)
+- Acede a `/create-dinner`
+- Define nome, data, localização
+- Escolhe modo de prova cego ou aberto
+- Designa um anfitrião (host)
 
-1. **Join a Dinner**
+**Adicionar Garrafas**
+- Acede ao jantar e clica "Adicionar Garrafa"
+- Preenche informações: nome, produtor, ano, tipo
+- Adiciona foto (opcional)
+- Define quem trouxe a garrafa
 
-   - Navigate to `/dinners`
-   - Select a dinner from the list
+**Iniciar Jantar**
+- Clica "Iniciar Jantar" quando estiver pronto
+- No modo cego, as informações das garrafas ficam ocultas
+- Os participantes podem começar a classificar
 
-2. **Rate Wines**
+### 4. Classificar Vinhos
 
-   - During active tasting, click "Rate This Wine"
-   - Use slider to set score (1-10)
-   - Add tasting notes (optional)
-   - Submit rating
+**Durante o Jantar**
+- Acede a `/bottles/[id]/rate`
+- Atribui uma nota de 1.0 a 10.0
+- Adiciona notas de prova (opcional)
+- Podes editar a tua classificação a qualquer momento
 
-3. **View Results**
-   - After reveal, check final rankings
-   - See everyone's ratings and notes
+**Modo Prova Cega**
+- As informações das garrafas são ocultadas
+- Apenas vês o número da posição
+- Classifica baseado apenas na prova
 
-## 🛠️ Tech Stack
+### 5. Cerimónia de Revelação
+
+**Revelar Garrafas** (Organizadores)
+- Acede a `/dinners/[id]/reveal`
+- Clica "Revelar Próxima" para mostrar cada garrafa
+- Vê as classificações em tempo real
+- Celebra os vencedores!
+
+**Ver Rankings**
+- Acede a `/dinners/[id]/rankings`
+- Vê classificações médias
+- Vê distribuição de notas
+- Identifica os vinhos mais bem classificados
+
+### 6. Fotos do Jantar
+
+**Adicionar Fotos**
+- Acede a `/dinners/[id]/photos`
+- Faz upload de fotos do jantar
+- Partilha memórias com o grupo
+
+### 7. Sistema de Pagamentos e Multas
+
+**Gerir Pagamentos** (Admin)
+- Acede a `/seasons/[id]/payments`
+- Marca quotas como pagas
+- Adiciona multas a membros
+- Vê estatísticas de pagamentos da temporada
+
+**Tipos de Multas**
+- Valor fixo ou percentagem da quota
+- Descrição obrigatória
+- Sistema de aprovação por admins
+
+### 8. Mandamentos do Vinho
+
+**Consultar Regras**
+- Acede a `/mandamentos` a partir da página inicial
+- 13 mandamentos fundamentais
+- 4 penalizações por violações
+- Mantém o espírito do grupo!
+
+### 9. Estatísticas
+
+**Painel de Stats**
+- Acede a `/stats`
+- Vê estatísticas de todas as temporadas
+- Consulta médias pessoais
+- Compara com outros membros
+- Identifica vinhos top-rated
+
+### 10. Perfil
+
+**Gerir Perfil**
+- Acede a `/profile`
+- Atualiza foto de perfil
+- Vê histórico de classificações
+- Acompanha estatísticas pessoais
+
+### 11. Painel Admin
+
+**Funcionalidades Admin**
+- Acede a `/admin` (apenas admins)
+- Gere utilizadores
+- Define roles (guest, founder, admin)
+- Monitora atividade da plataforma
+
+## 🛠️ Stack Tecnológica
 
 - **Framework**: Next.js 16 (App Router)
-- **Frontend**: React 19, TypeScript
+- **Frontend**: React 19, TypeScript 5
 - **Styling**: Tailwind CSS 4
-- **Database**: Supabase (PostgreSQL)
-- **Authentication**: JWT with bcrypt
+- **Base de Dados**: Supabase (PostgreSQL)
+- **Autenticação**: JWT com bcrypt
 - **Data Fetching**: TanStack React Query
-- **Validation**: Zod
-- **Forms**: React Hook Form
+- **Validação**: Zod
+- **Formulários**: React Hook Form
+- **Deploy**: Vercel
 
-## 📦 Key Dependencies
+## 📦 Dependências Principais
 
 ```json
 {
@@ -276,93 +409,193 @@ wine-rating-app/
 }
 ```
 
-## 🔒 Security Features
+## 🔒 Características de Segurança
 
-- ✅ JWT-based authentication with 7-day expiration
-- ✅ Bcrypt password hashing
-- ✅ Role-based access control (RBAC)
-- ✅ Environment variable validation
-- ✅ Protected API routes
-- ✅ SQL injection prevention via Supabase
+- ✅ Autenticação baseada em JWT com expiração de 7 dias
+- ✅ Hashing de passwords com Bcrypt
+- ✅ Controlo de acesso baseado em roles (RBAC)
+- ✅ Validação de variáveis de ambiente
+- ✅ Rotas API protegidas
+- ✅ Prevenção de SQL injection via Supabase
+- ✅ CORS configurado para acesso em rede local
 
-## 🎨 UI/UX Highlights
+## 🎨 Destaques UI/UX
 
-- 🌗 Glassmorphism design with backdrop blur
-- 🎭 Smooth animations and transitions
-- 📱 Fully responsive mobile-first design
-- 🎨 Purple/pink gradient theme
-- ⚡ Loading skeletons for better UX
-- 🔔 Toast notifications system
+- 🌗 Design glassmorphism com backdrop blur
+- 🎭 Animações e transições suaves
+- 📱 Design mobile-first totalmente responsivo
+- 🎨 Tema gradiente roxo/rosa
+- ⚡ Loading skeletons para melhor UX
+- 🔔 Sistema de notificações toast
+- 🌐 Interface 100% em Português (PT-PT)
+- 🎯 Otimizado para dispositivos móveis
 
-## 🧪 Development
+## 🧪 Desenvolvimento
 
-### Available Scripts
+### Scripts Disponíveis
 
 ```bash
-npm run dev      # Start development server
-npm run build    # Build for production
-npm run start    # Start production server
-npm run lint     # Run ESLint
+npm run dev      # Iniciar servidor de desenvolvimento
+npm run build    # Build para produção
+npm run start    # Iniciar servidor de produção
+npm run lint     # Executar ESLint
 ```
 
-### Environment Variables
+### Variáveis de Ambiente
 
-| Variable                        | Description                          | Required |
-| ------------------------------- | ------------------------------------ | -------- |
-| `NEXT_PUBLIC_SUPABASE_URL`      | Your Supabase project URL            | Yes      |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anonymous key               | Yes      |
-| `JWT_SECRET`                    | Secret for JWT tokens (min 32 chars) | Yes      |
+| Variável                          | Descrição                                | Obrigatória |
+| --------------------------------- | ---------------------------------------- | ----------- |
+| `NEXT_PUBLIC_SUPABASE_URL`        | URL do teu projeto Supabase              | Sim         |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY`   | Chave anónima do Supabase                | Sim         |
+| `SUPABASE_SERVICE_ROLE_KEY`       | Chave de service role do Supabase        | Sim         |
+| `JWT_SECRET`                      | Secret para tokens JWT (mín. 32 chars)   | Sim         |
 
-## 📝 API Endpoints
+## 📝 Principais API Endpoints
 
-### Authentication
+### 🔐 Autenticação
+- `POST /api/auth/login` - Login de utilizador
+- `POST /api/auth/register` - Registo de utilizador
 
-- `POST /api/auth/login` - User login
-- `POST /api/auth/register` - User registration
+### 🍷 Jantares
+- `GET /api/dinners` - Listar todos os jantares
+- `POST /api/dinners` - Criar novo jantar (apenas founders)
+- `POST /api/dinners/:id/start` - Iniciar prova cega
+- `POST /api/dinners/:id/end` - Terminar jantar
+- `GET /api/dinners/:id/bottles` - Obter garrafas do jantar
+- `GET /api/dinners/:id/ratings` - Obter rankings finais
+- `POST /api/dinners/:id/photos` - Upload de foto do jantar
+- `GET /api/dinners/:id/photos` - Listar fotos do jantar
 
-### Dinners
+### 🍾 Garrafas e Classificações
+- `GET /api/bottles/:id` - Detalhes da garrafa
+- `GET /api/bottles/:id/ratings` - Classificações da garrafa
+- `POST /api/bottles/:id/ratings` - Submeter/atualizar classificação
 
-- `GET /api/dinners` - List all dinners
-- `POST /api/dinners` - Create new dinner (founders only)
-- `POST /api/dinners/:id/start` - Start blind tasting
-- `POST /api/dinners/:id/end` - End dinner
-- `GET /api/dinners/:id/bottles` - Get dinner bottles
-- `GET /api/dinners/:id/ratings` - Get final rankings
+### 🎭 Cerimónia de Revelação
+- `GET /api/dinners/:id/reveal-status` - Estado da revelação
+- `POST /api/dinners/:id/reveal-next` - Revelar próxima garrafa
 
-### Bottles & Ratings
+### 🏆 Temporadas
+- `GET /api/seasons` - Listar temporadas
+- `POST /api/seasons` - Criar temporada (apenas founders)
+- `GET /api/seasons/active` - Obter temporada ativa
+- `GET /api/seasons/:id/stats` - Estatísticas da temporada
+- `POST /api/seasons/:id/close` - Fechar temporada (apenas admin)
 
-- `GET /api/bottles/:id` - Get bottle details
-- `GET /api/bottles/:id/ratings` - Get bottle ratings
-- `POST /api/bottles/:id/ratings` - Submit/update rating
+### 💰 Pagamentos e Multas
+- `GET /api/dinners/:id/payments` - Listar pagamentos do jantar
+- `PATCH /api/dinners/:id/payments/:paymentId` - Atualizar pagamento (apenas admin)
+- `POST /api/dinners/:id/payments/:paymentId/fines` - Adicionar multa (apenas admin)
+- `DELETE /api/dinners/:id/payments/:paymentId/fines/:fineId` - Remover multa (apenas admin)
 
-### Reveal
+### 📊 Estatísticas
+- `GET /api/stats/all-seasons` - Estatísticas globais de todas as temporadas
 
-- `GET /api/dinners/:id/reveal-status` - Check reveal status
-- `POST /api/dinners/:id/reveal-next` - Reveal next bottle
+### 👥 Administração
+- `GET /api/admin/users` - Listar todos os utilizadores (apenas admin)
+- `PATCH /api/admin/users/:id` - Atualizar role do utilizador (apenas admin)
 
-### Admin
-
-- `GET /api/admin/users` - List all users (admin only)
-- `PATCH /api/admin/users/:id` - Update user role (admin only)
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## 📄 License
-
-This project is licensed under the MIT License.
-
-## 👨‍💻 Author
-
-**José Carreira** - [@zecarreira](https://github.com/zecarreira)
-
-## 🙏 Acknowledgments
-
-- Icons: Emoji-based design system
-- UI Inspiration: Modern glassmorphism trends
-- Special thanks to all wine enthusiasts who tested this app
+### 📸 Upload
+- `POST /api/upload` - Upload de imagens (garrafas, jantares, perfis)
 
 ---
 
-Made with ❤️ and 🍷 by José Carreira
+## 🚀 Deploy na Vercel
+
+### Pré-requisitos
+- Conta na [Vercel](https://vercel.com)
+- Projeto Supabase configurado
+- Repositório Git (GitHub, GitLab ou Bitbucket)
+
+### Passos para Deploy
+
+1. **Prepara o Repositório**
+   ```bash
+   git add .
+   git commit -m "Preparar para deploy"
+   git push origin main
+   ```
+
+2. **Importa o Projeto na Vercel**
+   - Acede a [vercel.com](https://vercel.com) e faz login
+   - Clica em "Add New Project"
+   - Seleciona o teu repositório Git
+   - Clica em "Import"
+
+3. **Configura as Variáveis de Ambiente**
+   
+   Na secção "Environment Variables", adiciona:
+   
+   ```env
+   NEXT_PUBLIC_SUPABASE_URL=https://seuprojetoid.supabase.co
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+   SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+   JWT_SECRET=seu_secret_com_pelo_menos_32_caracteres
+   ```
+
+4. **Deploy!**
+   - Clica em "Deploy"
+   - Aguarda alguns minutos enquanto a Vercel faz o build
+   - Recebe o URL do teu site: `https://wine-app.vercel.app`
+
+### Configuração Pós-Deploy
+
+1. **Atualiza os CORS no Supabase**
+   - Acede ao Dashboard do Supabase
+   - Settings → API → CORS
+   - Adiciona o domínio Vercel: `https://wine-app.vercel.app`
+
+2. **Testa o Site**
+   - Acede ao URL do Vercel
+   - Faz login/registo
+   - Verifica que tudo funciona
+
+3. **Domínio Personalizado (Opcional)**
+   - Na Vercel, vai a Settings → Domains
+   - Adiciona o teu domínio personalizado
+   - Segue as instruções para configurar DNS
+
+### Deploy Automático
+
+A Vercel faz deploy automático quando fazes push para o branch principal:
+
+```bash
+git add .
+git commit -m "Nova funcionalidade"
+git push origin main
+```
+
+O site é automaticamente atualizado em produção! 🎉
+
+### Variáveis de Ambiente para Produção
+
+⚠️ **Importante**: Certifica-te que todas as 4 variáveis estão configuradas:
+
+- ✅ `NEXT_PUBLIC_SUPABASE_URL`
+- ✅ `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- ✅ `SUPABASE_SERVICE_ROLE_KEY`
+- ✅ `JWT_SECRET`
+
+---
+
+## 🤝 Contribuir
+
+Contribuições são bem-vindas! Sente-te à vontade para submeter um Pull Request.
+
+## 📄 Licença
+
+Este projeto está licenciado sob a Licença MIT.
+
+## 👨‍💻 Autor
+
+**José Carreira** - [@zecarreira](https://github.com/zecarreira)
+
+## 🙏 Agradecimentos
+
+- Ícones: Sistema de design baseado em Emojis
+- Inspiração UI: Tendências modernas de glassmorphism
+- Agradecimento especial a todos os entusiastas de vinho que testaram esta aplicação
+
+---
+
+Feito com ❤️ e 🍷 por José Carreira
