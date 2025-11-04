@@ -11,23 +11,27 @@ Uma aplicação sofisticada para jantares de prova de vinhos às cegas, constru�
 ## ✨ Funcionalidades Principais
 
 ### 🎭 **Modo Prova Cega**
+
 - Vinhos embaralhados e etiquetados como A, B, C... durante a prova
 - Nomes e detalhes escondidos até à cerimónia de revelação
 - Embaralhamento determinístico garante a mesma ordem para todos
 
 ### ⭐ **Sistema de Classificação**
+
 - Classifica vinhos de 1 a 10 com precisão de meio ponto
 - Adiciona notas de prova detalhadas para cada vinho
 - Edita as tuas classificações antes do jantar terminar
 - Sistema de pontuação customizado com labels divertidos
 
 ### 🎪 **Cerimónia Interativa de Revelação**
+
 - Revelação progressiva garrafa a garrafa
 - Animações dramáticas e celebrações com emojis
 - Mostra todas as classificações e pontuações médias
 - Coroa o vencedor no final
 
 ### 👥 **Sistema de Temporadas**
+
 - Organiza jantares em temporadas de 7 eventos
 - Cada fundador organiza 1 jantar por temporada
 - Sistema de rotação automática
@@ -35,6 +39,7 @@ Uma aplicação sofisticada para jantares de prova de vinhos às cegas, constru�
 - Histórico completo de todas as temporadas
 
 ### 💰 **Sistema de Pagamentos e Multas**
+
 - Gestão de "pipas" (moeda do grupo)
 - Taxa de participação: 10 pipas por jantar
 - Sistema de multas por infrações às regras
@@ -42,17 +47,20 @@ Uma aplicação sofisticada para jantares de prova de vinhos às cegas, constru�
 - Dashboard de pagamentos por temporada
 
 ### 📜 **Mandamentos do Vinho**
+
 - 13 fundamentos sagrados do grupo
 - 4 tipos de penalizações claramente definidas
 - Página dedicada com todas as regras
 - Design otimizado para consulta rápida
 
 ### 👑 **Controlo de Acesso por Funções**
+
 - **Admin**: Controlo total do sistema
 - **Founder**: Cria jantares, gere garrafas (máximo 7 fundadores)
 - **Guest**: Participa em jantares e classifica vinhos
 
 ### 📊 **Estatísticas Completas**
+
 - Rankings finais com pontuações detalhadas
 - Estatísticas por temporada
 - Estatísticas gerais de todas as temporadas
@@ -61,18 +69,21 @@ Uma aplicação sofisticada para jantares de prova de vinhos às cegas, constru�
 - Dashboard de pagamentos e multas
 
 ### 📸 **Galeria de Fotos**
+
 - Upload de fotos durante o jantar
 - Visualizador de imagens em ecrã completo
 - Lightbox interativo
 - Partilha de memórias com os participantes
 
 ### � **Design Mobile-First**
+
 - 100% otimizado para dispositivos móveis
 - Layout responsivo em todas as páginas
 - Touch-friendly interface
 - Performance otimizada para smartphones
 
 ### 🌐 **Totalmente em Português (PT-PT)**
+
 - Interface 100% em Português de Portugal
 - Mensagens, labels e notificações traduzidas
 - Formato de datas em PT-PT
@@ -125,6 +136,7 @@ openssl rand -base64 32
 4. **Configura a base de dados Supabase**
 
 Executa os scripts SQL na pasta `migrations/` pela ordem:
+
 - `create_payments_system.sql` - Sistema de pagamentos e multas
 - `create_profile_photos_bucket.sql` - Bucket para fotos de perfil
 - `add_organizer_to_dinners.sql` - Sistema de organizadores
@@ -136,6 +148,7 @@ Ou executa todos de uma vez no SQL Editor do Supabase.
 5. **Configura o Storage no Supabase**
 
 Cria os seguintes buckets públicos:
+
 - `bottle-photos` - Para fotos de garrafas
 - `dinner-photos` - Para fotos de jantares
 - `profile-photos` - Para fotos de perfil
@@ -257,11 +270,13 @@ wine-rating-app/
 ### 1. Autenticação
 
 **Registo**
+
 - Visita `/register` para criar uma nova conta
 - Apenas admins podem promover utilizadores a founder ou admin
 - Por defeito, novos utilizadores são guests
 
 **Login**
+
 - Visita `/login`
 - Usa email e password
 - O token JWT é válido por 7 dias
@@ -271,12 +286,14 @@ wine-rating-app/
 As temporadas organizam os jantares em períodos (ex: "Temporada 2024"):
 
 **Criar Temporada** (Admin/Founder)
+
 - Acede a `/seasons`
 - Define nome, datas de início e fim
 - Define valor da quota
 - Adiciona membros à temporada
 
 **Gerir Temporada Ativa**
+
 - Apenas uma temporada pode estar ativa de cada vez
 - Jantares criados são automaticamente associados à temporada ativa
 - Controla o máximo de jantares que cada membro pode organizar
@@ -284,18 +301,21 @@ As temporadas organizam os jantares em períodos (ex: "Temporada 2024"):
 ### 3. Gerir Jantares
 
 **Criar Jantar** (Founders)
+
 - Acede a `/create-dinner`
 - Define nome, data, localização
 - Escolhe modo de prova cego ou aberto
 - Designa um anfitrião (host)
 
 **Adicionar Garrafas**
+
 - Acede ao jantar e clica "Adicionar Garrafa"
 - Preenche informações: nome, produtor, ano, tipo
 - Adiciona foto (opcional)
 - Define quem trouxe a garrafa
 
 **Iniciar Jantar**
+
 - Clica "Iniciar Jantar" quando estiver pronto
 - No modo cego, as informações das garrafas ficam ocultas
 - Os participantes podem começar a classificar
@@ -303,12 +323,14 @@ As temporadas organizam os jantares em períodos (ex: "Temporada 2024"):
 ### 4. Classificar Vinhos
 
 **Durante o Jantar**
+
 - Acede a `/bottles/[id]/rate`
 - Atribui uma nota de 1.0 a 10.0
 - Adiciona notas de prova (opcional)
 - Podes editar a tua classificação a qualquer momento
 
 **Modo Prova Cega**
+
 - As informações das garrafas são ocultadas
 - Apenas vês o número da posição
 - Classifica baseado apenas na prova
@@ -316,12 +338,14 @@ As temporadas organizam os jantares em períodos (ex: "Temporada 2024"):
 ### 5. Cerimónia de Revelação
 
 **Revelar Garrafas** (Organizadores)
+
 - Acede a `/dinners/[id]/reveal`
 - Clica "Revelar Próxima" para mostrar cada garrafa
 - Vê as classificações em tempo real
 - Celebra os vencedores!
 
 **Ver Rankings**
+
 - Acede a `/dinners/[id]/rankings`
 - Vê classificações médias
 - Vê distribuição de notas
@@ -330,6 +354,7 @@ As temporadas organizam os jantares em períodos (ex: "Temporada 2024"):
 ### 6. Fotos do Jantar
 
 **Adicionar Fotos**
+
 - Acede a `/dinners/[id]/photos`
 - Faz upload de fotos do jantar
 - Partilha memórias com o grupo
@@ -337,12 +362,14 @@ As temporadas organizam os jantares em períodos (ex: "Temporada 2024"):
 ### 7. Sistema de Pagamentos e Multas
 
 **Gerir Pagamentos** (Admin)
+
 - Acede a `/seasons/[id]/payments`
 - Marca quotas como pagas
 - Adiciona multas a membros
 - Vê estatísticas de pagamentos da temporada
 
 **Tipos de Multas**
+
 - Valor fixo ou percentagem da quota
 - Descrição obrigatória
 - Sistema de aprovação por admins
@@ -350,6 +377,7 @@ As temporadas organizam os jantares em períodos (ex: "Temporada 2024"):
 ### 8. Mandamentos do Vinho
 
 **Consultar Regras**
+
 - Acede a `/mandamentos` a partir da página inicial
 - 13 mandamentos fundamentais
 - 4 penalizações por violações
@@ -358,6 +386,7 @@ As temporadas organizam os jantares em períodos (ex: "Temporada 2024"):
 ### 9. Estatísticas
 
 **Painel de Stats**
+
 - Acede a `/stats`
 - Vê estatísticas de todas as temporadas
 - Consulta médias pessoais
@@ -367,6 +396,7 @@ As temporadas organizam os jantares em períodos (ex: "Temporada 2024"):
 ### 10. Perfil
 
 **Gerir Perfil**
+
 - Acede a `/profile`
 - Atualiza foto de perfil
 - Vê histórico de classificações
@@ -375,6 +405,7 @@ As temporadas organizam os jantares em períodos (ex: "Temporada 2024"):
 ### 11. Painel Admin
 
 **Funcionalidades Admin**
+
 - Acede a `/admin` (apenas admins)
 - Gere utilizadores
 - Define roles (guest, founder, admin)
@@ -443,20 +474,22 @@ npm run lint     # Executar ESLint
 
 ### Variáveis de Ambiente
 
-| Variável                          | Descrição                                | Obrigatória |
-| --------------------------------- | ---------------------------------------- | ----------- |
-| `NEXT_PUBLIC_SUPABASE_URL`        | URL do teu projeto Supabase              | Sim         |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY`   | Chave anónima do Supabase                | Sim         |
-| `SUPABASE_SERVICE_ROLE_KEY`       | Chave de service role do Supabase        | Sim         |
-| `JWT_SECRET`                      | Secret para tokens JWT (mín. 32 chars)   | Sim         |
+| Variável                        | Descrição                              | Obrigatória |
+| ------------------------------- | -------------------------------------- | ----------- |
+| `NEXT_PUBLIC_SUPABASE_URL`      | URL do teu projeto Supabase            | Sim         |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Chave anónima do Supabase              | Sim         |
+| `SUPABASE_SERVICE_ROLE_KEY`     | Chave de service role do Supabase      | Sim         |
+| `JWT_SECRET`                    | Secret para tokens JWT (mín. 32 chars) | Sim         |
 
 ## 📝 Principais API Endpoints
 
 ### 🔐 Autenticação
+
 - `POST /api/auth/login` - Login de utilizador
 - `POST /api/auth/register` - Registo de utilizador
 
 ### 🍷 Jantares
+
 - `GET /api/dinners` - Listar todos os jantares
 - `POST /api/dinners` - Criar novo jantar (apenas founders)
 - `POST /api/dinners/:id/start` - Iniciar prova cega
@@ -467,15 +500,18 @@ npm run lint     # Executar ESLint
 - `GET /api/dinners/:id/photos` - Listar fotos do jantar
 
 ### 🍾 Garrafas e Classificações
+
 - `GET /api/bottles/:id` - Detalhes da garrafa
 - `GET /api/bottles/:id/ratings` - Classificações da garrafa
 - `POST /api/bottles/:id/ratings` - Submeter/atualizar classificação
 
 ### 🎭 Cerimónia de Revelação
+
 - `GET /api/dinners/:id/reveal-status` - Estado da revelação
 - `POST /api/dinners/:id/reveal-next` - Revelar próxima garrafa
 
 ### 🏆 Temporadas
+
 - `GET /api/seasons` - Listar temporadas
 - `POST /api/seasons` - Criar temporada (apenas founders)
 - `GET /api/seasons/active` - Obter temporada ativa
@@ -483,19 +519,23 @@ npm run lint     # Executar ESLint
 - `POST /api/seasons/:id/close` - Fechar temporada (apenas admin)
 
 ### 💰 Pagamentos e Multas
+
 - `GET /api/dinners/:id/payments` - Listar pagamentos do jantar
 - `PATCH /api/dinners/:id/payments/:paymentId` - Atualizar pagamento (apenas admin)
 - `POST /api/dinners/:id/payments/:paymentId/fines` - Adicionar multa (apenas admin)
 - `DELETE /api/dinners/:id/payments/:paymentId/fines/:fineId` - Remover multa (apenas admin)
 
 ### 📊 Estatísticas
+
 - `GET /api/stats/all-seasons` - Estatísticas globais de todas as temporadas
 
 ### 👥 Administração
+
 - `GET /api/admin/users` - Listar todos os utilizadores (apenas admin)
 - `PATCH /api/admin/users/:id` - Atualizar role do utilizador (apenas admin)
 
 ### 📸 Upload
+
 - `POST /api/upload` - Upload de imagens (garrafas, jantares, perfis)
 
 ---
@@ -503,6 +543,7 @@ npm run lint     # Executar ESLint
 ## 🚀 Deploy na Vercel
 
 ### Pré-requisitos
+
 - Conta na [Vercel](https://vercel.com)
 - Projeto Supabase configurado
 - Repositório Git (GitHub, GitLab ou Bitbucket)
@@ -510,6 +551,7 @@ npm run lint     # Executar ESLint
 ### Passos para Deploy
 
 1. **Prepara o Repositório**
+
    ```bash
    git add .
    git commit -m "Preparar para deploy"
@@ -517,15 +559,16 @@ npm run lint     # Executar ESLint
    ```
 
 2. **Importa o Projeto na Vercel**
+
    - Acede a [vercel.com](https://vercel.com) e faz login
    - Clica em "Add New Project"
    - Seleciona o teu repositório Git
    - Clica em "Import"
 
 3. **Configura as Variáveis de Ambiente**
-   
+
    Na secção "Environment Variables", adiciona:
-   
+
    ```env
    NEXT_PUBLIC_SUPABASE_URL=https://seuprojetoid.supabase.co
    NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
@@ -541,11 +584,13 @@ npm run lint     # Executar ESLint
 ### Configuração Pós-Deploy
 
 1. **Atualiza os CORS no Supabase**
+
    - Acede ao Dashboard do Supabase
    - Settings → API → CORS
    - Adiciona o domínio Vercel: `https://wine-app.vercel.app`
 
 2. **Testa o Site**
+
    - Acede ao URL do Vercel
    - Faz login/registo
    - Verifica que tudo funciona
