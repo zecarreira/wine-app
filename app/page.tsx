@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { getUser, checkAuthStatus } from "@/lib/auth-client";
+import { SpeedInsights } from "@vercel/speed-insights/next";
+import { Analytics } from "@vercel/analytics/next";
 
 export default function Home() {
   const [user, setUser] = useState<ReturnType<typeof getUser> | null>(null);
@@ -121,6 +123,8 @@ export default function Home() {
           </div>
         </div>
       </main>
+      <SpeedInsights />
+      <Analytics />
     </div>
   );
 }
