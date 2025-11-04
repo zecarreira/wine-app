@@ -49,6 +49,8 @@ interface Bottle {
   };
 }
 
+type BottleWithDetails = Bottle;
+
 export default function BottleDetailPage({
   params,
 }: {
