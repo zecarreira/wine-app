@@ -74,7 +74,10 @@ export default function SeasonPaymentStatsPage({
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
-        <div className="text-white text-xl">Loading statistics...</div>
+        <div className="text-center">
+          <div className="text-6xl mb-4 animate-spin">📊</div>
+          <div className="text-white text-xl">A carregar estatísticas...</div>
+        </div>
       </div>
     );
   }

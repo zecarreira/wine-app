@@ -46,10 +46,10 @@ export default function CreateDinnerPage() {
         if (data.success) {
           setAvailableFounders(data.founders);
         } else {
-          setError(data.error || "Failed to load founders");
+          setError(data.error || "Erro ao carregar fundadores");
         }
       } catch (err) {
-        setError("Failed to load founders");
+        setError("Erro ao carregar fundadores");
       } finally {
         setLoadingFounders(false);
       }
@@ -67,7 +67,7 @@ export default function CreateDinnerPage() {
       const token = localStorage.getItem("token");
 
       if (!token) {
-        alert("Please login first");
+        alert("Por favor faz login primeiro");
         router.push("/login");
         return;
       }
@@ -92,10 +92,10 @@ export default function CreateDinnerPage() {
       if (data.success) {
         router.push(`/dinners/${data.dinner.id}`);
       } else {
-        setError(data.error || "Failed to create dinner");
+        setError(data.error || "Erro ao criar jantar");
       }
     } catch (error) {
-      setError("Network error. Please try again.");
+      setError("Erro de conexão. Tenta novamente.");
     } finally {
       setLoading(false);
     }

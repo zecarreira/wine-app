@@ -75,7 +75,7 @@ export default function DinnerPhotosPage({
       const token = localStorage.getItem("token");
 
       if (!token) {
-        alert("Please login first");
+        alert("Por favor faz login primeiro");
         router.push("/login");
         return;
       }
@@ -124,7 +124,7 @@ export default function DinnerPhotosPage({
       await fetchDinnerAndPhotos();
       setSelectedFiles([]);
     } catch (error: any) {
-      alert("Error uploading photos: " + error.message);
+      alert("Erro ao fazer upload das fotos: " + error.message);
     } finally {
       setUploading(false);
     }
@@ -135,7 +135,7 @@ export default function DinnerPhotosPage({
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
         <div className="text-center">
           <div className="text-6xl mb-4 animate-spin">📸</div>
-          <div className="text-white text-xl">Loading photos...</div>
+          <div className="text-white text-xl">A carregar fotos...</div>
         </div>
       </div>
     );
@@ -162,28 +162,31 @@ export default function DinnerPhotosPage({
         {/* Title */}
         <div className="text-center mb-8">
           <div className="text-6xl mb-4">📸</div>
-          <h1 className="text-4xl font-bold text-white mb-2">Photo Gallery</h1>
+          <h1 className="text-4xl font-bold text-white mb-2">
+            Galeria de Fotos
+          </h1>
           {dinner && (
             <p className="text-purple-200">
-              {dinner.name} • {new Date(dinner.event_date).toLocaleDateString()}
+              {dinner.name} •{" "}
+              {new Date(dinner.event_date).toLocaleDateString("pt-PT")}
             </p>
           )}
         </div>
 
         {/* Upload Section */}
         <div className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-lg rounded-3xl p-6 mb-8 border border-white/20 shadow-2xl">
-          <h2 className="text-2xl font-bold text-white mb-4">Upload Photos</h2>
+          <h2 className="text-2xl font-bold text-white mb-4">Carregar Fotos</h2>
 
           <div className="space-y-4">
             <label className="block w-full bg-white/5 border-2 border-dashed border-white/20 rounded-2xl p-8 text-center cursor-pointer hover:border-purple-400 transition-colors">
               <div className="text-5xl mb-2">📷</div>
-              <div className="text-white/60">Click to select photos</div>
+              <div className="text-white/60">Clica para selecionar fotos</div>
               <div className="text-white/40 text-sm mt-1">
                 {selectedFiles.length > 0
-                  ? `${selectedFiles.length} file${
+                  ? `${selectedFiles.length} ficheiro${
                       selectedFiles.length !== 1 ? "s" : ""
-                    } selected`
-                  : "Multiple files supported"}
+                    } selecionado${selectedFiles.length !== 1 ? "s" : ""}`
+                  : "Podes selecionar várias fotos"}
               </div>
               <input
                 type="file"
@@ -201,8 +204,8 @@ export default function DinnerPhotosPage({
                 className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-4 rounded-2xl font-bold text-lg shadow-lg hover:shadow-green-500/50 transform hover:scale-[1.02] transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {uploading
-                  ? "📤 Uploading..."
-                  : `📤 Upload ${selectedFiles.length} Photo${
+                  ? "📤 A carregar..."
+                  : `📤 Carregar ${selectedFiles.length} Foto${
                       selectedFiles.length !== 1 ? "s" : ""
                     }`}
               </button>
@@ -214,13 +217,15 @@ export default function DinnerPhotosPage({
         {photos.length === 0 ? (
           <div className="bg-white/5 backdrop-blur-sm rounded-3xl p-12 text-center border border-white/10">
             <div className="text-6xl mb-4">🖼️</div>
-            <p className="text-white/60 text-lg">No photos yet</p>
-            <p className="text-white/40 text-sm mt-2">Upload some memories!</p>
+            <p className="text-white/60 text-lg">Ainda não há fotos</p>
+            <p className="text-white/40 text-sm mt-2">
+              Carrega algumas memórias!
+            </p>
           </div>
         ) : (
           <div>
             <h2 className="text-2xl font-bold text-white mb-4">
-              Gallery ({photos.length})
+              Galeria ({photos.length})
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {photos.map((photo, index) => (
@@ -231,7 +236,7 @@ export default function DinnerPhotosPage({
                 >
                   <Image
                     src={photo.photo_url}
-                    alt="Dinner photo"
+                    alt="Foto do jantar"
                     fill
                     className="object-cover group-hover:scale-110 transition-transform duration-300"
                   />
@@ -277,7 +282,7 @@ export default function DinnerPhotosPage({
             <div className="relative max-w-5xl max-h-[90vh] w-full h-full">
               <Image
                 src={photos[lightboxIndex].photo_url}
-                alt="Full size"
+                alt="Tamanho completo"
                 fill
                 className="object-contain"
               />

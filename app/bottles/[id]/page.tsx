@@ -262,7 +262,7 @@ export default function BottleDetailPage({
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
         <div className="text-center">
           <div className="text-6xl mb-4 animate-spin">🍷</div>
-          <div className="text-white text-xl">Loading bottle...</div>
+          <div className="text-white text-xl">A carregar garrafa...</div>
         </div>
       </div>
     );
@@ -273,7 +273,7 @@ export default function BottleDetailPage({
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
         <div className="text-center">
           <div className="text-6xl mb-4">❌</div>
-          <div className="text-white text-xl">Bottle not found</div>
+          <div className="text-white text-xl">Garrafa não encontrada</div>
         </div>
       </div>
     );
@@ -358,7 +358,7 @@ export default function BottleDetailPage({
                     <div className="text-center">
                       <div className="text-8xl mb-4">🍷</div>
                       <div className="text-white/60">
-                        {isEditing ? "Clica para adicionar foto" : "No photo"}
+                        {isEditing ? "Clica para adicionar foto" : "Sem foto"}
                       </div>
                     </div>
                   )}

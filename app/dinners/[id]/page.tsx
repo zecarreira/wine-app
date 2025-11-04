@@ -174,13 +174,13 @@ export default function DinnerDetailPage({
 
       const data = await response.json();
       if (data.success) {
-        alert("🎭 Blind tasting started!");
+        alert("🎭 Prova cega iniciada!");
         fetchDinnerAndBottles();
       } else {
-        alert(data.error || "Failed to start dinner");
+        alert(data.error || "Erro ao iniciar jantar");
       }
     } catch (error) {
-      alert("Error starting dinner");
+      alert("Erro ao iniciar jantar");
     } finally {
       setActionLoading(false);
     }
@@ -188,7 +188,9 @@ export default function DinnerDetailPage({
 
   async function handleEndDinner() {
     if (
-      !confirm("End the dinner and lock all ratings? Ready to reveal results!")
+      !confirm(
+        "Terminar o jantar e bloquear todas as avaliações? Pronto para revelar resultados!"
+      )
     )
       return;
 
@@ -204,13 +206,13 @@ export default function DinnerDetailPage({
 
       const data = await response.json();
       if (data.success) {
-        alert("✅ Dinner ended! Ready for reveal!");
+        alert("✅ Jantar terminado! Pronto para revelar!");
         fetchDinnerAndBottles();
       } else {
-        alert(data.error || "Failed to end dinner");
+        alert(data.error || "Erro ao terminar jantar");
       }
     } catch (error) {
-      alert("Error ending dinner");
+      alert("Erro ao terminar jantar");
     } finally {
       setActionLoading(false);
     }
@@ -245,7 +247,7 @@ export default function DinnerDetailPage({
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
         <div className="text-center">
           <div className="text-6xl mb-4 animate-spin">🍷</div>
-          <div className="text-white text-xl">Loading dinner...</div>
+          <div className="text-white text-xl">A carregar jantar...</div>
         </div>
       </div>
     );
@@ -256,7 +258,7 @@ export default function DinnerDetailPage({
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
         <div className="text-center">
           <div className="text-6xl mb-4">❌</div>
-          <div className="text-white text-xl">Dinner not found</div>
+          <div className="text-white text-xl">Jantar não encontrado</div>
         </div>
       </div>
     );
@@ -446,16 +448,18 @@ export default function DinnerDetailPage({
                 >
                   🎭{" "}
                   {dinner.status === "ended"
-                    ? "Start Reveal Ceremony"
-                    : "Continue Revealing"}
+                    ? "Iniciar Cerimónia de Revelação"
+                    : "Continuar a Revelar"}
                 </Link>
               )}
 
               {dinner.status === "completed" && (
                 <div className="text-center py-4">
                   <div className="text-4xl mb-2">🎉</div>
-                  <p className="text-white font-semibold">Dinner completed!</p>
-                  <p className="text-white/60 text-sm">All results revealed</p>
+                  <p className="text-white font-semibold">Jantar completo!</p>
+                  <p className="text-white/60 text-sm">
+                    Todos os resultados revelados
+                  </p>
                 </div>
               )}
             </div>
@@ -469,10 +473,10 @@ export default function DinnerDetailPage({
               <span className="text-3xl">🎭</span>
               <div>
                 <p className="text-white font-semibold">
-                  Blind Tasting Mode Active
+                  Modo Prova Cega Ativo
                 </p>
                 <p className="text-purple-200 text-sm">
-                  Wines are labeled A, B, C... and shuffled randomly
+                  Vinhos etiquetados como A, B, C... e baralhados aleatoriamente
                 </p>
               </div>
             </div>
@@ -487,7 +491,7 @@ export default function DinnerDetailPage({
               className="flex items-center justify-center gap-3 w-full bg-gradient-to-r from-blue-600 to-cyan-600 text-white px-6 py-4 rounded-2xl font-bold text-lg shadow-lg hover:shadow-blue-500/50 transform hover:scale-[1.02] transition-all duration-200 active:scale-[0.98]"
             >
               <span className="text-2xl">+</span>
-              <span>Add Wine Bottle</span>
+              <span>Adicionar Garrafa</span>
             </Link>
           </div>
         )}
@@ -515,7 +519,7 @@ export default function DinnerDetailPage({
             className="flex items-center justify-center gap-3 w-full bg-gradient-to-r from-pink-600 to-rose-600 text-white px-6 py-4 rounded-2xl font-bold text-lg shadow-lg hover:shadow-pink-500/50 transform hover:scale-[1.02] transition-all duration-200 active:scale-[0.98]"
           >
             <span className="text-2xl">📸</span>
-            <span>View Photos</span>
+            <span>Ver Fotos</span>
           </Link>
         </div>
 
@@ -525,9 +529,9 @@ export default function DinnerDetailPage({
             {displayBottles.length === 0 ? (
               <div className="bg-white/5 backdrop-blur-sm rounded-3xl p-12 text-center border border-white/10">
                 <div className="text-6xl mb-4">🍾</div>
-                <p className="text-white/60 text-lg">No bottles yet</p>
+                <p className="text-white/60 text-lg">Ainda não há garrafas</p>
                 <p className="text-white/40 text-sm mt-2">
-                  Add bottles via API
+                  Adiciona garrafas via botão acima
                 </p>
               </div>
             ) : (
