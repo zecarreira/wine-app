@@ -34,6 +34,10 @@ interface Dinner {
   host_id: string;
   created_by: string;
   is_extra_dinner?: boolean;
+  organizer?: {
+    id: string;
+    name: string;
+  };
 }
 
 // Deterministic shuffle function - same seed = same order for all users
@@ -347,6 +351,14 @@ export default function DinnerDetailPage({
               <div className="flex items-center gap-2">
                 <span className="text-xl">📍</span>
                 <span className="text-base">{dinner.location}</span>
+              </div>
+            )}
+            {dinner.organizer && (
+              <div className="flex items-center gap-2">
+                <span className="text-xl">🎯</span>
+                <span className="text-base">
+                  Organizado por: <strong>{dinner.organizer.name}</strong>
+                </span>
               </div>
             )}
             {participants.length > 0 && (
