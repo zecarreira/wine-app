@@ -83,15 +83,42 @@ export async function POST(
       );
     }
 
-    // Check if dinner exists
+    // Check if dinner exists and get organizer info
     const { data: dinner, error: dinnerError } = await supabase
       .from("dinners")
-      .select("id")
+      .select("id, organizer_id")
       .eq("id", dinnerId)
       .single();
 
     if (dinnerError || !dinner) {
       return NextResponse.json({ error: "Dinner not found" }, { status: 404 });
+    }
+
+    // Check how many bottles this user already added to this dinner
+    const { data: userBottles, error: bottlesError } = await supabase
+      .from("bottles")
+      .select("id")
+      .eq("dinner_id", dinnerId)
+      .eq("brought_by", auth.userId);
+
+    if (bottlesError) throw bottlesError;
+
+    const bottlesCount = userBottles?.length || 0;
+
+    // Determine max bottles allowed
+    const isOrganizer = dinner.organizer_id === auth.userId;
+    const maxBottles = isOrganizer ? 2 : 1;
+
+    // Validate bottle limit
+    if (bottlesCount >= maxBottles) {
+      return NextResponse.json(
+        {
+          error: isOrganizer
+            ? "Organizador já adicionou o máximo de 2 garrafas para este jantar"
+            : "Já adicionaste 1 garrafa para este jantar. Apenas o organizador pode adicionar 2 garrafas.",
+        },
+        { status: 400 }
+      );
     }
 
     // Insert bottle

@@ -13,6 +13,7 @@ interface Bottle {
   producer: string;
   wine_type: string;
   position: number;
+  brought_by?: string;
   stats?: {
     total_ratings: number;
     average_score: number;
@@ -212,6 +213,30 @@ export default function DinnerDetailPage({
       alert("Error ending dinner");
     } finally {
       setActionLoading(false);
+    }
+  }
+
+  async function handleDeleteBottle(bottleId: string) {
+    if (!confirm("Tens a certeza que queres apagar esta garrafa?")) return;
+
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`/api/bottles/${bottleId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        alert("✅ Garrafa apagada com sucesso!");
+        fetchDinnerAndBottles();
+      } else {
+        alert(data.error || "Erro ao apagar garrafa");
+      }
+    } catch (error) {
+      alert("Erro ao apagar garrafa");
     }
   }
 
@@ -512,6 +537,23 @@ export default function DinnerDetailPage({
                     key={bottle.id || `temp-${bottle.displayPosition}`}
                     className="relative"
                   >
+                    {/* Edit/Delete Buttons - Only in setup mode and for bottle owner */}
+                    {dinner.status === "setup" &&
+                      bottle.brought_by === checkIfHost() && (
+                        <div className="absolute top-2 right-2 md:top-4 md:right-4 z-10">
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleDeleteBottle(bottle.id);
+                            }}
+                            className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 md:px-3 md:py-2 rounded-lg text-xs md:text-sm font-semibold transition-colors shadow-lg"
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      )}
+
                     {/* Clickable Card Wrapper - Only if bottle has valid ID */}
                     {bottle.id ? (
                       <Link href={`/bottles/${bottle.id}`} className="block">
