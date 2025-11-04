@@ -10,7 +10,7 @@ interface HeaderProps {
 
 export default function Header({
   backUrl,
-  useBackButton = false,
+  useBackButton = true, // Changed default to true - always go back to previous page
 }: HeaderProps) {
   const router = useRouter();
 

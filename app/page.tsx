@@ -67,6 +67,16 @@ export default function Home() {
                 </Link>
 
                 <Link
+                  href="/stats"
+                  className="block w-full bg-linear-to-r from-blue-600 to-cyan-600 text-white text-center px-5 py-3.5 rounded-xl font-bold text-base shadow-xl hover:shadow-blue-500/50 transform hover:scale-105 transition-all duration-200 active:scale-95"
+                >
+                  <div className="flex items-center justify-center gap-2">
+                    <span className="text-lg">📊</span>
+                    <span>Estatísticas Gerais</span>
+                  </div>
+                </Link>
+
+                <Link
                   href="/profile"
                   className="block w-full bg-white/10 backdrop-blur-lg text-white text-center px-5 py-3.5 rounded-xl font-semibold text-base border border-white/20 hover:bg-white/20 transform hover:scale-105 transition-all duration-200 active:scale-95"
                 >

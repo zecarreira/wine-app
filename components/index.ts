@@ -7,3 +7,4 @@ export { default as Input } from "./Input";
 export { default as Textarea } from "./Textarea";
 export { ToastProvider, useToast } from "./ToastProvider";
 export * from "./Skeletons";
+export { PaymentsSection } from "./PaymentsSection";

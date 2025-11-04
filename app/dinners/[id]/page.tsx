@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { use } from "react";
 import Link from "next/link";
+import { PaymentsSection } from "@/components";
 
 interface Bottle {
   id: string;
@@ -68,6 +69,7 @@ export default function DinnerDetailPage({
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [isHost, setIsHost] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [participants, setParticipants] = useState<
     Array<{ id: string; name: string }>
   >([]);
@@ -75,6 +77,8 @@ export default function DinnerDetailPage({
   useEffect(() => {
     fetchDinnerAndBottles();
     checkIfHost();
+    checkIfAdmin();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   function checkIfHost() {
@@ -84,6 +88,14 @@ export default function DinnerDetailPage({
       return user.id;
     }
     return null;
+  }
+
+  function checkIfAdmin() {
+    const userStr = localStorage.getItem("user");
+    if (userStr) {
+      const user = JSON.parse(userStr);
+      setIsAdmin(user.role === "admin");
+    }
   }
 
   async function fetchDinnerAndBottles() {
@@ -248,12 +260,12 @@ export default function DinnerDetailPage({
       {/* Header */}
       <header className="bg-black/20 backdrop-blur-lg border-b border-white/10 sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link
-            href="/dinners"
+          <button
+            onClick={() => window.history.back()}
             className="text-white/80 hover:text-white text-2xl"
           >
             ←
-          </Link>
+          </button>
           <Link href="/" className="text-white/80 hover:text-white text-2xl">
             🏠
           </Link>
@@ -349,6 +361,9 @@ export default function DinnerDetailPage({
             )}
           </div>
         </div>
+
+        {/* PAYMENTS SECTION */}
+        <PaymentsSection dinnerId={id} isAdmin={isAdmin} />
 
         {/* HOST CONTROL PANEL */}
         {isHost && (

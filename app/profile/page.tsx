@@ -17,6 +17,7 @@ interface User {
     total_ratings: number;
     total_bottles_brought: number;
     average_rating: string;
+    total_spent: number;
   };
   favorite_wine: any;
   recent_ratings: any[];
@@ -262,7 +263,7 @@ export default function ProfilePage() {
           </div>
 
           {/* Stats Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
             <div className="bg-white/5 rounded-2xl p-3 text-center">
               <div className="text-2xl mb-1">🍽️</div>
               <div className="text-xl font-bold text-white">
@@ -294,6 +295,16 @@ export default function ProfilePage() {
               </div>
               <div className="text-white/60 text-xs">Média</div>
             </div>
+
+            {user.role !== "guest" && (
+              <div className="bg-white/5 rounded-2xl p-3 text-center">
+                <div className="text-2xl mb-1">💰</div>
+                <div className="text-xl font-bold text-white">
+                  {user.stats.total_spent}
+                </div>
+                <div className="text-white/60 text-xs">Pipas</div>
+              </div>
+            )}
           </div>
           <div className="flex justify-center mt-4">
             <button

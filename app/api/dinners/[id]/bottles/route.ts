@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import supabase from "@/lib/db";
+import supabase, { supabaseAdmin } from "@/lib/db";
 import { requireAuth } from "@/lib/middleware";
 
 // GET /api/dinners/:id/bottles - List all bottles for a dinner
@@ -126,6 +126,49 @@ export async function POST(
       .single();
 
     if (insertError) throw insertError;
+
+    // Auto-create payment for this user (10 pipas base)
+    // Check if payment already exists for this user in this dinner
+    const { data: existingPayment, error: checkPaymentError } =
+      await supabaseAdmin
+        .from("payments")
+        .select("id")
+        .eq("dinner_id", dinnerId)
+        .eq("user_id", auth.userId)
+        .maybeSingle();
+
+    if (checkPaymentError) {
+      console.error("Error checking existing payment:", checkPaymentError);
+    }
+
+    // Only create payment if it doesn't exist yet
+    if (!existingPayment) {
+      console.log(
+        "Creating payment for user:",
+        auth.userId,
+        "in dinner:",
+        dinnerId
+      );
+      const { data: newPayment, error: paymentError } = await supabaseAdmin
+        .from("payments")
+        .insert({
+          dinner_id: dinnerId,
+          user_id: auth.userId,
+          base_amount: 10,
+          status: "pending",
+        })
+        .select()
+        .single();
+
+      if (paymentError) {
+        console.error("Failed to create payment:", paymentError);
+        // Don't fail the bottle creation if payment fails
+      } else {
+        console.log("Payment created successfully:", newPayment);
+      }
+    } else {
+      console.log("Payment already exists for this user in this dinner");
+    }
 
     return NextResponse.json(
       {

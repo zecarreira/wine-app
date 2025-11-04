@@ -12,21 +12,19 @@ export default function LoadingSpinner({
   const sizeClasses = {
     sm: "text-4xl",
     md: "text-5xl",
-    lg: "text-6xl",
+    lg: "text-6xl md:text-7xl",
   };
 
   const textSizeClasses = {
-    sm: "text-base",
-    md: "text-lg",
-    lg: "text-xl",
+    sm: "text-sm md:text-base",
+    md: "text-base md:text-lg",
+    lg: "text-lg md:text-xl",
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
-      <div className="text-center">
-        <div className={`${sizeClasses[size]} mb-4 animate-spin`}>{icon}</div>
-        <div className={`text-white ${textSizeClasses[size]}`}>{message}</div>
-      </div>
+    <div className="text-center">
+      <div className={`${sizeClasses[size]} mb-4 animate-spin`}>{icon}</div>
+      <div className={`text-white ${textSizeClasses[size]}`}>{message}</div>
     </div>
   );
 }

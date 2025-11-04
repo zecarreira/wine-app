@@ -167,6 +167,11 @@ export default function DinnersPage() {
   const dinners = activeSeason?.dinners || [];
   const stats = activeSeason?.stats;
 
+  // Check if there are any scheduled (not completed) dinners
+  const hasScheduledDinner = dinners.some(
+    (dinner) => dinner.status === "setup" || dinner.status === "active"
+  );
+
   return (
     <div className="min-h-screen bg-linear-to-br from-slate-900 via-purple-900 to-slate-900">
       <Header useBackButton />
@@ -174,26 +179,36 @@ export default function DinnersPage() {
       <div className="container mx-auto px-4 py-6">
         {/* Header Actions */}
         <div className="mb-4">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex-1">
-              <h1 className="text-2xl font-bold text-white mb-1">
-                {activeSeason
-                  ? `Temporada ${activeSeason.season_number}`
-                  : "Jantares"}
-              </h1>
-              {activeSeason && stats && (
-                <p className="text-purple-200 text-sm">
-                  {stats.total_dinners}/8 Jantares
-                </p>
-              )}
-              {!activeSeason && (
-                <p className="text-purple-200 text-sm">
-                  Nenhuma temporada ativa
-                </p>
-              )}
-            </div>
-            <Link href="/dinners/history">
-              <Button variant="secondary" size="sm" icon="📚">
+          <div className="mb-3">
+            <h1 className="text-2xl font-bold text-white mb-1">
+              {activeSeason
+                ? `Temporada ${activeSeason.season_number}`
+                : "Jantares"}
+            </h1>
+            {activeSeason && stats && (
+              <p className="text-purple-200 text-sm">
+                {stats.total_dinners}/8 Jantares
+              </p>
+            )}
+            {!activeSeason && (
+              <p className="text-purple-200 text-sm">Nenhuma temporada ativa</p>
+            )}
+          </div>
+
+          {/* Stats and History Buttons */}
+          <div className="flex gap-2 mb-3">
+            {activeSeason && (
+              <Link
+                href={`/seasons/${activeSeason.id}/payments`}
+                className="flex-1"
+              >
+                <Button variant="secondary" size="sm" icon="💰" fullWidth>
+                  Estatísticas
+                </Button>
+              </Link>
+            )}
+            <Link href="/dinners/history" className="flex-1">
+              <Button variant="secondary" size="sm" icon="📚" fullWidth>
                 Histórico
               </Button>
             </Link>
@@ -202,7 +217,7 @@ export default function DinnersPage() {
           {/* Admin Buttons */}
           {userRole === "admin" && activeSeason && (
             <div className="flex gap-2">
-              {!stats?.is_full && (
+              {!stats?.is_full && !hasScheduledDinner && (
                 <Button
                   variant="success"
                   size="sm"
@@ -365,22 +380,17 @@ export default function DinnersPage() {
 
                   {/* Status Badge */}
                   <div className="mt-3 pt-3 border-t border-white/10">
-                    <div className="flex items-center justify-between">
-                      <span
-                        className={`text-xs font-semibold ${
-                          dinner.is_completed || dinner.status === "completed"
-                            ? "text-green-400"
-                            : "text-amber-400"
-                        }`}
-                      >
-                        {dinner.is_completed || dinner.status === "completed"
-                          ? "Concluído"
-                          : "Agendado"}
-                      </span>
-                      <span className="text-white/60 text-xs">
-                        Ver detalhes →
-                      </span>
-                    </div>
+                    <span
+                      className={`text-xs font-semibold ${
+                        dinner.is_completed || dinner.status === "completed"
+                          ? "text-green-400"
+                          : "text-amber-400"
+                      }`}
+                    >
+                      {dinner.is_completed || dinner.status === "completed"
+                        ? "Concluído"
+                        : "Agendado"}
+                    </span>
                   </div>
                 </Card>
               </Link>

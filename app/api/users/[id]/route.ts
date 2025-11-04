@@ -94,6 +94,44 @@ export async function GET(
           ).toFixed(1)
         : null;
 
+    // Calculate total spent (only for non-guest users)
+    let totalSpent = 0;
+    if (user.role !== "guest") {
+      // Get all payments for this user
+      const { data: payments } = await supabase
+        .from("payments")
+        .select("base_amount, status")
+        .eq("user_id", userId);
+
+      // Get all fines for this user's payments
+      const paymentIds = payments?.map((p: any) => p.id) || [];
+      let totalFines = 0;
+
+      if (paymentIds.length > 0) {
+        const { data: finesData } = await supabase
+          .from("payments")
+          .select(
+            `
+            id,
+            fines:fines(amount)
+          `
+          )
+          .eq("user_id", userId);
+
+        totalFines =
+          finesData?.reduce((sum: number, payment: any) => {
+            const paymentFines = payment.fines || [];
+            return (
+              sum + paymentFines.reduce((s: number, f: any) => s + f.amount, 0)
+            );
+          }, 0) || 0;
+      }
+
+      totalSpent =
+        (payments?.reduce((sum: any, p: any) => sum + p.base_amount, 0) || 0) +
+        totalFines;
+    }
+
     // Find favorite wine (highest rated)
     const favoriteWine =
       userRatings && userRatings.length > 0
@@ -111,6 +149,7 @@ export async function GET(
           total_ratings: totalRatings,
           total_bottles_brought: totalBottlesBrought,
           average_rating: averageRating,
+          total_spent: totalSpent,
         },
         favorite_wine: favoriteWine,
         recent_ratings: userRatings?.slice(0, 5) || [],
