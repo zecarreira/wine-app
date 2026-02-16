@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import supabase from "@/lib/db";
+import { db } from "@/lib/db";
+import { users } from "@/lib/schema";
+import { eq } from "drizzle-orm";
 import { hashPassword, createToken } from "@/lib/auth";
 
 export async function POST(request: NextRequest) {
   try {
-    // Get data from request body
     const body = await request.json();
     const { name, email, password, role } = body;
 
-    // Validate required fields
     if (!name || !email || !password) {
       return NextResponse.json(
         { error: "Name, email, and password are required" },
@@ -16,7 +16,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return NextResponse.json(
@@ -25,7 +24,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate password length
     if (password.length < 6) {
       return NextResponse.json(
         { error: "Password must be at least 6 characters" },
@@ -33,12 +31,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if user already exists
-    const { data: existingUser } = await supabase
-      .from("users")
-      .select("id")
-      .eq("email", email)
-      .single();
+    const [existingUser] = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.email, email))
+      .limit(1);
 
     if (existingUser) {
       return NextResponse.json(
@@ -47,32 +44,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Hash the password
     const passwordHash = await hashPassword(password);
 
-    // Set role (default to 'guest' if not specified)
-    const userRole = role === "founder" ? "founder" : "guest";
+    // role param is accepted but ignored — only admins can promote via admin routes
+    void role;
 
-    // Insert user into database
-    const { data: newUser, error: insertError } = await supabase
-      .from("users")
-      .insert({
+    const [newUser] = await db
+      .insert(users)
+      .values({
         name,
         email,
         password_hash: passwordHash,
         role: "guest",
       })
-      .select()
-      .single();
+      .returning();
 
-    if (insertError) {
-      throw insertError;
-    }
-
-    // Create JWT token
     const token = createToken(newUser.id, newUser.role);
 
-    // Return success with user data (no password!)
     return NextResponse.json(
       {
         success: true,
@@ -89,10 +77,7 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     console.error("Registration error:", error);
-
-    const errorMessage =
-      error instanceof Error ? error.message : "Unknown error occurred";
-
+    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
     return NextResponse.json(
       { error: "Registration failed", details: errorMessage },
       { status: 500 }
