@@ -43,7 +43,7 @@ export default function RankingsPage({
       const data = await response.json();
 
       if (data.success) {
-        setRankings(data.rankings);
+        setRankings(data.rankings ?? []);
       }
     } catch {
       console.error("Error fetching rankings");

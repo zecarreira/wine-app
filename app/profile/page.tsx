@@ -51,7 +51,10 @@ export default function ProfilePage() {
       if (data.success) {
         setUser(data.user);
       } else {
-        console.error("API error:", data.error);
+        // Stale session — clear and redirect to login
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        router.push("/login");
       }
     } catch (error) {
       console.error("Error fetching profile:", error);

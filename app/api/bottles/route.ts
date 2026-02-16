@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
         dinner: { id: dinners.id, name: dinners.name, event_date: dinners.event_date },
         brought_by_user: { id: broughtByUser.id, name: broughtByUser.name },
         total_ratings: sql<number>`count(${ratings.id})::int`,
-        average_rating: sql<number>`round(coalesce(avg(${ratings.score}), 0)::numeric, 1)`,
+        average_rating: sql<number>`round(coalesce(avg(${ratings.score}), 0)::numeric, 1)::float`,
       })
       .from(bottles)
       .leftJoin(dinners, eq(bottles.dinner_id, dinners.id))
