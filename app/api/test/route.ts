@@ -1,40 +1,27 @@
 import { NextResponse } from "next/server";
-import supabase from "@/lib/db";
+import { db } from "@/lib/db";
+import { users } from "@/lib/schema";
+import { eq } from "drizzle-orm";
 
 export async function GET() {
   try {
-    // Test 1: Check if we can connect
-    const { data: countData, error: countError } = await supabase
-      .from("users")
-      .select("count")
-      .limit(1);
+    const allUsers = await db
+      .select({ id: users.id, name: users.name, email: users.email })
+      .from(users);
 
-    if (countError) throw countError;
-
-    // Test 2: Get all users to verify the specific user exists
-    const { data: allUsers, error: usersError } = await supabase
-      .from("users")
-      .select("id, name, email");
-
-    console.log("All users:", allUsers);
-
-    // Test 3: Try to get the specific user
     const userId = "00c8bb28-6a93-4ffc-9123-60edefe70c66";
-    const { data: specificUser, error: specificError } = await supabase
-      .from("users")
-      .select("*")
-      .eq("id", userId)
-      .single();
-
-    console.log("Specific user query:", { specificUser, specificError });
+    const [specificUser] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
 
     return NextResponse.json({
       success: true,
-      message: "Supabase connected! Database is ready.",
+      message: "Neon connected! Database is ready.",
       tables_accessible: true,
       all_users: allUsers,
-      specific_user: specificUser,
-      specific_error: specificError,
+      specific_user: specificUser || null,
     });
   } catch (error: unknown) {
     const message =
@@ -44,12 +31,6 @@ export async function GET() {
         ? error
         : "Unknown error";
 
-    return NextResponse.json(
-      {
-        success: false,
-        error: message,
-      },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: message }, { status: 500 });
   }
 }

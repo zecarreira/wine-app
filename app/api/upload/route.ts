@@ -1,131 +1,65 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-import jwt from "jsonwebtoken";
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { requireAuth } from "@/lib/middleware";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const jwtSecret = process.env.JWT_SECRET!;
+const r2 = new S3Client({
+  region: "auto",
+  endpoint: process.env.R2_ENDPOINT!,
+  credentials: {
+    accessKeyId: process.env.R2_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,
+  },
+});
+
+const VALID_BUCKETS = ["bottle-photos", "dinner-photos", "profile-photos"];
 
 export async function POST(request: NextRequest) {
-  console.log("🚀 ===== UPLOAD ROUTE CALLED =====");
-
   try {
-    console.log("🔑 Checking auth header...");
-    const authHeader = request.headers.get("Authorization");
-    console.log("🔑 Auth header exists?", !!authHeader);
-
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      console.log("❌ FAIL: No auth header");
-      return NextResponse.json(
-        { success: false, error: "Unauthorized" },
-        { status: 401 }
-      );
-    }
-
-    const token = authHeader.replace("Bearer ", "");
-    console.log("🎫 Token extracted, length:", token.length);
-
-    let userId: string;
-    try {
-      console.log("🔐 Verifying JWT...");
-      console.log("🔐 JWT_SECRET exists?", !!jwtSecret);
-      const decoded = jwt.verify(token, jwtSecret) as { userId: string };
-      userId = decoded.userId;
-      console.log("✅ JWT verified! User ID:", userId);
-    } catch (error: any) {
-      console.log("❌ JWT verification failed:", error.message);
-      return NextResponse.json(
-        { success: false, error: "Invalid token: " + error.message },
-        { status: 401 }
-      );
-    }
-
-    console.log("🗄️ Creating Supabase client...");
-    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-      auth: {
-        persistSession: false,
-      },
-    });
+    const auth = await requireAuth(request);
+    if (auth instanceof NextResponse) return auth;
 
     const formData = await request.formData();
     const file = formData.get("file") as File;
     const bucket = formData.get("bucket") as string;
 
-    console.log("📦 File received:", !!file, "Bucket:", bucket);
-
     if (!file) {
-      return NextResponse.json(
-        { success: false, error: "No file provided" },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, error: "No file provided" }, { status: 400 });
     }
 
-    if (
-      !bucket ||
-      !["bottle-photos", "dinner-photos", "profile-photos"].includes(bucket)
-    ) {
-      return NextResponse.json(
-        { success: false, error: "Invalid bucket" },
-        { status: 400 }
-      );
+    if (!bucket || !VALID_BUCKETS.includes(bucket)) {
+      return NextResponse.json({ success: false, error: "Invalid bucket" }, { status: 400 });
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      return NextResponse.json(
-        { success: false, error: "File too large (max 5MB)" },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, error: "File too large (max 5MB)" }, { status: 400 });
     }
 
     if (!file.type.startsWith("image/")) {
-      return NextResponse.json(
-        { success: false, error: "Only images allowed" },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, error: "Only images allowed" }, { status: 400 });
     }
 
     const fileExt = file.name.split(".").pop();
-    const fileName = `${userId}-${Date.now()}.${fileExt}`;
-
-    console.log("📸 Uploading file:", fileName);
+    const fileName = `${auth.userId}-${Date.now()}.${fileExt}`;
+    const key = `${bucket}/${fileName}`;
 
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from(bucket)
-      .upload(fileName, buffer, {
-        contentType: file.type,
-        upsert: false,
-      });
-
-    if (uploadError) {
-      console.error("❌ Upload error:", uploadError);
-      return NextResponse.json(
-        { success: false, error: uploadError.message },
-        { status: 500 }
-      );
-    }
-
-    const {
-      data: { publicUrl },
-    } = supabase.storage.from(bucket).getPublicUrl(fileName);
-
-    console.log("✅ Upload success! URL:", publicUrl);
-
-    return NextResponse.json({
-      success: true,
-      url: publicUrl,
-      path: fileName,
-    });
-  } catch (error: any) {
-    console.error("💥 Upload error:", error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: error.message || "Failed to upload",
-      },
-      { status: 500 }
+    await r2.send(
+      new PutObjectCommand({
+        Bucket: process.env.R2_BUCKET_NAME!,
+        Key: key,
+        Body: buffer,
+        ContentType: file.type,
+      })
     );
+
+    const publicUrl = `${process.env.R2_PUBLIC_URL}/${key}`;
+
+    return NextResponse.json({ success: true, url: publicUrl, path: key });
+  } catch (error) {
+    console.error("Upload error:", error);
+    const errorMessage = error instanceof Error ? error.message : "Failed to upload";
+    return NextResponse.json({ success: false, error: errorMessage }, { status: 500 });
   }
 }

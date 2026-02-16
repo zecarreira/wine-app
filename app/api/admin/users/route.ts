@@ -1,85 +1,35 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-import jwt from "jsonwebtoken";
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const jwtSecret = process.env.JWT_SECRET!;
+import { db } from "@/lib/db";
+import { users } from "@/lib/schema";
+import { eq, desc } from "drizzle-orm";
+import { requireAuth } from "@/lib/middleware";
 
 // GET - List all users (admin only)
 export async function GET(request: NextRequest) {
   try {
-    // Verify admin
-    const authHeader = request.headers.get("Authorization");
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return NextResponse.json(
-        { success: false, error: "Unauthorized" },
-        { status: 401 }
-      );
+    const auth = await requireAuth(request);
+    if (auth instanceof NextResponse) return auth;
+
+    const [currentUser] = await db
+      .select({ role: users.role })
+      .from(users)
+      .where(eq(users.id, auth.userId))
+      .limit(1);
+
+    if (!currentUser || currentUser.role !== "admin") {
+      return NextResponse.json({ success: false, error: "Admin access required" }, { status: 403 });
     }
 
-    const token = authHeader.replace("Bearer ", "");
-    let userId: string;
+    const allUsers = await db
+      .select({ id: users.id, name: users.name, email: users.email, role: users.role, created_at: users.created_at })
+      .from(users)
+      .orderBy(desc(users.created_at));
 
-    try {
-      const decoded = jwt.verify(token, jwtSecret) as { userId: string };
-      userId = decoded.userId;
-    } catch (error) {
-      return NextResponse.json(
-        { success: false, error: "Invalid token" },
-        { status: 401 }
-      );
-    }
+    const founderCount = allUsers.filter(u => u.role === "founder" || u.role === "admin").length;
 
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
-    // Check if user is admin
-    const { data: currentUser, error: userError } = await supabase
-      .from("users")
-      .select("role")
-      .eq("id", userId)
-      .single();
-
-    if (userError || !currentUser || currentUser.role !== "admin") {
-      return NextResponse.json(
-        { success: false, error: "Admin access required" },
-        { status: 403 }
-      );
-    }
-
-    // Get all users
-    const { data: users, error } = await supabase
-      .from("users")
-      .select("id, name, email, role, created_at")
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      console.error("Error fetching users:", error);
-      return NextResponse.json(
-        { success: false, error: error.message },
-        { status: 500 }
-      );
-    }
-
-    // Count founders
-    const founderCount =
-      users?.filter((u) => u.role === "founder" || u.role === "admin").length ||
-      0;
-
-    return NextResponse.json({
-      success: true,
-      users,
-      founderCount,
-      maxFounders: 7,
-    });
-  } catch (error: unknown) {
+    return NextResponse.json({ success: true, users: allUsers, founderCount, maxFounders: 7 });
+  } catch (error) {
     console.error("Error:", error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: "Internal server error",
-      },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 });
   }
 }

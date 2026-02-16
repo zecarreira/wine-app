@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import supabase, { supabaseAdmin } from "@/lib/db";
+import { db } from "@/lib/db";
+import { users, payments, fines } from "@/lib/schema";
+import { eq, asc } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import { requireAuth } from "@/lib/middleware";
 
 // POST /api/dinners/:dinnerId/payments/:paymentId/fines - Adicionar multa (Admin only)
@@ -8,24 +11,12 @@ export async function POST(
   { params }: { params: Promise<{ id: string; paymentId: string }> }
 ) {
   try {
-    // Require authentication
     const auth = await requireAuth(request);
-    if (auth instanceof NextResponse) {
-      return auth;
-    }
+    if (auth instanceof NextResponse) return auth;
 
-    // Check if user is admin
-    const { data: user } = await supabase
-      .from("users")
-      .select("role")
-      .eq("id", auth.userId)
-      .single();
-
-    if (!user || user.role !== "admin") {
-      return NextResponse.json(
-        { error: "Only admins can add fines" },
-        { status: 403 }
-      );
+    const [currentUser] = await db.select({ role: users.role }).from(users).where(eq(users.id, auth.userId)).limit(1);
+    if (!currentUser || currentUser.role !== "admin") {
+      return NextResponse.json({ error: "Only admins can add fines" }, { status: 403 });
     }
 
     const { paymentId } = await params;
@@ -33,79 +24,67 @@ export async function POST(
     const { amount, reason } = body;
 
     if (!amount || amount <= 0) {
-      return NextResponse.json(
-        { error: "Valid amount is required (must be > 0)" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Valid amount is required (must be > 0)" }, { status: 400 });
     }
-
     if (!reason || reason.trim() === "") {
-      return NextResponse.json(
-        { error: "Reason is required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Reason is required" }, { status: 400 });
     }
 
-    // Check if payment exists
-    const { data: payment, error: paymentError } = await supabaseAdmin
-      .from("payments")
-      .select("id, user_id, dinner_id")
-      .eq("id", paymentId)
-      .single();
+    const [payment] = await db
+      .select({ id: payments.id, user_id: payments.user_id, dinner_id: payments.dinner_id })
+      .from(payments)
+      .where(eq(payments.id, paymentId))
+      .limit(1);
 
-    if (paymentError || !payment) {
+    if (!payment) {
       return NextResponse.json({ error: "Payment not found" }, { status: 404 });
     }
 
-    // Create fine using supabaseAdmin to bypass RLS
-    const { data: fine, error: insertError } = await supabaseAdmin
-      .from("fines")
-      .insert({
-        payment_id: paymentId,
-        amount: amount,
-        reason: reason.trim(),
-        created_by: auth.userId,
+    const [newFine] = await db
+      .insert(fines)
+      .values({ payment_id: paymentId, amount, reason: reason.trim(), created_by: auth.userId })
+      .returning();
+
+    // Fetch fine with admin user info
+    const adminUser = alias(users, "admin");
+    const [fineWithAdmin] = await db
+      .select({
+        id: fines.id,
+        payment_id: fines.payment_id,
+        amount: fines.amount,
+        reason: fines.reason,
+        created_at: fines.created_at,
+        created_by: fines.created_by,
+        admin_id: adminUser.id,
+        admin_name: adminUser.name,
       })
-      .select(
-        `
-        *,
-        admin:users!created_by(
-          id,
-          name
-        )
-      `
-      )
-      .single();
+      .from(fines)
+      .leftJoin(adminUser, eq(fines.created_by, adminUser.id))
+      .where(eq(fines.id, newFine.id))
+      .limit(1);
 
-    if (insertError) throw insertError;
+    const fineFormatted = {
+      id: fineWithAdmin.id,
+      payment_id: fineWithAdmin.payment_id,
+      amount: fineWithAdmin.amount,
+      reason: fineWithAdmin.reason,
+      created_at: fineWithAdmin.created_at,
+      created_by: fineWithAdmin.created_by,
+      admin: fineWithAdmin.admin_id ? { id: fineWithAdmin.admin_id, name: fineWithAdmin.admin_name } : null,
+    };
 
-    // Fetch updated payment com todas as fines
-    const { data: fines } = await supabaseAdmin
-      .from("fines")
-      .select("amount")
-      .eq("payment_id", paymentId);
-
-    const totalFines = fines?.reduce((sum, f) => sum + f.amount, 0) || 0;
+    // Fetch total fines for this payment
+    const allFines = await db.select({ amount: fines.amount }).from(fines).where(eq(fines.payment_id, paymentId));
+    const totalFines = allFines.reduce((sum, f) => sum + f.amount, 0);
 
     return NextResponse.json(
-      {
-        success: true,
-        message: "Fine added successfully",
-        fine,
-        total_fines: totalFines,
-      },
+      { success: true, message: "Fine added successfully", fine: fineFormatted, total_fines: totalFines },
       { status: 201 }
     );
   } catch (error) {
     console.error("Add fine error:", error);
-
-    const errorMessage =
-      error instanceof Error ? error.message : "Unknown error occurred";
-
-    return NextResponse.json(
-      { error: "Failed to add fine", details: errorMessage },
-      { status: 500 }
-    );
+    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+    return NextResponse.json({ error: "Failed to add fine", details: errorMessage }, { status: 500 });
   }
 }
 
@@ -117,50 +96,44 @@ export async function GET(
   try {
     const { paymentId } = await params;
 
-    // Check if payment exists
-    const { data: payment, error: paymentError } = await supabase
-      .from("payments")
-      .select("id")
-      .eq("id", paymentId)
-      .single();
-
-    if (paymentError || !payment) {
+    const [payment] = await db.select({ id: payments.id }).from(payments).where(eq(payments.id, paymentId)).limit(1);
+    if (!payment) {
       return NextResponse.json({ error: "Payment not found" }, { status: 404 });
     }
 
-    // Fetch fines
-    const { data: fines, error: finesError } = await supabase
-      .from("fines")
-      .select(
-        `
-        *,
-        admin:users!created_by(
-          id,
-          name
-        )
-      `
-      )
-      .eq("payment_id", paymentId)
-      .order("created_at", { ascending: true });
+    const adminUser = alias(users, "admin");
+    const allFines = await db
+      .select({
+        id: fines.id,
+        payment_id: fines.payment_id,
+        amount: fines.amount,
+        reason: fines.reason,
+        created_at: fines.created_at,
+        created_by: fines.created_by,
+        admin_id: adminUser.id,
+        admin_name: adminUser.name,
+      })
+      .from(fines)
+      .leftJoin(adminUser, eq(fines.created_by, adminUser.id))
+      .where(eq(fines.payment_id, paymentId))
+      .orderBy(asc(fines.created_at));
 
-    if (finesError) throw finesError;
+    const finesFormatted = allFines.map(f => ({
+      id: f.id,
+      payment_id: f.payment_id,
+      amount: f.amount,
+      reason: f.reason,
+      created_at: f.created_at,
+      created_by: f.created_by,
+      admin: f.admin_id ? { id: f.admin_id, name: f.admin_name } : null,
+    }));
 
-    const totalFines = fines?.reduce((sum, f) => sum + f.amount, 0) || 0;
+    const totalFines = finesFormatted.reduce((sum, f) => sum + f.amount, 0);
 
-    return NextResponse.json({
-      success: true,
-      fines: fines || [],
-      total_fines: totalFines,
-    });
+    return NextResponse.json({ success: true, fines: finesFormatted, total_fines: totalFines });
   } catch (error) {
     console.error("Fetch fines error:", error);
-
-    const errorMessage =
-      error instanceof Error ? error.message : "Unknown error occurred";
-
-    return NextResponse.json(
-      { error: "Failed to fetch fines", details: errorMessage },
-      { status: 500 }
-    );
+    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+    return NextResponse.json({ error: "Failed to fetch fines", details: errorMessage }, { status: 500 });
   }
 }
