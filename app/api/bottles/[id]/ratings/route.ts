@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import supabase from "@/lib/db";
+import { db } from "@/lib/db";
+import { bottles, ratings, users } from "@/lib/schema";
+import { eq, and, desc } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import { requireAuth } from "@/lib/middleware";
 
 // GET /api/bottles/:id/ratings - Get all ratings for a bottle
@@ -9,45 +12,40 @@ export async function GET(
 ) {
   try {
     const { id: bottleId } = await params;
+    const ratingUser = alias(users, "user");
 
-    // Fetch ratings with user info
-    const { data: ratings, error } = await supabase
-      .from("ratings")
-      .select(
-        `
-        *,
-        user:users(id, name)
-      `
-      )
-      .eq("bottle_id", bottleId)
-      .order("created_at", { ascending: false });
+    const allRatings = await db
+      .select({
+        id: ratings.id,
+        bottle_id: ratings.bottle_id,
+        user_id: ratings.user_id,
+        score: ratings.score,
+        tasting_notes: ratings.tasting_notes,
+        created_at: ratings.created_at,
+        updated_at: ratings.updated_at,
+        user: { id: ratingUser.id, name: ratingUser.name },
+      })
+      .from(ratings)
+      .leftJoin(ratingUser, eq(ratings.user_id, ratingUser.id))
+      .where(eq(ratings.bottle_id, bottleId))
+      .orderBy(desc(ratings.created_at));
 
-    if (error) throw error;
-
-    // Calculate average score
-    const averageScore =
-      ratings && ratings.length > 0
-        ? ratings.reduce((sum, r) => sum + r.score, 0) / ratings.length
-        : 0;
+    const averageScore = allRatings.length > 0
+      ? allRatings.reduce((sum, r) => sum + Number(r.score), 0) / allRatings.length
+      : 0;
 
     return NextResponse.json({
       success: true,
-      ratings: ratings || [],
+      ratings: allRatings,
       stats: {
-        total_ratings: ratings?.length || 0,
-        average_score: Math.round(averageScore * 10) / 10, // Round to 1 decimal
+        total_ratings: allRatings.length,
+        average_score: Math.round(averageScore * 10) / 10,
       },
     });
   } catch (error) {
     console.error("Fetch ratings error:", error);
-
-    const errorMessage =
-      error instanceof Error ? error.message : "Unknown error occurred";
-
-    return NextResponse.json(
-      { error: "Failed to fetch ratings", details: errorMessage },
-      { status: 500 }
-    );
+    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+    return NextResponse.json({ error: "Failed to fetch ratings", details: errorMessage }, { status: 500 });
   }
 }
 
@@ -57,100 +55,53 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Require authentication
     const auth = await requireAuth(request);
-
-    if (auth instanceof NextResponse) {
-      return auth;
-    }
+    if (auth instanceof NextResponse) return auth;
 
     const { id: bottleId } = await params;
     const body = await request.json();
     const { score, tasting_notes } = body;
 
-    // Validate score
     if (score === undefined || score === null) {
       return NextResponse.json({ error: "Score is required" }, { status: 400 });
     }
-
     if (score < 1 || score > 10) {
-      return NextResponse.json(
-        { error: "Score must be between 1 and 10" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Score must be between 1 and 10" }, { status: 400 });
     }
 
-    // Check if bottle exists
-    const { data: bottle, error: bottleError } = await supabase
-      .from("bottles")
-      .select("id")
-      .eq("id", bottleId)
-      .single();
-
-    if (bottleError || !bottle) {
+    const [bottle] = await db.select({ id: bottles.id }).from(bottles).where(eq(bottles.id, bottleId)).limit(1);
+    if (!bottle) {
       return NextResponse.json({ error: "Bottle not found" }, { status: 404 });
     }
 
-    // Check if user already rated this bottle
-    const { data: existingRating } = await supabase
-      .from("ratings")
-      .select("id")
-      .eq("bottle_id", bottleId)
-      .eq("user_id", auth.userId)
-      .single();
+    const [existingRating] = await db
+      .select({ id: ratings.id })
+      .from(ratings)
+      .where(and(eq(ratings.bottle_id, bottleId), eq(ratings.user_id, auth.userId)))
+      .limit(1);
 
     if (existingRating) {
-      // Update existing rating
-      const { data: updatedRating, error: updateError } = await supabase
-        .from("ratings")
-        .update({
-          score,
-          tasting_notes: tasting_notes || null,
-        })
-        .eq("id", existingRating.id)
-        .select()
-        .single();
+      const [updatedRating] = await db
+        .update(ratings)
+        .set({ score: String(score), tasting_notes: tasting_notes || null, updated_at: new Date() })
+        .where(eq(ratings.id, existingRating.id))
+        .returning();
 
-      if (updateError) throw updateError;
-
-      return NextResponse.json({
-        success: true,
-        message: "Rating updated successfully",
-        rating: updatedRating,
-      });
+      return NextResponse.json({ success: true, message: "Rating updated successfully", rating: updatedRating });
     } else {
-      // Insert new rating
-      const { data: newRating, error: insertError } = await supabase
-        .from("ratings")
-        .insert({
-          bottle_id: bottleId,
-          user_id: auth.userId,
-          score,
-          tasting_notes: tasting_notes || null,
-        })
-        .select()
-        .single();
-
-      if (insertError) throw insertError;
+      const [newRating] = await db
+        .insert(ratings)
+        .values({ bottle_id: bottleId, user_id: auth.userId, score: String(score), tasting_notes: tasting_notes || null })
+        .returning();
 
       return NextResponse.json(
-        {
-          success: true,
-          message: "Rating submitted successfully",
-          rating: newRating,
-        },
+        { success: true, message: "Rating submitted successfully", rating: newRating },
         { status: 201 }
       );
     }
   } catch (error) {
     console.error("Submit rating error:", error);
-
-    const errorMessage =
-      error instanceof Error ? error.message : "Unknown error occurred";
-
-    return NextResponse.json(
-      { error: "Failed to submit rating", details: errorMessage },
-      { status: 500 }
-    );
+    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+    return NextResponse.json({ error: "Failed to submit rating", details: errorMessage }, { status: 500 });
   }
 }

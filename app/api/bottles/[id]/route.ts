@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-import supabase from "@/lib/db";
+import { db } from "@/lib/db";
+import { bottles, dinners, ratings, users } from "@/lib/schema";
+import { eq, and } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import { requireAuth } from "@/lib/middleware";
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 export async function GET(
   request: NextRequest,
@@ -12,137 +11,120 @@ export async function GET(
 ) {
   try {
     const { id: bottleId } = await params;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const broughtByUser = alias(users, "brought_by_user");
+    const dinnerHost = alias(users, "host");
 
-    // Get bottle with all related data
-    const { data: bottle, error } = await supabase
-      .from("bottles")
-      .select(
-        `
-        *,
-        dinner:dinners(
-          id, 
-          name, 
-          event_date, 
-          location, 
-          is_blind, 
-          status,
-          created_by,
-          host:users!dinners_created_by_fkey(id, name)
-        ),
-        brought_by_user:users!bottles_brought_by_fkey(id, name),
-        ratings(
-          id,
-          score,
-          tasting_notes,
-          created_at,
-          user:users(id, name)
-        )
-      `
-      )
-      .eq("id", bottleId)
-      .single();
+    const [bottle] = await db
+      .select({
+        id: bottles.id,
+        name: bottles.name,
+        producer: bottles.producer,
+        vintage: bottles.vintage,
+        wine_type: bottles.wine_type,
+        description: bottles.description,
+        photo_url: bottles.photo_url,
+        position: bottles.position,
+        brought_by: bottles.brought_by,
+        dinner_id: bottles.dinner_id,
+        created_at: bottles.created_at,
+        updated_at: bottles.updated_at,
+        dinner_db_id: dinners.id,
+        dinner_name: dinners.name,
+        dinner_event_date: dinners.event_date,
+        dinner_location: dinners.location,
+        dinner_is_blind: dinners.is_blind,
+        dinner_status: dinners.status,
+        dinner_created_by: dinners.created_by,
+        dinner_host_id: dinnerHost.id,
+        dinner_host_name: dinnerHost.name,
+        brought_by_user: { id: broughtByUser.id, name: broughtByUser.name },
+      })
+      .from(bottles)
+      .leftJoin(dinners, eq(bottles.dinner_id, dinners.id))
+      .leftJoin(dinnerHost, eq(dinners.created_by, dinnerHost.id))
+      .leftJoin(broughtByUser, eq(bottles.brought_by, broughtByUser.id))
+      .where(eq(bottles.id, bottleId))
+      .limit(1);
 
-    if (error) {
-      console.error("Error fetching bottle:", error);
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Bottle not found",
-        },
-        { status: 404 }
-      );
+    if (!bottle) {
+      return NextResponse.json({ success: false, error: "Bottle not found" }, { status: 404 });
     }
 
-    // Calculate stats
-    const ratings = bottle.ratings || [];
-    const totalRatings = ratings.length;
-    const averageScore =
-      totalRatings > 0
-        ? (
-            ratings.reduce((sum: number, r: any) => sum + r.score, 0) /
-            totalRatings
-          ).toFixed(1)
-        : null;
+    const ratingUser = alias(users, "user");
+    const bottleRatings = await db
+      .select({
+        id: ratings.id,
+        score: ratings.score,
+        tasting_notes: ratings.tasting_notes,
+        created_at: ratings.created_at,
+        user: { id: ratingUser.id, name: ratingUser.name },
+      })
+      .from(ratings)
+      .leftJoin(ratingUser, eq(ratings.user_id, ratingUser.id))
+      .where(eq(ratings.bottle_id, bottleId));
+
+    const totalRatings = bottleRatings.length;
+    const averageScore = totalRatings > 0
+      ? (bottleRatings.reduce((sum, r) => sum + Number(r.score), 0) / totalRatings).toFixed(1)
+      : null;
+
+    const { dinner_db_id, dinner_name, dinner_event_date, dinner_location, dinner_is_blind, dinner_status, dinner_created_by, dinner_host_id, dinner_host_name, ...bottleFields } = bottle;
 
     return NextResponse.json({
       success: true,
       bottle: {
-        ...bottle,
-        stats: {
-          total_ratings: totalRatings,
-          average_score: averageScore,
-        },
+        ...bottleFields,
+        dinner: dinner_db_id ? { id: dinner_db_id, name: dinner_name, event_date: dinner_event_date, location: dinner_location, is_blind: dinner_is_blind, status: dinner_status, created_by: dinner_created_by, host: { id: dinner_host_id, name: dinner_host_name } } : null,
+        ratings: bottleRatings,
+        stats: { total_ratings: totalRatings, average_score: averageScore },
       },
     });
   } catch (error) {
     console.error("Error:", error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: "Internal server error",
-      },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 });
   }
 }
 
-// PATCH /api/bottles/:id - Update a bottle
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const auth = await requireAuth(request);
-
-    if (auth instanceof NextResponse) {
-      return auth;
-    }
+    if (auth instanceof NextResponse) return auth;
 
     const { id: bottleId } = await params;
     const body = await request.json();
     const { name, description, vintage, producer, wine_type, photo_url } = body;
 
-    // Get bottle and dinner info
-    const { data: bottle, error: bottleError } = await supabase
-      .from("bottles")
-      .select(
-        `
-        id,
-        brought_by,
-        dinner_id,
-        dinners!inner(id, status)
-      `
-      )
-      .eq("id", bottleId)
-      .single();
+    const [bottle] = await db
+      .select({ id: bottles.id, brought_by: bottles.brought_by, dinner_id: bottles.dinner_id })
+      .from(bottles)
+      .where(eq(bottles.id, bottleId))
+      .limit(1);
 
-    if (bottleError || !bottle) {
+    if (!bottle) {
       return NextResponse.json({ error: "Bottle not found" }, { status: 404 });
     }
 
-    // Check if dinner is in setup status
-    const dinner = bottle.dinners as unknown as { id: string; status: string };
-    if (dinner.status !== "setup") {
+    const [dinner] = await db
+      .select({ status: dinners.status })
+      .from(dinners)
+      .where(eq(dinners.id, bottle.dinner_id!))
+      .limit(1);
+
+    if (!dinner || dinner.status !== "setup") {
       return NextResponse.json(
-        {
-          error:
-            "Apenas podes editar garrafas enquanto o jantar está em preparação (setup). O jantar já começou ou terminou.",
-        },
+        { error: "Apenas podes editar garrafas enquanto o jantar está em preparação (setup). O jantar já começou ou terminou." },
         { status: 400 }
       );
     }
 
-    // Check if user owns this bottle
     if (bottle.brought_by !== auth.userId) {
-      return NextResponse.json(
-        { error: "Não podes editar garrafas de outros utilizadores" },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: "Não podes editar garrafas de outros utilizadores" }, { status: 403 });
     }
 
-    // Update bottle
-    const updateData: Record<string, unknown> = {};
+    const updateData: Record<string, unknown> = { updated_at: new Date() };
     if (name !== undefined) updateData.name = name;
     if (description !== undefined) updateData.description = description;
     if (vintage !== undefined) updateData.vintage = vintage;
@@ -150,106 +132,63 @@ export async function PATCH(
     if (wine_type !== undefined) updateData.wine_type = wine_type;
     if (photo_url !== undefined) updateData.photo_url = photo_url;
 
-    const { data: updatedBottle, error: updateError } = await supabase
-      .from("bottles")
-      .update(updateData)
-      .eq("id", bottleId)
-      .select()
-      .single();
+    const [updatedBottle] = await db
+      .update(bottles)
+      .set(updateData)
+      .where(eq(bottles.id, bottleId))
+      .returning();
 
-    if (updateError) throw updateError;
-
-    return NextResponse.json({
-      success: true,
-      message: "Garrafa atualizada com sucesso",
-      bottle: updatedBottle,
-    });
+    return NextResponse.json({ success: true, message: "Garrafa atualizada com sucesso", bottle: updatedBottle });
   } catch (error) {
     console.error("Update bottle error:", error);
-
-    const errorMessage =
-      error instanceof Error ? error.message : "Unknown error occurred";
-
-    return NextResponse.json(
-      { error: "Failed to update bottle", details: errorMessage },
-      { status: 500 }
-    );
+    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+    return NextResponse.json({ error: "Failed to update bottle", details: errorMessage }, { status: 500 });
   }
 }
 
-// DELETE /api/bottles/:id - Delete a bottle
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const auth = await requireAuth(request);
-
-    if (auth instanceof NextResponse) {
-      return auth;
-    }
+    if (auth instanceof NextResponse) return auth;
 
     const { id: bottleId } = await params;
 
-    // Get bottle and dinner info
-    const { data: bottle, error: bottleError } = await supabase
-      .from("bottles")
-      .select(
-        `
-        id,
-        brought_by,
-        dinner_id,
-        dinners!inner(id, status)
-      `
-      )
-      .eq("id", bottleId)
-      .single();
+    const [bottle] = await db
+      .select({ id: bottles.id, brought_by: bottles.brought_by, dinner_id: bottles.dinner_id })
+      .from(bottles)
+      .where(eq(bottles.id, bottleId))
+      .limit(1);
 
-    if (bottleError || !bottle) {
+    if (!bottle) {
       return NextResponse.json({ error: "Bottle not found" }, { status: 404 });
     }
 
-    // Check if dinner is in setup status
-    const dinner = bottle.dinners as unknown as { id: string; status: string };
-    if (dinner.status !== "setup") {
+    const [dinner] = await db
+      .select({ status: dinners.status })
+      .from(dinners)
+      .where(eq(dinners.id, bottle.dinner_id!))
+      .limit(1);
+
+    if (!dinner || dinner.status !== "setup") {
       return NextResponse.json(
-        {
-          error:
-            "Apenas podes apagar garrafas enquanto o jantar está em preparação (setup). O jantar já começou ou terminou.",
-        },
+        { error: "Apenas podes apagar garrafas enquanto o jantar está em preparação (setup). O jantar já começou ou terminou." },
         { status: 400 }
       );
     }
 
-    // Check if user owns this bottle
     if (bottle.brought_by !== auth.userId) {
-      return NextResponse.json(
-        { error: "Não podes apagar garrafas de outros utilizadores" },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: "Não podes apagar garrafas de outros utilizadores" }, { status: 403 });
     }
 
-    // Delete bottle
-    const { error: deleteError } = await supabase
-      .from("bottles")
-      .delete()
-      .eq("id", bottleId);
+    await db.delete(bottles).where(eq(bottles.id, bottleId));
 
-    if (deleteError) throw deleteError;
-
-    return NextResponse.json({
-      success: true,
-      message: "Garrafa apagada com sucesso",
-    });
+    return NextResponse.json({ success: true, message: "Garrafa apagada com sucesso" });
   } catch (error) {
     console.error("Delete bottle error:", error);
-
-    const errorMessage =
-      error instanceof Error ? error.message : "Unknown error occurred";
-
-    return NextResponse.json(
-      { error: "Failed to delete bottle", details: errorMessage },
-      { status: 500 }
-    );
+    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+    return NextResponse.json({ error: "Failed to delete bottle", details: errorMessage }, { status: 500 });
   }
 }
