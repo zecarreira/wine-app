@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import supabase from "@/lib/db";
+import { db } from "@/lib/db";
+import { seasons, dinners, users } from "@/lib/schema";
+import { eq, asc } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import { authenticate } from "@/lib/middleware";
 
 // GET /api/seasons/[id] - Get season details with dinners
@@ -11,44 +14,57 @@ export async function GET(
     await authenticate(request);
     const { id } = await params;
 
-    const { data: season, error: seasonError } = await supabase
-      .from("seasons")
-      .select("*")
-      .eq("id", id)
-      .single();
-
-    if (seasonError) throw seasonError;
+    const [season] = await db
+      .select()
+      .from(seasons)
+      .where(eq(seasons.id, id))
+      .limit(1);
 
     if (!season) {
       return NextResponse.json({ error: "Season not found" }, { status: 404 });
     }
 
-    const { data: dinners, error: dinnersError } = await supabase
-      .from("dinners")
-      .select(
-        `
-        *,
-        created_by_user:users!created_by(id, name, email)
-      `
-      )
-      .eq("season_id", id)
-      .order("dinner_number_in_season", { ascending: true });
+    const createdByUser = alias(users, "created_by_user");
 
-    if (dinnersError) throw dinnersError;
+    const seasonDinners = await db
+      .select({
+        id: dinners.id,
+        name: dinners.name,
+        event_date: dinners.event_date,
+        location: dinners.location,
+        status: dinners.status,
+        season_id: dinners.season_id,
+        created_by: dinners.created_by,
+        organizer_id: dinners.organizer_id,
+        host_id: dinners.host_id,
+        is_blind: dinners.is_blind,
+        is_extra_dinner: dinners.is_extra_dinner,
+        dinner_number_in_season: dinners.dinner_number_in_season,
+        started_at: dinners.started_at,
+        ended_at: dinners.ended_at,
+        created_at: dinners.created_at,
+        updated_at: dinners.updated_at,
+        created_by_user: {
+          id: createdByUser.id,
+          name: createdByUser.name,
+          email: createdByUser.email,
+        },
+      })
+      .from(dinners)
+      .leftJoin(createdByUser, eq(dinners.created_by, createdByUser.id))
+      .where(eq(dinners.season_id, id))
+      .orderBy(asc(dinners.dinner_number_in_season));
 
     return NextResponse.json({
       success: true,
       season: {
         ...season,
-        dinners: dinners || [],
+        dinners: seasonDinners,
       },
     });
   } catch (error) {
     console.error("Fetch season error:", error);
-
-    const errorMessage =
-      error instanceof Error ? error.message : "Unknown error occurred";
-
+    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
     return NextResponse.json(
       { error: "Failed to fetch season", details: errorMessage },
       { status: 500 }

@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import supabase from "@/lib/db";
+import { db } from "@/lib/db";
+import { seasons, dinners, users } from "@/lib/schema";
+import { eq, asc } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import { authenticate } from "@/lib/middleware";
 
 // GET /api/seasons/active - Get active season with dinners
@@ -7,13 +10,13 @@ export async function GET(request: NextRequest) {
   try {
     await authenticate(request);
 
-    const { data: activeSeason, error: seasonError } = await supabase
-      .from("seasons")
-      .select("*")
-      .eq("status", "active")
-      .single();
+    const [activeSeason] = await db
+      .select()
+      .from(seasons)
+      .where(eq(seasons.status, "active"))
+      .limit(1);
 
-    if (seasonError || !activeSeason) {
+    if (!activeSeason) {
       return NextResponse.json({
         success: true,
         season: null,
@@ -21,31 +24,46 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Get dinners for active season
-    const { data: dinners, error: dinnersError } = await supabase
-      .from("dinners")
-      .select(
-        `
-        *,
-        created_by_user:users!created_by(id, name, email)
-      `
-      )
-      .eq("season_id", activeSeason.id)
-      .order("dinner_number_in_season", { ascending: true });
+    const createdByUser = alias(users, "created_by_user");
 
-    if (dinnersError) throw dinnersError;
+    const seasonDinners = await db
+      .select({
+        id: dinners.id,
+        name: dinners.name,
+        event_date: dinners.event_date,
+        location: dinners.location,
+        status: dinners.status,
+        season_id: dinners.season_id,
+        created_by: dinners.created_by,
+        organizer_id: dinners.organizer_id,
+        host_id: dinners.host_id,
+        is_blind: dinners.is_blind,
+        is_extra_dinner: dinners.is_extra_dinner,
+        dinner_number_in_season: dinners.dinner_number_in_season,
+        started_at: dinners.started_at,
+        ended_at: dinners.ended_at,
+        created_at: dinners.created_at,
+        updated_at: dinners.updated_at,
+        created_by_user: {
+          id: createdByUser.id,
+          name: createdByUser.name,
+          email: createdByUser.email,
+        },
+      })
+      .from(dinners)
+      .leftJoin(createdByUser, eq(dinners.created_by, createdByUser.id))
+      .where(eq(dinners.season_id, activeSeason.id))
+      .orderBy(asc(dinners.dinner_number_in_season));
 
-    // Get stats
-    const totalDinners = dinners?.length || 0;
-    const regularDinners =
-      dinners?.filter((d) => !d.is_extra_dinner).length || 0;
-    const hasExtraDinner = dinners?.some((d) => d.is_extra_dinner) || false;
+    const totalDinners = seasonDinners.length;
+    const regularDinners = seasonDinners.filter((d) => !d.is_extra_dinner).length;
+    const hasExtraDinner = seasonDinners.some((d) => d.is_extra_dinner);
 
     return NextResponse.json({
       success: true,
       season: {
         ...activeSeason,
-        dinners: dinners || [],
+        dinners: seasonDinners,
         stats: {
           total_dinners: totalDinners,
           regular_dinners: regularDinners,
@@ -57,10 +75,7 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error("Fetch active season error:", error);
-
-    const errorMessage =
-      error instanceof Error ? error.message : "Unknown error occurred";
-
+    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
     return NextResponse.json(
       { error: "Failed to fetch active season", details: errorMessage },
       { status: 500 }

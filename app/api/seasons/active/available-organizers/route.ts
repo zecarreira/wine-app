@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import supabase from "@/lib/db";
+import { db } from "@/lib/db";
+import { seasons, dinners, users } from "@/lib/schema";
+import { eq, inArray, isNotNull } from "drizzle-orm";
 import { requireFounder } from "@/lib/middleware";
 
 /**
@@ -10,49 +12,39 @@ export async function GET(request: NextRequest) {
   try {
     const auth = await requireFounder(request);
 
-    if (auth instanceof NextResponse) {
-      return auth;
-    }
+    if (auth instanceof NextResponse) return auth;
 
-    // Get active season
-    const { data: activeSeason, error: seasonError } = await supabase
-      .from("seasons")
-      .select("id")
-      .eq("status", "active")
-      .single();
+    const [activeSeason] = await db
+      .select({ id: seasons.id })
+      .from(seasons)
+      .where(eq(seasons.status, "active"))
+      .limit(1);
 
-    if (seasonError || !activeSeason) {
+    if (!activeSeason) {
       return NextResponse.json(
         { error: "No active season found" },
         { status: 400 }
       );
     }
 
-    // Get all founders and admins (admins are also founders)
-    const { data: founders, error: foundersError } = await supabase
-      .from("users")
-      .select("id, name, email")
-      .in("role", ["founder", "admin"])
-      .order("name");
+    const founders = await db
+      .select({ id: users.id, name: users.name, email: users.email })
+      .from(users)
+      .where(inArray(users.role, ["founder", "admin"]))
+      .orderBy(users.name);
 
-    if (foundersError) throw foundersError;
+    const organizerRows = await db
+      .select({ organizer_id: dinners.organizer_id })
+      .from(dinners)
+      .where(eq(dinners.season_id, activeSeason.id));
 
-    // Get founders who already organized in this season
-    const { data: organizerIds, error: organizersError } = await supabase
-      .from("dinners")
-      .select("organizer_id")
-      .eq("season_id", activeSeason.id)
-      .not("organizer_id", "is", null);
-
-    if (organizersError) throw organizersError;
-
-    // Create set of organizer IDs for fast lookup
     const organizedSet = new Set(
-      (organizerIds || []).map((d) => d.organizer_id)
+      organizerRows
+        .filter((d) => d.organizer_id !== null)
+        .map((d) => d.organizer_id)
     );
 
-    // Filter out founders who already organized
-    const availableFounders = (founders || []).filter(
+    const availableFounders = founders.filter(
       (founder) => !organizedSet.has(founder.id)
     );
 
@@ -63,10 +55,7 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error("Fetch available organizers error:", error);
-
-    const errorMessage =
-      error instanceof Error ? error.message : "Unknown error occurred";
-
+    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
     return NextResponse.json(
       { error: "Failed to fetch available organizers", details: errorMessage },
       { status: 500 }

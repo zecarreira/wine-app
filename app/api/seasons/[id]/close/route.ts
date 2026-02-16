@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import supabase from "@/lib/db";
+import { db } from "@/lib/db";
+import { seasons, dinners, users } from "@/lib/schema";
+import { eq, count } from "drizzle-orm";
 import { authenticate } from "@/lib/middleware";
 
 // POST /api/seasons/[id]/close - Close a season (founder/admin only)
@@ -10,22 +12,16 @@ export async function POST(
   try {
     const auth = await authenticate(request);
 
-    if (auth instanceof NextResponse) {
-      return auth;
-    }
-
-    if (!auth) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    if (auth instanceof NextResponse) return auth;
+    if (!auth) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const { id } = await params;
 
-    // Check if user is founder or admin
-    const { data: user } = await supabase
-      .from("users")
-      .select("role")
-      .eq("id", auth.userId)
-      .single();
+    const [user] = await db
+      .select({ role: users.role })
+      .from(users)
+      .where(eq(users.id, auth.userId))
+      .limit(1);
 
     if (!user || (user.role !== "founder" && user.role !== "admin")) {
       return NextResponse.json(
@@ -34,14 +30,13 @@ export async function POST(
       );
     }
 
-    // Get the season
-    const { data: season, error: seasonError } = await supabase
-      .from("seasons")
-      .select("*")
-      .eq("id", id)
-      .single();
+    const [season] = await db
+      .select()
+      .from(seasons)
+      .where(eq(seasons.id, id))
+      .limit(1);
 
-    if (seasonError || !season) {
+    if (!season) {
       return NextResponse.json({ error: "Season not found" }, { status: 404 });
     }
 
@@ -52,33 +47,25 @@ export async function POST(
       );
     }
 
-    // Check if season has 8 dinners
-    const { count } = await supabase
-      .from("dinners")
-      .select("*", { count: "exact", head: true })
-      .eq("season_id", id);
+    const [{ value: dinnerCount }] = await db
+      .select({ value: count() })
+      .from(dinners)
+      .where(eq(dinners.season_id, id));
 
-    if (count !== 8) {
+    if (dinnerCount !== 8) {
       return NextResponse.json(
         {
-          error: `Cannot close season. Season must have exactly 8 dinners (currently has ${count})`,
+          error: `Cannot close season. Season must have exactly 8 dinners (currently has ${dinnerCount})`,
         },
         { status: 400 }
       );
     }
 
-    // Close the season
-    const { data: closedSeason, error: updateError } = await supabase
-      .from("seasons")
-      .update({
-        status: "completed",
-        end_date: new Date().toISOString(),
-      })
-      .eq("id", id)
-      .select()
-      .single();
-
-    if (updateError) throw updateError;
+    const [closedSeason] = await db
+      .update(seasons)
+      .set({ status: "completed", end_date: new Date(), updated_at: new Date() })
+      .where(eq(seasons.id, id))
+      .returning();
 
     return NextResponse.json({
       success: true,
@@ -87,10 +74,7 @@ export async function POST(
     });
   } catch (error) {
     console.error("Close season error:", error);
-
-    const errorMessage =
-      error instanceof Error ? error.message : "Unknown error occurred";
-
+    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
     return NextResponse.json(
       { error: "Failed to close season", details: errorMessage },
       { status: 500 }

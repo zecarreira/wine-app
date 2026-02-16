@@ -1,29 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
-import supabase from "@/lib/db";
+import { db } from "@/lib/db";
+import { users, seasons } from "@/lib/schema";
+import { eq, desc } from "drizzle-orm";
 import { authenticate } from "@/lib/middleware";
+import { getSeasonStats } from "@/lib/queries/seasons";
 
 // GET /api/seasons - List all seasons
 export async function GET(request: NextRequest) {
   try {
     await authenticate(request);
 
-    const { data: seasons, error } = await supabase
-      .from("season_stats")
-      .select("*")
-      .order("season_number", { ascending: false });
-
-    if (error) throw error;
+    const seasonStats = await getSeasonStats();
 
     return NextResponse.json({
       success: true,
-      seasons: seasons || [],
+      seasons: seasonStats,
     });
   } catch (error) {
     console.error("Fetch seasons error:", error);
-
-    const errorMessage =
-      error instanceof Error ? error.message : "Unknown error occurred";
-
+    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
     return NextResponse.json(
       { error: "Failed to fetch seasons", details: errorMessage },
       { status: 500 }
@@ -36,20 +31,14 @@ export async function POST(request: NextRequest) {
   try {
     const auth = await authenticate(request);
 
-    if (auth instanceof NextResponse) {
-      return auth;
-    }
+    if (auth instanceof NextResponse) return auth;
+    if (!auth) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    if (!auth) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    // Check if user is founder or admin
-    const { data: user } = await supabase
-      .from("users")
-      .select("role")
-      .eq("id", auth.userId)
-      .single();
+    const [user] = await db
+      .select({ role: users.role })
+      .from(users)
+      .where(eq(users.id, auth.userId))
+      .limit(1);
 
     if (!user || (user.role !== "founder" && user.role !== "admin")) {
       return NextResponse.json(
@@ -58,12 +47,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if there's already an active season
-    const { data: activeSeason } = await supabase
-      .from("seasons")
-      .select("*")
-      .eq("status", "active")
-      .single();
+    const [activeSeason] = await db
+      .select()
+      .from(seasons)
+      .where(eq(seasons.status, "active"))
+      .limit(1);
 
     if (activeSeason) {
       return NextResponse.json(
@@ -72,27 +60,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get the next season number
-    const { data: lastSeason } = await supabase
-      .from("seasons")
-      .select("season_number")
-      .order("season_number", { ascending: false })
-      .limit(1)
-      .single();
+    const [lastSeason] = await db
+      .select({ season_number: seasons.season_number })
+      .from(seasons)
+      .orderBy(desc(seasons.season_number))
+      .limit(1);
 
     const nextSeasonNumber = lastSeason ? lastSeason.season_number + 1 : 1;
 
-    // Create new season
-    const { data: newSeason, error: insertError } = await supabase
-      .from("seasons")
-      .insert({
-        season_number: nextSeasonNumber,
-        status: "active",
-      })
-      .select()
-      .single();
-
-    if (insertError) throw insertError;
+    const [newSeason] = await db
+      .insert(seasons)
+      .values({ season_number: nextSeasonNumber, status: "active" })
+      .returning();
 
     return NextResponse.json(
       {
@@ -104,10 +83,7 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     console.error("Create season error:", error);
-
-    const errorMessage =
-      error instanceof Error ? error.message : "Unknown error occurred";
-
+    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
     return NextResponse.json(
       { error: "Failed to create season", details: errorMessage },
       { status: 500 }
