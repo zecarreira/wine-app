@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import supabase from "@/lib/db";
+import { db } from "@/lib/db";
+import { dinners, bottles } from "@/lib/schema";
+import { eq, count } from "drizzle-orm";
 
 // GET /api/dinners/:id/reveal-status - Get current reveal state
 export async function GET(
@@ -9,23 +11,17 @@ export async function GET(
   try {
     const { id: dinnerId } = await params;
 
-    const { data: dinner, error: dinnerError } = await supabase
-      .from("dinners")
-      .select("*")
-      .eq("id", dinnerId)
-      .single();
+    const [dinner] = await db.select().from(dinners).where(eq(dinners.id, dinnerId)).limit(1);
 
-    if (dinnerError || !dinner) {
+    if (!dinner) {
       return NextResponse.json({ error: "Dinner not found" }, { status: 404 });
     }
 
-    // Get bottle count
-    const { data: bottles } = await supabase
-      .from("bottles")
-      .select("id")
-      .eq("dinner_id", dinnerId);
+    const [{ value: totalBottles }] = await db
+      .select({ value: count() })
+      .from(bottles)
+      .where(eq(bottles.dinner_id, dinnerId));
 
-    const totalBottles = bottles?.length || 0;
     const revealedCount = dinner.reveal_index || 0;
     const remainingCount = totalBottles - revealedCount;
 
@@ -40,11 +36,7 @@ export async function GET(
     });
   } catch (error) {
     console.error("Get reveal status error:", error);
-    const errorMessage =
-      error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json(
-      { error: "Failed to get status", details: errorMessage },
-      { status: 500 }
-    );
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    return NextResponse.json({ error: "Failed to get status", details: errorMessage }, { status: 500 });
   }
 }

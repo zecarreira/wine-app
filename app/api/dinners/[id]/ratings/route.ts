@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import supabase from "@/lib/db";
+import { db } from "@/lib/db";
+import { bottles, ratings, users } from "@/lib/schema";
+import { eq, inArray, asc } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 
 // GET /api/dinners/:id/ratings - Get aggregated ratings for all bottles in a dinner
 export async function GET(
@@ -9,63 +12,51 @@ export async function GET(
   try {
     const { id: dinnerId } = await params;
 
-    // Fetch all bottles with their ratings
-    const { data: bottles, error: bottlesError } = await supabase
-      .from("bottles")
-      .select(
-        `
-        id,
-        name,
-        description,
-        vintage,
-        producer,
-        wine_type,
-        position,
-        brought_by_user:users!brought_by(id, name)
-      `
-      )
-      .eq("dinner_id", dinnerId)
-      .order("position", { ascending: true });
+    const broughtByUser = alias(users, "brought_by_user");
 
-    if (bottlesError) throw bottlesError;
+    const dinnerBottles = await db
+      .select({
+        id: bottles.id,
+        name: bottles.name,
+        description: bottles.description,
+        vintage: bottles.vintage,
+        producer: bottles.producer,
+        wine_type: bottles.wine_type,
+        position: bottles.position,
+        brought_by_user: { id: broughtByUser.id, name: broughtByUser.name },
+      })
+      .from(bottles)
+      .leftJoin(broughtByUser, eq(bottles.brought_by, broughtByUser.id))
+      .where(eq(bottles.dinner_id, dinnerId))
+      .orderBy(asc(bottles.position));
 
-    if (!bottles || bottles.length === 0) {
-      return NextResponse.json({
-        success: true,
-        bottles: [],
-        message: "No bottles found for this dinner",
-      });
+    if (dinnerBottles.length === 0) {
+      return NextResponse.json({ success: true, bottles: [], message: "No bottles found for this dinner" });
     }
 
-    // Fetch ratings for all bottles
-    const bottleIds = bottles.map((b) => b.id);
-    const { data: ratings, error: ratingsError } = await supabase
-      .from("ratings")
-      .select(
-        `
-        *,
-        user:users(id, name)
-      `
-      )
-      .in("bottle_id", bottleIds);
+    const bottleIds = dinnerBottles.map((b) => b.id);
+    const ratingUser = alias(users, "user");
 
-    if (ratingsError) throw ratingsError;
+    const allRatings = await db
+      .select({
+        id: ratings.id,
+        bottle_id: ratings.bottle_id,
+        user_id: ratings.user_id,
+        score: ratings.score,
+        tasting_notes: ratings.tasting_notes,
+        created_at: ratings.created_at,
+        updated_at: ratings.updated_at,
+        user: { id: ratingUser.id, name: ratingUser.name },
+      })
+      .from(ratings)
+      .leftJoin(ratingUser, eq(ratings.user_id, ratingUser.id))
+      .where(inArray(ratings.bottle_id, bottleIds));
 
-    // Aggregate ratings by bottle
-    const bottlesWithRatings = bottles.map((bottle) => {
-      const bottleRatings =
-        ratings?.filter((r) => r.bottle_id === bottle.id) || [];
-
-      const totalPoints = bottleRatings.reduce((sum, r) => sum + r.score, 0);
-
-      const averageScore =
-        bottleRatings.length > 0 ? totalPoints / bottleRatings.length : 0;
-
-      // Find highest individual rating for tiebreaker
-      const highestRating =
-        bottleRatings.length > 0
-          ? Math.max(...bottleRatings.map((r) => r.score))
-          : 0;
+    const bottlesWithRatings = dinnerBottles.map((bottle) => {
+      const bottleRatings = allRatings.filter((r) => r.bottle_id === bottle.id);
+      const totalPoints = bottleRatings.reduce((sum, r) => sum + Number(r.score), 0);
+      const averageScore = bottleRatings.length > 0 ? totalPoints / bottleRatings.length : 0;
+      const highestRating = bottleRatings.length > 0 ? Math.max(...bottleRatings.map((r) => Number(r.score))) : 0;
 
       return {
         ...bottle,
@@ -79,43 +70,21 @@ export async function GET(
       };
     });
 
-    // Sort with tiebreaker rules:
-    // 1. By average score (highest first)
-    // 2. If tied, by total points (highest first)
-    // 3. If still tied, by highest individual rating (highest first)
     const sortedBottles = [...bottlesWithRatings].sort((a, b) => {
-      // First: Compare average scores
-      if (b.stats.average_score !== a.stats.average_score) {
-        return b.stats.average_score - a.stats.average_score;
-      }
-
-      // Second: Compare total points (tiebreaker #1)
-      if (b.stats.total_points !== a.stats.total_points) {
-        return b.stats.total_points - a.stats.total_points;
-      }
-
-      // Third: Compare highest individual rating (tiebreaker #2)
+      if (b.stats.average_score !== a.stats.average_score) return b.stats.average_score - a.stats.average_score;
+      if (b.stats.total_points !== a.stats.total_points) return b.stats.total_points - a.stats.total_points;
       return b.stats.highest_rating - a.stats.highest_rating;
     });
 
     return NextResponse.json({
       success: true,
-      bottles: bottlesWithRatings, // Original order
-      rankings: sortedBottles, // Sorted by score
-      stats: {
-        total_bottles: bottles.length,
-        total_ratings: ratings?.length || 0,
-      },
+      bottles: bottlesWithRatings,
+      rankings: sortedBottles,
+      stats: { total_bottles: dinnerBottles.length, total_ratings: allRatings.length },
     });
   } catch (error) {
     console.error("Fetch dinner ratings error:", error);
-
-    const errorMessage =
-      error instanceof Error ? error.message : "Unknown error occurred";
-
-    return NextResponse.json(
-      { error: "Failed to fetch dinner ratings", details: errorMessage },
-      { status: 500 }
-    );
+    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+    return NextResponse.json({ error: "Failed to fetch dinner ratings", details: errorMessage }, { status: 500 });
   }
 }

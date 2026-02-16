@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { db } from "@/lib/db";
+import { dinner_photos, dinners, users } from "@/lib/schema";
+import { eq, desc } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import jwt from "jsonwebtoken";
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const jwtSecret = process.env.JWT_SECRET!;
 
 // GET - List all photos for a dinner
 export async function GET(
@@ -13,40 +12,26 @@ export async function GET(
 ) {
   try {
     const { id: dinnerId } = await params;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const uploadedByUser = alias(users, "uploaded_by_user");
 
-    const { data: photos, error } = await supabase
-      .from("dinner_photos")
-      .select(
-        `
-        *,
-        uploaded_by_user:users!dinner_photos_uploaded_by_fkey(id, name)
-      `
-      )
-      .eq("dinner_id", dinnerId)
-      .order("created_at", { ascending: false });
+    const photos = await db
+      .select({
+        id: dinner_photos.id,
+        dinner_id: dinner_photos.dinner_id,
+        photo_url: dinner_photos.photo_url,
+        uploaded_by: dinner_photos.uploaded_by,
+        created_at: dinner_photos.created_at,
+        uploaded_by_user: { id: uploadedByUser.id, name: uploadedByUser.name },
+      })
+      .from(dinner_photos)
+      .leftJoin(uploadedByUser, eq(dinner_photos.uploaded_by, uploadedByUser.id))
+      .where(eq(dinner_photos.dinner_id, dinnerId))
+      .orderBy(desc(dinner_photos.created_at));
 
-    if (error) {
-      console.error("Error fetching photos:", error);
-      return NextResponse.json(
-        { success: false, error: error.message },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json({
-      success: true,
-      photos: photos || [],
-    });
+    return NextResponse.json({ success: true, photos });
   } catch (error: unknown) {
     console.error("Error:", error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: "Internal server error",
-      },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 });
   }
 }
 
@@ -58,90 +43,62 @@ export async function POST(
   try {
     const { id: dinnerId } = await params;
 
-    // Verify JWT token
     const authHeader = request.headers.get("Authorization");
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return NextResponse.json(
-        { success: false, error: "Unauthorized" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }
 
     const token = authHeader.replace("Bearer ", "");
     let userId: string;
 
     try {
-      const decoded = jwt.verify(token, jwtSecret) as { userId: string };
+      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string };
       userId = decoded.userId;
-    } catch (error) {
-      return NextResponse.json(
-        { success: false, error: "Invalid token" },
-        { status: 401 }
-      );
+    } catch {
+      return NextResponse.json({ success: false, error: "Invalid token" }, { status: 401 });
     }
 
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const [dinner] = await db
+      .select({ id: dinners.id })
+      .from(dinners)
+      .where(eq(dinners.id, dinnerId))
+      .limit(1);
 
-    // Verify dinner exists
-    const { data: dinner, error: dinnerError } = await supabase
-      .from("dinners")
-      .select("id")
-      .eq("id", dinnerId)
-      .single();
-
-    if (dinnerError || !dinner) {
-      return NextResponse.json(
-        { success: false, error: "Dinner not found" },
-        { status: 404 }
-      );
+    if (!dinner) {
+      return NextResponse.json({ success: false, error: "Dinner not found" }, { status: 404 });
     }
 
     const body = await request.json();
     const { photo_url } = body;
 
     if (!photo_url) {
-      return NextResponse.json(
-        { success: false, error: "Photo URL required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, error: "Photo URL required" }, { status: 400 });
     }
 
-    // Insert photo record
-    const { data: photo, error: insertError } = await supabase
-      .from("dinner_photos")
-      .insert({
-        dinner_id: dinnerId,
-        photo_url,
-        uploaded_by: userId,
+    const uploadedByUser = alias(users, "uploaded_by_user");
+
+    const [newPhoto] = await db
+      .insert(dinner_photos)
+      .values({ dinner_id: dinnerId, photo_url, uploaded_by: userId })
+      .returning();
+
+    const [photoWithUser] = await db
+      .select({
+        id: dinner_photos.id,
+        dinner_id: dinner_photos.dinner_id,
+        photo_url: dinner_photos.photo_url,
+        uploaded_by: dinner_photos.uploaded_by,
+        created_at: dinner_photos.created_at,
+        uploaded_by_user: { id: uploadedByUser.id, name: uploadedByUser.name },
       })
-      .select(
-        `
-        *,
-        uploaded_by_user:users!dinner_photos_uploaded_by_fkey(id, name)
-      `
-      )
-      .single();
+      .from(dinner_photos)
+      .leftJoin(uploadedByUser, eq(dinner_photos.uploaded_by, uploadedByUser.id))
+      .where(eq(dinner_photos.id, newPhoto.id))
+      .limit(1);
 
-    if (insertError) {
-      console.error("Error inserting photo:", insertError);
-      return NextResponse.json(
-        { success: false, error: insertError.message },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json({
-      success: true,
-      photo,
-    });
+    return NextResponse.json({ success: true, photo: photoWithUser });
   } catch (error: unknown) {
     console.error("Error:", error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: "Internal server error",
-      },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 });
   }
 }

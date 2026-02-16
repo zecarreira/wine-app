@@ -42,6 +42,9 @@ export const dinners = pgTable("dinners", {
   is_blind: boolean("is_blind").notNull().default(false),
   is_extra_dinner: boolean("is_extra_dinner").notNull().default(false),
   dinner_number_in_season: integer("dinner_number_in_season"),
+  is_completed: boolean("is_completed").notNull().default(false),
+  reveal_index: integer("reveal_index").notNull().default(0),
+  revealed_at: timestamp("revealed_at", { withTimezone: true }),
   started_at: timestamp("started_at", { withTimezone: true }),
   ended_at: timestamp("ended_at", { withTimezone: true }),
   created_at: timestamp("created_at", { withTimezone: true }).defaultNow(),
@@ -56,6 +59,7 @@ export const bottles = pgTable("bottles", {
   wine_type: text("wine_type").notNull().default("red"), // red | white | rosé | sparkling | dessert | other
   description: text("description"),
   photo_url: text("photo_url"),
+  position: integer("position"),
   dinner_id: uuid("dinner_id").references(() => dinners.id, { onDelete: "cascade" }),
   brought_by: uuid("brought_by").references(() => users.id),
   created_at: timestamp("created_at", { withTimezone: true }).defaultNow(),
