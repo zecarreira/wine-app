@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import db from "@/lib/db";
+import { db } from "@/lib/db";
+import { dinners, bottles, ratings, users } from "@/lib/schema";
+import { eq, inArray } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 
 // GET /api/dinners/:id/debug - Debug dinner state
 export async function GET(
@@ -10,51 +13,37 @@ export async function GET(
     const { id: dinnerId } = await params;
 
     // Get dinner
-    const { data: dinner, error: dinnerError } = await db
-      .from("dinners")
-      .select("*")
-      .eq("id", dinnerId)
-      .single();
+    const [dinner] = await db
+      .select()
+      .from(dinners)
+      .where(eq(dinners.id, dinnerId));
 
-    if (dinnerError || !dinner) {
+    if (!dinner) {
       return NextResponse.json({ error: "Dinner not found" }, { status: 404 });
     }
 
-    // Get bottles
-    const { data: bottles, error: bottlesError } = await db
-      .from("bottles")
-      .select(
-        `
-        id,
-        name,
-        brought_by,
-        brought_by_user:users!brought_by(id, name)
-      `
-      )
-      .eq("dinner_id", dinnerId);
-
-    if (bottlesError) {
-      return NextResponse.json(
-        { error: "Bottles error", details: bottlesError },
-        { status: 500 }
-      );
-    }
+    // Get bottles with brought_by user
+    const broughtByUser = alias(users, "brought_by_user");
+    const dinnerBottles = await db
+      .select({
+        id: bottles.id,
+        name: bottles.name,
+        brought_by: bottles.brought_by,
+        brought_by_user: { id: broughtByUser.id, name: broughtByUser.name },
+      })
+      .from(bottles)
+      .leftJoin(broughtByUser, eq(bottles.brought_by, broughtByUser.id))
+      .where(eq(bottles.dinner_id, dinnerId));
 
     // Get ratings
-    const { data: ratings, error: ratingsError } = await db
-      .from("ratings")
-      .select("*")
-      .in(
-        "bottle_id",
-        bottles?.map((b) => b.id) || []
-      );
-
-    if (ratingsError) {
-      return NextResponse.json(
-        { error: "Ratings error", details: ratingsError },
-        { status: 500 }
-      );
-    }
+    const bottleIds = dinnerBottles.map((b) => b.id);
+    const allRatings =
+      bottleIds.length > 0
+        ? await db
+            .select()
+            .from(ratings)
+            .where(inArray(ratings.bottle_id, bottleIds))
+        : [];
 
     return NextResponse.json({
       dinner: {
@@ -63,14 +52,14 @@ export async function GET(
         status: dinner.status,
         reveal_index: dinner.reveal_index,
       },
-      bottles: bottles?.map((b) => ({
+      bottles: dinnerBottles.map((b) => ({
         id: b.id,
         name: b.name,
         brought_by: b.brought_by,
         brought_by_user: b.brought_by_user,
-        ratings_count: ratings?.filter((r) => r.bottle_id === b.id).length || 0,
+        ratings_count: allRatings.filter((r) => r.bottle_id === b.id).length,
       })),
-      total_ratings: ratings?.length || 0,
+      total_ratings: allRatings.length,
     });
   } catch (error) {
     console.error("Debug error:", error);
