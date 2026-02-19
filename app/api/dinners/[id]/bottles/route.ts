@@ -33,8 +33,7 @@ export async function GET(
     return NextResponse.json({ success: true, bottles: result });
   } catch (error) {
     console.error("Fetch bottles error:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
-    return NextResponse.json({ error: "Failed to fetch bottles", details: errorMessage }, { status: 500 });
+    return NextResponse.json({ error: "Failed to fetch bottles" }, { status: 500 });
   }
 }
 
@@ -116,14 +115,10 @@ export async function POST(
       .limit(1);
 
     if (!existingPayment) {
-      console.log("Creating payment for user:", auth.userId, "in dinner:", dinnerId);
-      const [newPayment] = await db
+      await db
         .insert(payments)
         .values({ dinner_id: dinnerId, user_id: auth.userId, base_amount: 10, status: "pending" })
         .returning();
-      console.log("Payment created successfully:", newPayment);
-    } else {
-      console.log("Payment already exists for this user in this dinner");
     }
 
     return NextResponse.json(
@@ -132,7 +127,6 @@ export async function POST(
     );
   } catch (error) {
     console.error("Add bottle error:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
-    return NextResponse.json({ error: "Failed to add bottle", details: errorMessage }, { status: 500 });
+    return NextResponse.json({ error: "Failed to add bottle" }, { status: 500 });
   }
 }

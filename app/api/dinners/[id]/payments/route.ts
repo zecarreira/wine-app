@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { users, dinners, payments, fines } from "@/lib/schema";
-import { eq, asc, inArray } from "drizzle-orm";
+import { eq, asc, inArray, and } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { requireAuth } from "@/lib/middleware";
 
@@ -11,6 +11,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requireAuth(request);
+    if (auth instanceof NextResponse) return auth;
+
     const { id: dinnerId } = await params;
 
     const paymentUser = alias(users, "payment_user");
@@ -103,8 +106,7 @@ export async function GET(
     return NextResponse.json({ success: true, payments: paymentsWithFines, stats });
   } catch (error) {
     console.error("Fetch payments error:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
-    return NextResponse.json({ error: "Failed to fetch payments", details: errorMessage }, { status: 500 });
+    return NextResponse.json({ error: "Failed to fetch payments" }, { status: 500 });
   }
 }
 
@@ -143,7 +145,7 @@ export async function POST(
     const [existingPayment] = await db
       .select({ id: payments.id })
       .from(payments)
-      .where(eq(payments.dinner_id, dinnerId))
+      .where(and(eq(payments.dinner_id, dinnerId), eq(payments.user_id, user_id)))
       .limit(1);
 
     if (existingPayment) {
@@ -161,7 +163,6 @@ export async function POST(
     );
   } catch (error) {
     console.error("Create payment error:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
-    return NextResponse.json({ error: "Failed to create payment", details: errorMessage }, { status: 500 });
+    return NextResponse.json({ error: "Failed to create payment" }, { status: 500 });
   }
 }

@@ -64,8 +64,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ success: true, dinners: result });
   } catch (error) {
     console.error("Fetch dinners error:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
-    return NextResponse.json({ error: "Failed to fetch dinners", details: errorMessage }, { status: 500 });
+    return NextResponse.json({ error: "Failed to fetch dinners" }, { status: 500 });
   }
 }
 
@@ -84,9 +83,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Organizer is required" }, { status: 400 });
     }
 
-    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-    if (!dateRegex.test(event_date)) {
-      return NextResponse.json({ error: "Invalid date format. Use YYYY-MM-DD" }, { status: 400 });
+    if (isNaN(new Date(event_date).getTime())) {
+      return NextResponse.json({ error: "Invalid date" }, { status: 400 });
     }
 
     const [activeSeason] = await db
@@ -168,7 +166,6 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     console.error("Create dinner error:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
-    return NextResponse.json({ error: "Failed to create dinner", details: errorMessage }, { status: 500 });
+    return NextResponse.json({ error: "Failed to create dinner" }, { status: 500 });
   }
 }

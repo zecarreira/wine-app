@@ -36,7 +36,6 @@ export async function GET(
     });
   } catch (error) {
     console.error("Get reveal status error:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json({ error: "Failed to get status", details: errorMessage }, { status: 500 });
+    return NextResponse.json({ error: "Failed to get status" }, { status: 500 });
   }
 }

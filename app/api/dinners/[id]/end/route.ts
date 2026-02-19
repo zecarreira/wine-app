@@ -45,7 +45,6 @@ export async function POST(
     });
   } catch (error) {
     console.error("End dinner error:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json({ error: "Failed to end dinner", details: errorMessage }, { status: 500 });
+    return NextResponse.json({ error: "Failed to end dinner" }, { status: 500 });
   }
 }

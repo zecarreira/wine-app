@@ -5,12 +5,18 @@ import { eq, and } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { requireAuth } from "@/lib/middleware";
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id: bottleId } = await params;
+
+    if (!UUID_REGEX.test(bottleId)) {
+      return NextResponse.json({ success: false, error: "Invalid ID" }, { status: 400 });
+    }
     const broughtByUser = alias(users, "brought_by_user");
     const dinnerHost = alias(users, "host");
 
@@ -141,8 +147,7 @@ export async function PATCH(
     return NextResponse.json({ success: true, message: "Garrafa atualizada com sucesso", bottle: updatedBottle });
   } catch (error) {
     console.error("Update bottle error:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
-    return NextResponse.json({ error: "Failed to update bottle", details: errorMessage }, { status: 500 });
+    return NextResponse.json({ error: "Failed to update bottle" }, { status: 500 });
   }
 }
 
@@ -188,7 +193,6 @@ export async function DELETE(
     return NextResponse.json({ success: true, message: "Garrafa apagada com sucesso" });
   } catch (error) {
     console.error("Delete bottle error:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
-    return NextResponse.json({ error: "Failed to delete bottle", details: errorMessage }, { status: 500 });
+    return NextResponse.json({ error: "Failed to delete bottle" }, { status: 500 });
   }
 }

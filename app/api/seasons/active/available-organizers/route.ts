@@ -55,9 +55,8 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error("Fetch available organizers error:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
     return NextResponse.json(
-      { error: "Failed to fetch available organizers", details: errorMessage },
+      { error: "Failed to fetch available organizers" },
       { status: 500 }
     );
   }

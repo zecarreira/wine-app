@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { users, fines } from "@/lib/schema";
+import { users, fines, dinners } from "@/lib/schema";
 import { eq } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { requireAuth } from "@/lib/middleware";
@@ -15,11 +15,17 @@ export async function PATCH(
     if (auth instanceof NextResponse) return auth;
 
     const [currentUser] = await db.select({ role: users.role }).from(users).where(eq(users.id, auth.userId)).limit(1);
-    if (!currentUser || currentUser.role !== "admin") {
-      return NextResponse.json({ error: "Only admins can update fines" }, { status: 403 });
-    }
 
-    const { fineId } = await params;
+    const { id: dinnerId, fineId } = await params;
+
+    const [dinner] = await db.select({ host_id: dinners.host_id }).from(dinners).where(eq(dinners.id, dinnerId)).limit(1);
+
+    const isAdmin = currentUser?.role === "admin";
+    const isDinnerHost = dinner?.host_id === auth.userId;
+
+    if (!isAdmin && !isDinnerHost) {
+      return NextResponse.json({ error: "Only admins or the dinner host can update fines" }, { status: 403 });
+    }
     const body = await request.json();
     const { amount, reason } = body;
 
@@ -72,8 +78,7 @@ export async function PATCH(
     return NextResponse.json({ success: true, message: "Fine updated successfully", fine: fineFormatted });
   } catch (error) {
     console.error("Update fine error:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
-    return NextResponse.json({ error: "Failed to update fine", details: errorMessage }, { status: 500 });
+    return NextResponse.json({ error: "Failed to update fine" }, { status: 500 });
   }
 }
 
@@ -87,11 +92,17 @@ export async function DELETE(
     if (auth instanceof NextResponse) return auth;
 
     const [currentUser] = await db.select({ role: users.role }).from(users).where(eq(users.id, auth.userId)).limit(1);
-    if (!currentUser || currentUser.role !== "admin") {
-      return NextResponse.json({ error: "Only admins can delete fines" }, { status: 403 });
-    }
 
-    const { fineId } = await params;
+    const { id: dinnerId, fineId } = await params;
+
+    const [dinner] = await db.select({ host_id: dinners.host_id }).from(dinners).where(eq(dinners.id, dinnerId)).limit(1);
+
+    const isAdmin = currentUser?.role === "admin";
+    const isDinnerHost = dinner?.host_id === auth.userId;
+
+    if (!isAdmin && !isDinnerHost) {
+      return NextResponse.json({ error: "Only admins or the dinner host can delete fines" }, { status: 403 });
+    }
 
     const [existingFine] = await db.select({ id: fines.id }).from(fines).where(eq(fines.id, fineId)).limit(1);
     if (!existingFine) {
@@ -103,7 +114,6 @@ export async function DELETE(
     return NextResponse.json({ success: true, message: "Fine deleted successfully" });
   } catch (error) {
     console.error("Delete fine error:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
-    return NextResponse.json({ error: "Failed to delete fine", details: errorMessage }, { status: 500 });
+    return NextResponse.json({ error: "Failed to delete fine" }, { status: 500 });
   }
 }

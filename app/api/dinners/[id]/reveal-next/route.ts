@@ -153,7 +153,6 @@ export async function POST(
     });
   } catch (error) {
     console.error("Reveal error:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json({ error: "Failed to reveal bottle", details: errorMessage }, { status: 500 });
+    return NextResponse.json({ error: "Failed to reveal bottle" }, { status: 500 });
   }
 }

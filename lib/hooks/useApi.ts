@@ -40,12 +40,13 @@ export function useDinner(id: string) {
   return useQuery({
     queryKey: ["dinners", id],
     queryFn: async () => {
-      const response = await fetch("/api/dinners");
+      const token = localStorage.getItem("token");
+      const response = await fetch(`/api/dinners/${id}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
       const data = await response.json();
       if (!data.success) throw new Error(data.error);
-      const dinner = data.dinners.find((d: Dinner) => d.id === id);
-      if (!dinner) throw new Error("Dinner not found");
-      return dinner as Dinner;
+      return data.dinner as Dinner;
     },
     enabled: !!id,
   });

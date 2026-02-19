@@ -108,9 +108,8 @@ export async function GET(
     });
   } catch (error) {
     console.error("Fetch season stats error:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
     return NextResponse.json(
-      { error: "Failed to fetch season stats", details: errorMessage },
+      { error: "Failed to fetch season stats" },
       { status: 500 }
     );
   }

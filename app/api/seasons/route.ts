@@ -18,9 +18,8 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error("Fetch seasons error:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
     return NextResponse.json(
-      { error: "Failed to fetch seasons", details: errorMessage },
+      { error: "Failed to fetch seasons" },
       { status: 500 }
     );
   }
@@ -83,9 +82,8 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     console.error("Create season error:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
     return NextResponse.json(
-      { error: "Failed to create season", details: errorMessage },
+      { error: "Failed to create season" },
       { status: 500 }
     );
   }

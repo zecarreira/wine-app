@@ -47,7 +47,6 @@ export async function POST(
     return NextResponse.json({ success: true, message: "Blind tasting started! 🎭", dinner: updatedDinner });
   } catch (error) {
     console.error("Start dinner error:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json({ error: "Failed to start dinner", details: errorMessage }, { status: 500 });
+    return NextResponse.json({ error: "Failed to start dinner" }, { status: 500 });
   }
 }

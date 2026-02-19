@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { dinner_photos, dinners, users } from "@/lib/schema";
 import { eq, desc } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
-import jwt from "jsonwebtoken";
+import { requireAuth } from "@/lib/middleware";
 
 // GET - List all photos for a dinner
 export async function GET(
@@ -11,6 +11,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requireAuth(request);
+    if (auth instanceof NextResponse) return auth;
+
     const { id: dinnerId } = await params;
     const uploadedByUser = alias(users, "uploaded_by_user");
 
@@ -41,22 +44,11 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const postAuth = await requireAuth(request);
+    if (postAuth instanceof NextResponse) return postAuth;
+    const userId = postAuth.userId;
+
     const { id: dinnerId } = await params;
-
-    const authHeader = request.headers.get("Authorization");
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
-    }
-
-    const token = authHeader.replace("Bearer ", "");
-    let userId: string;
-
-    try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string };
-      userId = decoded.userId;
-    } catch {
-      return NextResponse.json({ success: false, error: "Invalid token" }, { status: 401 });
-    }
 
     const [dinner] = await db
       .select({ id: dinners.id })

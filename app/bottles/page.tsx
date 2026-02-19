@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Header } from "@/components";
+import Header from "@/components/Header";
 import { useBottlesCatalog } from "@/lib/hooks/useApi";
 
 export default function BottlesCatalogPage() {
@@ -59,9 +59,9 @@ export default function BottlesCatalogPage() {
           <div className="space-y-3">
             {/* Sort By */}
             <div>
-              <label className="block text-white/90 text-xs font-semibold mb-1.5">
+              <p className="block text-white/90 text-xs font-semibold mb-1.5">
                 Ordenar por
-              </label>
+              </p>
               <div className="grid grid-cols-4 gap-1.5">
                 <button
                   onClick={() => setSortBy("name")}
@@ -108,9 +108,9 @@ export default function BottlesCatalogPage() {
 
             {/* Order */}
             <div>
-              <label className="block text-white/90 text-xs font-semibold mb-1.5">
+              <p className="block text-white/90 text-xs font-semibold mb-1.5">
                 Ordem
-              </label>
+              </p>
               <div className="grid grid-cols-2 gap-1.5">
                 <button
                   onClick={() => setOrder("asc")}
@@ -137,9 +137,9 @@ export default function BottlesCatalogPage() {
 
             {/* Producer Filter */}
             <div>
-              <label className="block text-white/90 text-xs font-semibold mb-1.5">
+              <p className="block text-white/90 text-xs font-semibold mb-1.5">
                 Produtor
-              </label>
+              </p>
               <div className="flex flex-wrap gap-1.5">
                 <button
                   onClick={() => setSelectedProducer("")}
@@ -191,9 +191,9 @@ export default function BottlesCatalogPage() {
 
             {/* Wine Type Filter */}
             <div>
-              <label className="block text-white/90 text-xs font-semibold mb-1.5">
+              <p className="block text-white/90 text-xs font-semibold mb-1.5">
                 Tipo de Vinho
-              </label>
+              </p>
               <div className="flex flex-wrap gap-1.5">
                 {wineTypes.map((type) => (
                   <button
@@ -281,6 +281,7 @@ export default function BottlesCatalogPage() {
                       src={bottle.photo_url}
                       alt={bottle.name}
                       fill
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                       className="object-cover"
                     />
                   </div>
@@ -364,6 +365,7 @@ export default function BottlesCatalogPage() {
                         src={bottle.photo_url}
                         alt={bottle.name}
                         fill
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                         className="object-cover"
                       />
                     </div>

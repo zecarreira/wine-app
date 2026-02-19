@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/components/ToastProvider";
 
 interface User {
   id: string;
@@ -26,13 +27,10 @@ interface User {
 
 export default function ProfilePage() {
   const router = useRouter();
+  const toast = useToast();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
-
-  useEffect(() => {
-    fetchProfile();
-  }, []);
 
   async function fetchProfile() {
     try {
@@ -58,10 +56,14 @@ export default function ProfilePage() {
       }
     } catch (error) {
       console.error("Error fetching profile:", error);
-    } finally {
-      setLoading(false);
     }
+    setLoading(false);
   }
+
+  useEffect(() => {
+    fetchProfile();
+  }, []);
+
   function handleLogout() {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
@@ -74,70 +76,72 @@ export default function ProfilePage() {
 
     // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      alert("A foto deve ter no máximo 5MB");
+      toast.error("A foto deve ter no máximo 5MB");
       return;
     }
 
     // Validate file type
     if (!file.type.startsWith("image/")) {
-      alert("Por favor, selecione uma imagem válida");
+      toast.error("Por favor, selecione uma imagem válida");
       return;
     }
 
     setUploadingPhoto(true);
 
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        router.push("/login");
-        return;
-      }
-
-      // Upload photo to storage
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("bucket", "profile-photos");
-
-      const uploadResponse = await fetch("/api/upload", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        body: formData,
-      });
-
-      const uploadData = await uploadResponse.json();
-
-      if (!uploadData.success) {
-        throw new Error(uploadData.error || "Failed to upload photo");
-      }
-
-      // Update user profile with photo URL
-      const updateResponse = await fetch(`/api/users/${user?.id}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          profile_photo_url: uploadData.url,
-        }),
-      });
-
-      const updateData = await updateResponse.json();
-
-      if (updateData.success) {
-        // Refresh profile
-        await fetchProfile();
-      } else {
-        throw new Error(updateData.error || "Failed to update profile");
-      }
-    } catch (error) {
-      console.error("Photo upload error:", error);
-      alert("Erro ao fazer upload da foto. Tenta novamente.");
-    } finally {
+    const token = localStorage.getItem("token");
+    if (!token) {
       setUploadingPhoto(false);
+      router.push("/login");
+      return;
     }
+
+    // Upload photo to storage
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("bucket", "profile-photos");
+
+    const uploadResponse = await fetch("/api/upload", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+    }).catch(() => null);
+
+    if (!uploadResponse) {
+      toast.error("Erro de rede. Tenta novamente.");
+      setUploadingPhoto(false);
+      return;
+    }
+
+    const uploadData = await uploadResponse.json().catch(() => null);
+    if (!uploadData?.success) {
+      toast.error(uploadData?.error ?? "Erro ao fazer upload da foto. Tenta novamente.");
+      setUploadingPhoto(false);
+      return;
+    }
+
+    // Update user profile with photo URL
+    const updateResponse = await fetch(`/api/users/${user?.id}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ profile_photo_url: uploadData.url }),
+    }).catch(() => null);
+
+    if (!updateResponse) {
+      toast.error("Erro de rede. Tenta novamente.");
+      setUploadingPhoto(false);
+      return;
+    }
+
+    const updateData = await updateResponse.json().catch(() => null);
+    if (updateData?.success) {
+      await fetchProfile();
+    } else {
+      toast.error(updateData?.error ?? "Erro ao atualizar perfil. Tenta novamente.");
+    }
+    setUploadingPhoto(false);
   }
 
   if (loading) {
@@ -444,6 +448,7 @@ export default function ProfilePage() {
                           src={bottle.photo_url}
                           alt={bottle.name}
                           fill
+                          sizes="56px"
                           className="object-cover"
                         />
                       </div>

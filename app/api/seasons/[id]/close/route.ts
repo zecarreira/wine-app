@@ -74,9 +74,8 @@ export async function POST(
     });
   } catch (error) {
     console.error("Close season error:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
     return NextResponse.json(
-      { error: "Failed to close season", details: errorMessage },
+      { error: "Failed to close season" },
       { status: 500 }
     );
   }

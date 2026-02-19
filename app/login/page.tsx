@@ -3,7 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Button, Input, Card } from "@/components";
+import Button from "@/components/Button";
+import Input from "@/components/Input";
+import Card from "@/components/Card";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -36,13 +38,16 @@ export default function LoginPage() {
         // Redirect to home page
         router.push("/");
       } else {
-        setError(data.error || "Falha no login");
+        if (data.error) {
+          setError(data.error);
+        } else {
+          setError("Falha no login");
+        }
       }
     } catch {
       setError("Erro de conexão. Tenta novamente.");
-    } finally {
-      setLoading(false);
     }
+    setLoading(false);
   }
 
   return (
@@ -68,7 +73,7 @@ export default function LoginPage() {
               label="Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="josecarreira@gmail.com"
+              placeholder="nome@exemplo.com"
               required
             />
 

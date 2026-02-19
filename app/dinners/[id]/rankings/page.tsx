@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { use } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 interface Rating {
@@ -34,6 +35,7 @@ export default function RankingsPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
+  const router = useRouter();
   const [rankings, setRankings] = useState<BottleWithRatings[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -43,13 +45,16 @@ export default function RankingsPage({
       const data = await response.json();
 
       if (data.success) {
-        setRankings(data.rankings ?? []);
+        if (data.rankings) {
+          setRankings(data.rankings);
+        } else {
+          setRankings([]);
+        }
       }
     } catch {
       console.error("Error fetching rankings");
-    } finally {
-      setLoading(false);
     }
+    setLoading(false);
   }, [id]);
 
   useEffect(() => {
@@ -75,7 +80,7 @@ export default function RankingsPage({
       <header className="bg-black/20 backdrop-blur-lg border-b border-white/10 sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <button
-            onClick={() => window.history.back()}
+            onClick={() => router.back()}
             className="text-white/80 hover:text-white text-2xl"
           >
             ←
@@ -190,7 +195,7 @@ export default function RankingsPage({
               Alta: {rankings[0].stats.highest_rating}/10
             </p>
             <p className="text-white/40 text-xs mt-3">
-              Tiebreaker rules: 1. Média → 2. Total de pontos → 3. Nota mais
+              Critérios de desempate: 1. Média → 2. Total de pontos → 3. Nota mais
               alta
             </p>
           </div>

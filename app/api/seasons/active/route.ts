@@ -75,9 +75,8 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error("Fetch active season error:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
     return NextResponse.json(
-      { error: "Failed to fetch active season", details: errorMessage },
+      { error: "Failed to fetch active season" },
       { status: 500 }
     );
   }

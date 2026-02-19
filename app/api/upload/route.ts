@@ -34,11 +34,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "File too large (max 5MB)" }, { status: 400 });
     }
 
-    if (!file.type.startsWith("image/")) {
-      return NextResponse.json({ success: false, error: "Only images allowed" }, { status: 400 });
+    const MIME_TO_EXT: Record<string, string> = {
+      "image/jpeg": "jpg",
+      "image/png": "png",
+      "image/webp": "webp",
+      "image/gif": "gif",
+    };
+    const fileExt = MIME_TO_EXT[file.type];
+    if (!fileExt) {
+      return NextResponse.json({ success: false, error: "Only JPEG, PNG, WebP, or GIF images allowed" }, { status: 400 });
     }
 
-    const fileExt = file.name.split(".").pop();
     const fileName = `${auth.userId}-${Date.now()}.${fileExt}`;
     const key = `${bucket}/${fileName}`;
 
@@ -59,7 +65,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, url: publicUrl, path: key });
   } catch (error) {
     console.error("Upload error:", error);
-    const errorMessage = error instanceof Error ? error.message : "Failed to upload";
-    return NextResponse.json({ success: false, error: errorMessage }, { status: 500 });
+    return NextResponse.json({ success: false, error: "Failed to upload" }, { status: 500 });
   }
 }

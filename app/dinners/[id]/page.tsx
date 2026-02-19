@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { use } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { PaymentsSection } from "@/components";
+import { PaymentsSection } from "@/components/PaymentsSection";
 
 interface Bottle {
   id: string;
@@ -69,22 +70,23 @@ export default function DinnerDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
+  const router = useRouter();
   const [bottles, setBottles] = useState<Bottle[]>([]);
   const [dinner, setDinner] = useState<Dinner | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [isHost, setIsHost] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [isAdmin] = useState(() => {
+    const userStr = localStorage.getItem("user");
+    if (userStr) {
+      const user = JSON.parse(userStr);
+      return user.role === "admin";
+    }
+    return false;
+  });
   const [participants, setParticipants] = useState<
     Array<{ id: string; name: string }>
   >([]);
-
-  useEffect(() => {
-    fetchDinnerAndBottles();
-    checkIfHost();
-    checkIfAdmin();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
 
   function checkIfHost() {
     const userStr = localStorage.getItem("user");
@@ -95,48 +97,51 @@ export default function DinnerDetailPage({
     return null;
   }
 
-  function checkIfAdmin() {
-    const userStr = localStorage.getItem("user");
-    if (userStr) {
-      const user = JSON.parse(userStr);
-      setIsAdmin(user.role === "admin");
-    }
-  }
-
   async function fetchDinnerAndBottles() {
-    try {
-      const dinnerResponse = await fetch("/api/dinners");
-      const dinnerData = await dinnerResponse.json();
-      const currentDinner = dinnerData.dinners.find((d: Dinner) => d.id === id);
-      setDinner(currentDinner);
+    const [dinnerResponse, bottlesResponse, ratingsResponse] = await Promise.all([
+      fetch("/api/dinners").catch(() => null),
+      fetch(`/api/dinners/${id}/bottles`).catch(() => null),
+      fetch(`/api/dinners/${id}/ratings`).catch(() => null),
+    ]);
 
-      // Check if user is host
-      const userId = checkIfHost();
-      if (userId && currentDinner) {
-        setIsHost(
-          userId === currentDinner.host_id ||
-            userId === currentDinner.created_by
-        );
+    if (!dinnerResponse || !bottlesResponse || !ratingsResponse) {
+      setLoading(false);
+      return;
+    }
+
+    const [dinnerData, bottlesData, ratingsData] = await Promise.all([
+      dinnerResponse.json().catch(() => null),
+      bottlesResponse.json().catch(() => null),
+      ratingsResponse.json().catch(() => null),
+    ]);
+
+    if (!dinnerData || !bottlesData || !ratingsData) {
+      setLoading(false);
+      return;
+    }
+
+    const currentDinner = dinnerData.dinners.find((d: Dinner) => d.id === id);
+    setDinner(currentDinner);
+
+    // Check if user is host
+    const userId = checkIfHost();
+    if (userId && currentDinner) {
+      if (userId === currentDinner.host_id || userId === currentDinner.created_by) {
+        setIsHost(true);
+      } else {
+        setIsHost(false);
       }
+    }
 
-      const bottlesResponse = await fetch(`/api/dinners/${id}/bottles`);
-      const bottlesData = await bottlesResponse.json();
+    if (bottlesData.success) {
+      setBottles(bottlesData.bottles);
+    }
 
-      if (bottlesData.success) {
-        setBottles(bottlesData.bottles);
-      }
-
-      // Fetch participants (users who rated bottles)
-      const ratingsResponse = await fetch(`/api/dinners/${id}/ratings`);
-      const ratingsData = await ratingsResponse.json();
-
-      if (ratingsData.success && ratingsData.bottles) {
-        const uniqueParticipants = new Map<
-          string,
-          { id: string; name: string }
-        >();
-        ratingsData.bottles.forEach((bottle: any) => {
-          bottle.ratings?.forEach((rating: any) => {
+    if (ratingsData.success && ratingsData.bottles) {
+      const uniqueParticipants = new Map<string, { id: string; name: string }>();
+      ratingsData.bottles.forEach((bottle: any) => {
+        if (bottle.ratings) {
+          bottle.ratings.forEach((rating: any) => {
             if (rating.user) {
               uniqueParticipants.set(rating.user.id, {
                 id: rating.user.id,
@@ -144,15 +149,18 @@ export default function DinnerDetailPage({
               });
             }
           });
-        });
-        setParticipants(Array.from(uniqueParticipants.values()));
-      }
-    } catch (error) {
-      console.error("Error fetching data:", error);
-    } finally {
-      setLoading(false);
+        }
+      });
+      setParticipants(Array.from(uniqueParticipants.values()));
     }
+    setLoading(false);
   }
+
+  useEffect(() => {
+    fetchDinnerAndBottles();
+    checkIfHost();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
   async function handleStartDinner() {
     if (
@@ -177,13 +185,16 @@ export default function DinnerDetailPage({
         alert("🎭 Prova cega iniciada!");
         fetchDinnerAndBottles();
       } else {
-        alert(data.error || "Erro ao iniciar jantar");
+        if (data.error) {
+          alert(data.error);
+        } else {
+          alert("Erro ao iniciar jantar");
+        }
       }
     } catch (error) {
       alert("Erro ao iniciar jantar");
-    } finally {
-      setActionLoading(false);
     }
+    setActionLoading(false);
   }
 
   async function handleEndDinner() {
@@ -209,13 +220,16 @@ export default function DinnerDetailPage({
         alert("✅ Jantar terminado! Pronto para revelar!");
         fetchDinnerAndBottles();
       } else {
-        alert(data.error || "Erro ao terminar jantar");
+        if (data.error) {
+          alert(data.error);
+        } else {
+          alert("Erro ao terminar jantar");
+        }
       }
     } catch (error) {
       alert("Erro ao terminar jantar");
-    } finally {
-      setActionLoading(false);
     }
+    setActionLoading(false);
   }
 
   async function handleDeleteBottle(bottleId: string) {
@@ -235,7 +249,11 @@ export default function DinnerDetailPage({
         alert("✅ Garrafa apagada com sucesso!");
         fetchDinnerAndBottles();
       } else {
-        alert(data.error || "Erro ao apagar garrafa");
+        if (data.error) {
+          alert(data.error);
+        } else {
+          alert("Erro ao apagar garrafa");
+        }
       }
     } catch (error) {
       alert("Erro ao apagar garrafa");
@@ -292,7 +310,7 @@ export default function DinnerDetailPage({
       <header className="bg-black/20 backdrop-blur-lg border-b border-white/10 sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <button
-            onClick={() => window.history.back()}
+            onClick={() => router.back()}
             className="text-white/80 hover:text-white text-2xl"
           >
             ←

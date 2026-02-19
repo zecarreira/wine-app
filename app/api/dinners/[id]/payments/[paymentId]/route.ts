@@ -49,7 +49,6 @@ export async function PATCH(
     return NextResponse.json({ success: true, message: `Payment marked as ${status}`, payment: updatedPayment });
   } catch (error) {
     console.error("Update payment error:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
-    return NextResponse.json({ error: "Failed to update payment", details: errorMessage }, { status: 500 });
+    return NextResponse.json({ error: "Failed to update payment" }, { status: 500 });
   }
 }

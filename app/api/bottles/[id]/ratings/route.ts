@@ -11,6 +11,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requireAuth(request);
+    if (auth instanceof NextResponse) return auth;
+
     const { id: bottleId } = await params;
     const ratingUser = alias(users, "user");
 
@@ -44,8 +47,7 @@ export async function GET(
     });
   } catch (error) {
     console.error("Fetch ratings error:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
-    return NextResponse.json({ error: "Failed to fetch ratings", details: errorMessage }, { status: 500 });
+    return NextResponse.json({ error: "Failed to fetch ratings" }, { status: 500 });
   }
 }
 
@@ -101,7 +103,6 @@ export async function POST(
     }
   } catch (error) {
     console.error("Submit rating error:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
-    return NextResponse.json({ error: "Failed to submit rating", details: errorMessage }, { status: 500 });
+    return NextResponse.json({ error: "Failed to submit rating" }, { status: 500 });
   }
 }

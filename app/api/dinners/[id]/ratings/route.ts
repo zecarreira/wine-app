@@ -84,7 +84,6 @@ export async function GET(
     });
   } catch (error) {
     console.error("Fetch dinner ratings error:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
-    return NextResponse.json({ error: "Failed to fetch dinner ratings", details: errorMessage }, { status: 500 });
+    return NextResponse.json({ error: "Failed to fetch dinner ratings" }, { status: 500 });
   }
 }

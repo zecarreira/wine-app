@@ -55,7 +55,7 @@ export async function requireFounder(request: NextRequest) {
     );
   }
 
-  if (auth.userRole !== "admin") {
+  if (!["admin", "founder"].includes(auth.userRole)) {
     return NextResponse.json(
       { error: "Forbidden. Only founders can perform this action." },
       { status: 403 }

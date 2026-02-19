@@ -2,7 +2,7 @@
 
 import {
   createContext,
-  useContext,
+  use,
   useState,
   useCallback,
   ReactNode,
@@ -119,7 +119,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 }
 
 export function useToast() {
-  const context = useContext(ToastContext);
+  const context = use(ToastContext);
   if (context === undefined) {
     throw new Error("useToast must be used within a ToastProvider");
   }

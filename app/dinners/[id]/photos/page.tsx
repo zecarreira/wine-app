@@ -36,10 +36,6 @@ export default function DinnerPhotosPage({
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
-  useEffect(() => {
-    fetchDinnerAndPhotos();
-  }, [id]);
-
   async function fetchDinnerAndPhotos() {
     try {
       // Fetch dinner info
@@ -57,10 +53,13 @@ export default function DinnerPhotosPage({
       }
     } catch (error) {
       console.error("Error fetching data:", error);
-    } finally {
-      setLoading(false);
     }
+    setLoading(false);
   }
+
+  useEffect(() => {
+    fetchDinnerAndPhotos();
+  }, [id]);
 
   function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files || []);
@@ -71,63 +70,69 @@ export default function DinnerPhotosPage({
     if (selectedFiles.length === 0) return;
 
     setUploading(true);
-    try {
-      const token = localStorage.getItem("token");
 
-      if (!token) {
-        alert("Por favor faz login primeiro");
-        router.push("/login");
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("Por favor faz login primeiro");
+      router.push("/login");
+      setUploading(false);
+      return;
+    }
+
+    // Upload each file
+    for (const file of selectedFiles) {
+      // 1. Upload to storage
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("bucket", "dinner-photos");
+
+      const uploadResponse = await fetch("/api/upload", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      }).catch(() => null);
+
+      if (!uploadResponse) {
+        alert("Erro de rede. Tenta novamente.");
+        setUploading(false);
         return;
       }
 
-      // Upload each file
-      for (const file of selectedFiles) {
-        // 1. Upload to storage
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("bucket", "dinner-photos");
-
-        const uploadResponse = await fetch("/api/upload", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          body: formData,
-        });
-
-        const uploadData = await uploadResponse.json();
-
-        if (!uploadData.success) {
-          throw new Error(uploadData.error);
-        }
-
-        // 2. Save photo record to database
-        const photoResponse = await fetch(`/api/dinners/${id}/photos`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            photo_url: uploadData.url,
-          }),
-        });
-
-        const photoData = await photoResponse.json();
-
-        if (!photoData.success) {
-          throw new Error(photoData.error);
-        }
+      const uploadData = await uploadResponse.json().catch(() => null);
+      if (!uploadData?.success) {
+        alert("Erro ao fazer upload das fotos: " + (uploadData?.error ?? "Erro desconhecido"));
+        setUploading(false);
+        return;
       }
 
-      // Refresh photos
-      await fetchDinnerAndPhotos();
-      setSelectedFiles([]);
-    } catch (error: any) {
-      alert("Erro ao fazer upload das fotos: " + error.message);
-    } finally {
-      setUploading(false);
+      // 2. Save photo record to database
+      const photoResponse = await fetch(`/api/dinners/${id}/photos`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ photo_url: uploadData.url }),
+      }).catch(() => null);
+
+      if (!photoResponse) {
+        alert("Erro de rede. Tenta novamente.");
+        setUploading(false);
+        return;
+      }
+
+      const photoData = await photoResponse.json().catch(() => null);
+      if (!photoData?.success) {
+        alert("Erro ao guardar foto: " + (photoData?.error ?? "Erro desconhecido"));
+        setUploading(false);
+        return;
+      }
     }
+
+    // Refresh photos
+    await fetchDinnerAndPhotos();
+    setSelectedFiles([]);
+    setUploading(false);
   }
 
   if (loading) {
@@ -147,7 +152,7 @@ export default function DinnerPhotosPage({
       <header className="bg-black/20 backdrop-blur-lg border-b border-white/10 sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <button
-            onClick={() => window.history.back()}
+            onClick={() => router.back()}
             className="text-white/80 hover:text-white text-2xl"
           >
             ←
@@ -229,15 +234,18 @@ export default function DinnerPhotosPage({
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {photos.map((photo, index) => (
-                <div
+                <button
                   key={photo.id}
+                  type="button"
                   onClick={() => setLightboxIndex(index)}
-                  className="relative aspect-square rounded-2xl overflow-hidden cursor-pointer group"
+                  aria-label={`Ver foto de ${photo.uploaded_by_user.name}`}
+                  className="relative aspect-square rounded-2xl overflow-hidden cursor-pointer group w-full"
                 >
                   <Image
                     src={photo.photo_url}
                     alt="Foto do jantar"
                     fill
+                    sizes="(max-width: 768px) calc(50vw - 24px), (max-width: 1024px) calc(33vw - 24px), calc(25vw - 24px)"
                     className="object-cover group-hover:scale-110 transition-transform duration-300"
                   />
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-end p-3">
@@ -245,7 +253,7 @@ export default function DinnerPhotosPage({
                       {photo.uploaded_by_user.name}
                     </div>
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           </div>
@@ -256,6 +264,7 @@ export default function DinnerPhotosPage({
           <div
             className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
             onClick={() => setLightboxIndex(null)}
+            role="presentation"
           >
             <button
               onClick={(e) => {
@@ -271,7 +280,7 @@ export default function DinnerPhotosPage({
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  setLightboxIndex(lightboxIndex - 1);
+                  setLightboxIndex((prev) => (prev ?? 0) - 1);
                 }}
                 className="absolute left-4 text-white text-6xl hover:text-purple-400 transition-colors"
               >
@@ -284,6 +293,7 @@ export default function DinnerPhotosPage({
                 src={photos[lightboxIndex].photo_url}
                 alt="Tamanho completo"
                 fill
+                sizes="100vw"
                 className="object-contain"
               />
             </div>
@@ -292,7 +302,7 @@ export default function DinnerPhotosPage({
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  setLightboxIndex(lightboxIndex + 1);
+                  setLightboxIndex((prev) => (prev ?? 0) + 1);
                 }}
                 className="absolute right-4 text-white text-6xl hover:text-purple-400 transition-colors"
               >

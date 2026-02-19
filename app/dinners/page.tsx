@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Header from "@/components/Header";
 import Button from "@/components/Button";
@@ -41,14 +41,7 @@ export default function DinnersPage() {
   const [isLoading, setIsLoading] = useState(true);
   const { showToast } = useToast();
 
-  const userRole = useMemo(() => {
-    const user = getUser();
-    return user?.role || null;
-  }, []);
-
-  useEffect(() => {
-    fetchActiveSeason();
-  }, []);
+  const [userRole] = useState(() => getUser()?.role ?? null);
 
   async function fetchActiveSeason() {
     try {
@@ -67,10 +60,13 @@ export default function DinnersPage() {
     } catch (error) {
       console.error("Error fetching active season:", error);
       showToast("Erro ao carregar temporada", "error");
-    } finally {
-      setIsLoading(false);
     }
+    setIsLoading(false);
   }
+
+  useEffect(() => {
+    fetchActiveSeason();
+  }, []);
 
   async function handleCloseSeason() {
     if (!activeSeason) return;
@@ -101,7 +97,11 @@ export default function DinnersPage() {
         );
         fetchActiveSeason();
       } else {
-        showToast(data.error || "Erro ao fechar temporada", "error");
+        if (data.error) {
+          showToast(data.error, "error");
+        } else {
+          showToast("Erro ao fechar temporada", "error");
+        }
       }
     } catch (error) {
       console.error("Error closing season:", error);
@@ -133,7 +133,11 @@ export default function DinnersPage() {
         showToast(`Temporada ${data.season.season_number} criada!`, "success");
         fetchActiveSeason();
       } else {
-        showToast(data.error || "Erro ao criar temporada", "error");
+        if (data.error) {
+          showToast(data.error, "error");
+        } else {
+          showToast("Erro ao criar temporada", "error");
+        }
       }
     } catch (error) {
       console.error("Error creating season:", error);
@@ -155,8 +159,8 @@ export default function DinnersPage() {
           </div>
 
           <div className="space-y-4">
-            {[1, 2, 3].map((i) => (
-              <DinnerCardSkeleton key={i} />
+            {[1, 2, 3].map((num) => (
+              <DinnerCardSkeleton key={`skeleton-${num}`} />
             ))}
           </div>
         </div>

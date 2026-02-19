@@ -30,6 +30,7 @@ export default function Header({
         {useBackButton ? (
           <button
             onClick={handleBack}
+            aria-label="Voltar"
             className="text-white/80 hover:text-white text-2xl"
           >
             ←
@@ -37,12 +38,13 @@ export default function Header({
         ) : (
           <Link
             href={backUrl || "/"}
+            aria-label="Voltar"
             className="text-white/80 hover:text-white text-2xl"
           >
             ←
           </Link>
         )}
-        <Link href="/" className="text-white/80 hover:text-white text-2xl">
+        <Link href="/" aria-label="Início" className="text-white/80 hover:text-white text-2xl">
           🏠
         </Link>
       </div>

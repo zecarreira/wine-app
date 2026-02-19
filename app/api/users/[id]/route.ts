@@ -3,13 +3,23 @@ import { db } from "@/lib/db";
 import { users, dinners, ratings, bottles, payments, fines } from "@/lib/schema";
 import { eq, desc, inArray } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
+import { requireAuth } from "@/lib/middleware";
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requireAuth(request);
+    if (auth instanceof NextResponse) return auth;
+
     const { id: userId } = await params;
+
+    if (!UUID_REGEX.test(userId)) {
+      return NextResponse.json({ success: false, error: "Invalid ID" }, { status: 400 });
+    }
 
     const [user] = await db
       .select({ id: users.id, name: users.name, email: users.email, role: users.role, created_at: users.created_at, profile_photo_url: users.profile_photo_url })
@@ -160,7 +170,15 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requireAuth(request);
+    if (auth instanceof NextResponse) return auth;
+
     const { id: userId } = await params;
+
+    if (auth.userId !== userId) {
+      return NextResponse.json({ success: false, error: "Forbidden" }, { status: 403 });
+    }
+
     const body = await request.json();
     const { profile_photo_url } = body;
 

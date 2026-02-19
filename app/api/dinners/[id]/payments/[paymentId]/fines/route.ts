@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { users, payments, fines } from "@/lib/schema";
+import { users, payments, fines, dinners } from "@/lib/schema";
 import { eq, asc } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { requireAuth } from "@/lib/middleware";
@@ -15,11 +15,17 @@ export async function POST(
     if (auth instanceof NextResponse) return auth;
 
     const [currentUser] = await db.select({ role: users.role }).from(users).where(eq(users.id, auth.userId)).limit(1);
-    if (!currentUser || currentUser.role !== "admin") {
-      return NextResponse.json({ error: "Only admins can add fines" }, { status: 403 });
-    }
 
-    const { paymentId } = await params;
+    const { id: dinnerId, paymentId } = await params;
+
+    const [dinner] = await db.select({ host_id: dinners.host_id }).from(dinners).where(eq(dinners.id, dinnerId)).limit(1);
+
+    const isAdmin = currentUser?.role === "admin";
+    const isDinnerHost = dinner?.host_id === auth.userId;
+
+    if (!isAdmin && !isDinnerHost) {
+      return NextResponse.json({ error: "Only admins or the dinner host can add fines" }, { status: 403 });
+    }
     const body = await request.json();
     const { amount, reason } = body;
 
@@ -83,8 +89,7 @@ export async function POST(
     );
   } catch (error) {
     console.error("Add fine error:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
-    return NextResponse.json({ error: "Failed to add fine", details: errorMessage }, { status: 500 });
+    return NextResponse.json({ error: "Failed to add fine" }, { status: 500 });
   }
 }
 
@@ -133,7 +138,6 @@ export async function GET(
     return NextResponse.json({ success: true, fines: finesFormatted, total_fines: totalFines });
   } catch (error) {
     console.error("Fetch fines error:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
-    return NextResponse.json({ error: "Failed to fetch fines", details: errorMessage }, { status: 500 });
+    return NextResponse.json({ error: "Failed to fetch fines" }, { status: 500 });
   }
 }
