@@ -22,9 +22,10 @@ export default function LoadingSpinner({
   };
 
   return (
-    <div className="text-center">
-      <div className={`${sizeClasses[size]} mb-4 animate-spin`}>{icon}</div>
-      <div className={`text-white ${textSizeClasses[size]}`}>{message}</div>
+    <div className="text-center" role="status" aria-label={message}>
+      <div className={`${sizeClasses[size]} mb-4 motion-safe:animate-spin`} aria-hidden="true">{icon}</div>
+      <div className={`text-white ${textSizeClasses[size]}`} aria-hidden="true">{message}</div>
+      <span className="sr-only">{message}</span>
     </div>
   );
 }

@@ -31,7 +31,7 @@ export default function Header({
           <button
             onClick={handleBack}
             aria-label="Voltar"
-            className="text-white/80 hover:text-white text-2xl"
+            className="text-white/80 hover:text-white text-2xl rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
           >
             ←
           </button>
@@ -39,12 +39,12 @@ export default function Header({
           <Link
             href={backUrl || "/"}
             aria-label="Voltar"
-            className="text-white/80 hover:text-white text-2xl"
+            className="text-white/80 hover:text-white text-2xl rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
           >
             ←
           </Link>
         )}
-        <Link href="/" aria-label="Início" className="text-white/80 hover:text-white text-2xl">
+        <Link href="/" aria-label="Início" className="text-white/80 hover:text-white text-2xl rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50">
           🏠
         </Link>
       </div>

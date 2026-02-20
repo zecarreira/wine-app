@@ -83,7 +83,7 @@ export default function CreateDinnerPage() {
           event_date: eventDate,
           location: location || null,
           is_blind: isBlind,
-          organizer_id: organizerId,
+          ...(organizerId ? { organizer_id: organizerId } : {}),
         }),
       });
 
@@ -108,11 +108,12 @@ export default function CreateDinnerPage() {
           <button
             onClick={() => router.back()}
             className="text-white/80 hover:text-white text-2xl"
+            aria-label="Voltar"
           >
             ←
           </button>
-          <Link href="/" className="text-white/80 hover:text-white text-2xl">
-            �
+          <Link href="/" className="text-white/80 hover:text-white text-2xl" aria-label="Início">
+            🏠
           </Link>
         </div>
       </header>
@@ -141,7 +142,8 @@ export default function CreateDinnerPage() {
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Noite de Vinhos Italianos"
                 required
-                className="w-full bg-white/10 border-2 border-white/20 rounded-2xl px-4 py-2.5 text-white placeholder:text-white/40 focus:outline-none focus:border-purple-400 text-base"
+                autoComplete="off"
+                className="w-full bg-white/10 border-2 border-white/20 rounded-2xl px-4 py-2.5 text-white placeholder:text-white/40 focus:border-purple-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400/50 text-base"
               />
             </div>
 
@@ -155,7 +157,8 @@ export default function CreateDinnerPage() {
                 value={eventDate}
                 onChange={(e) => setEventDate(e.target.value)}
                 required
-                className="w-full max-w-full bg-white/10 border-2 border-white/20 rounded-2xl px-4 py-2.5 text-white focus:outline-none focus:border-purple-400 text-base scheme-dark"
+                autoComplete="off"
+                className="w-full max-w-full bg-white/10 border-2 border-white/20 rounded-2xl px-4 py-2.5 text-white focus:border-purple-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400/50 text-base scheme-dark"
                 style={{ colorScheme: "dark" }}
               />
             </div>
@@ -170,48 +173,51 @@ export default function CreateDinnerPage() {
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
                 placeholder="Lisboa, Portugal"
-                className="w-full bg-white/10 border-2 border-white/20 rounded-2xl px-4 py-2.5 text-white placeholder:text-white/40 focus:outline-none focus:border-purple-400 text-base"
+                autoComplete="street-address"
+                className="w-full bg-white/10 border-2 border-white/20 rounded-2xl px-4 py-2.5 text-white placeholder:text-white/40 focus:border-purple-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400/50 text-base"
               />
             </div>
 
             {/* Organizer Selection */}
             <div>
-              <label className="block text-white font-semibold mb-2 text-sm">
-                Organizador *
-              </label>
               {loadingFounders ? (
                 <div className="w-full bg-white/10 border-2 border-white/20 rounded-2xl px-4 py-2.5 text-white/60 text-base">
                   A carregar founders...
                 </div>
               ) : availableFounders.length === 0 ? (
-                <div className="w-full bg-red-500/20 border-2 border-red-500/50 rounded-2xl px-4 py-2.5 text-red-200 text-sm">
-                  ⚠️ Todos os founders já organizaram um jantar nesta temporada
+                <div className="w-full bg-amber-500/20 border-2 border-amber-400/30 rounded-2xl px-4 py-3 text-amber-200 text-sm">
+                  🎁 Jantar extra — todos os founders já organizaram um jantar nesta temporada, por isso este não precisa de organizador.
                 </div>
               ) : (
-                <select
-                  value={organizerId}
-                  onChange={(e) => setOrganizerId(e.target.value)}
-                  required
-                  className="w-full bg-white/10 border-2 border-white/20 rounded-2xl px-4 py-2.5 text-white focus:outline-none focus:border-purple-400 text-base"
-                  style={{ colorScheme: "dark" }}
-                >
-                  <option value="" className="bg-slate-800">
-                    Seleciona quem organiza...
-                  </option>
-                  {availableFounders.map((founder) => (
-                    <option
-                      key={founder.id}
-                      value={founder.id}
-                      className="bg-slate-800"
-                    >
-                      {founder.name}
+                <>
+                  <label className="block text-white font-semibold mb-2 text-sm">
+                    Organizador *
+                  </label>
+                  <select
+                    value={organizerId}
+                    onChange={(e) => setOrganizerId(e.target.value)}
+                    required
+                    className="w-full bg-white/10 border-2 border-white/20 rounded-2xl px-4 py-2.5 text-white focus:border-purple-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400/50 text-base"
+                    style={{ colorScheme: "dark" }}
+                  >
+                    <option value="" className="bg-slate-800">
+                      Seleciona quem organiza...
                     </option>
-                  ))}
-                </select>
+                    {availableFounders.map((founder) => (
+                      <option
+                        key={founder.id}
+                        value={founder.id}
+                        className="bg-slate-800"
+                      >
+                        {founder.name}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-purple-200 text-xs mt-2">
+                    Cada founder só pode organizar 1 jantar por temporada
+                  </p>
+                </>
               )}
-              <p className="text-purple-200 text-xs mt-2">
-                Cada founder só pode organizar 1 jantar por temporada
-              </p>
             </div>
 
             {/* Blind Tasting Toggle */}
@@ -245,7 +251,7 @@ export default function CreateDinnerPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-linear-to-r from-purple-600 to-pink-600 text-white px-5 py-4 rounded-2xl font-bold text-lg shadow-lg hover:shadow-purple-500/50 transform hover:scale-[1.02] transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-linear-to-r from-purple-600 to-pink-600 text-white px-5 py-4 rounded-2xl font-bold text-lg shadow-lg hover:shadow-purple-500/50 transform hover:scale-[1.02] transition-[colors,transform,box-shadow] duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400/70"
             >
               {loading ? "A criar..." : "Criar Jantar 🍽️"}
             </button>

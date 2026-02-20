@@ -30,7 +30,7 @@ export default function Badge({
     <div
       className={`inline-flex items-center gap-2 ${variantClasses[variant]} ${sizeClasses[size]} font-bold rounded-full border`}
     >
-      {icon && <span>{icon}</span>}
+      {icon && <span aria-hidden="true">{icon}</span>}
       <span className="uppercase">{children}</span>
     </div>
   );

@@ -25,6 +25,28 @@ export async function POST(
       return NextResponse.json({ error: "Only the host can end this dinner" }, { status: 403 });
     }
 
+    // Jantar extra: passa diretamente de "setup" para "completed"
+    if (dinner.is_extra_dinner) {
+      if (dinner.status !== "setup" && dinner.status !== "active") {
+        return NextResponse.json(
+          { error: `Jantar já está ${dinner.status}` },
+          { status: 400 }
+        );
+      }
+
+      const [updatedDinner] = await db
+        .update(dinners)
+        .set({ status: "completed", ended_at: new Date(), is_completed: true, updated_at: new Date() })
+        .where(eq(dinners.id, dinnerId))
+        .returning();
+
+      return NextResponse.json({
+        success: true,
+        message: "Jantar extra concluído! 🎉",
+        dinner: updatedDinner,
+      });
+    }
+
     if (dinner.status !== "active") {
       return NextResponse.json(
         { error: `Cannot end dinner in ${dinner.status} state` },

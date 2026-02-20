@@ -65,6 +65,7 @@ export default function BottlesCatalogPage() {
               <div className="grid grid-cols-4 gap-1.5">
                 <button
                   onClick={() => setSortBy("name")}
+                  aria-pressed={sortBy === "name"}
                   className={`px-2 py-2 rounded-lg text-xs font-semibold transition-colors ${
                     sortBy === "name"
                       ? "bg-purple-600 text-white"
@@ -75,6 +76,7 @@ export default function BottlesCatalogPage() {
                 </button>
                 <button
                   onClick={() => setSortBy("producer")}
+                  aria-pressed={sortBy === "producer"}
                   className={`px-2 py-2 rounded-lg text-xs font-semibold transition-colors ${
                     sortBy === "producer"
                       ? "bg-purple-600 text-white"
@@ -85,6 +87,7 @@ export default function BottlesCatalogPage() {
                 </button>
                 <button
                   onClick={() => setSortBy("rating")}
+                  aria-pressed={sortBy === "rating"}
                   className={`px-2 py-2 rounded-lg text-xs font-semibold transition-colors ${
                     sortBy === "rating"
                       ? "bg-purple-600 text-white"
@@ -95,6 +98,7 @@ export default function BottlesCatalogPage() {
                 </button>
                 <button
                   onClick={() => setSortBy("vintage")}
+                  aria-pressed={sortBy === "vintage"}
                   className={`px-2 py-2 rounded-lg text-xs font-semibold transition-colors ${
                     sortBy === "vintage"
                       ? "bg-purple-600 text-white"
@@ -114,6 +118,7 @@ export default function BottlesCatalogPage() {
               <div className="grid grid-cols-2 gap-1.5">
                 <button
                   onClick={() => setOrder("asc")}
+                  aria-pressed={order === "asc"}
                   className={`px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${
                     order === "asc"
                       ? "bg-purple-600 text-white"
@@ -124,6 +129,7 @@ export default function BottlesCatalogPage() {
                 </button>
                 <button
                   onClick={() => setOrder("desc")}
+                  aria-pressed={order === "desc"}
                   className={`px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${
                     order === "desc"
                       ? "bg-purple-600 text-white"
@@ -143,6 +149,7 @@ export default function BottlesCatalogPage() {
               <div className="flex flex-wrap gap-1.5">
                 <button
                   onClick={() => setSelectedProducer("")}
+                  aria-pressed={selectedProducer === ""}
                   className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
                     selectedProducer === ""
                       ? "bg-purple-600 text-white"
@@ -155,6 +162,7 @@ export default function BottlesCatalogPage() {
                   <button
                     key={producer}
                     onClick={() => setSelectedProducer(producer)}
+                    aria-pressed={selectedProducer === producer}
                     className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
                       selectedProducer === producer
                         ? "bg-purple-600 text-white"
@@ -175,6 +183,7 @@ export default function BottlesCatalogPage() {
                       <button
                         key={producer}
                         onClick={() => setSelectedProducer(producer)}
+                        aria-pressed={selectedProducer === producer}
                         className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
                           selectedProducer === producer
                             ? "bg-purple-600 text-white"
@@ -199,6 +208,7 @@ export default function BottlesCatalogPage() {
                   <button
                     key={type.value}
                     onClick={() => setSelectedWineType(type.value)}
+                    aria-pressed={selectedWineType === type.value}
                     className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
                       selectedWineType === type.value
                         ? "bg-purple-600 text-white"
@@ -222,6 +232,8 @@ export default function BottlesCatalogPage() {
             <div className="flex gap-2">
               <button
                 onClick={() => setViewMode("grid")}
+                aria-label="Vista em grelha"
+                aria-pressed={viewMode === "grid"}
                 className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
                   viewMode === "grid"
                     ? "bg-purple-500 text-white"
@@ -232,6 +244,8 @@ export default function BottlesCatalogPage() {
               </button>
               <button
                 onClick={() => setViewMode("list")}
+                aria-label="Vista em lista"
+                aria-pressed={viewMode === "list"}
                 className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
                   viewMode === "list"
                     ? "bg-purple-500 text-white"
@@ -247,8 +261,8 @@ export default function BottlesCatalogPage() {
         {/* Loading State */}
         {isLoading && (
           <div className="text-center py-12">
-            <div className="text-6xl mb-4 animate-spin">🍷</div>
-            <div className="text-white text-xl">A carregar vinhos...</div>
+            <div className="text-6xl mb-4 motion-safe:animate-spin" aria-hidden="true">🍷</div>
+            <div role="status" className="text-white text-xl">A carregar vinhos…</div>
           </div>
         )}
 
@@ -272,7 +286,7 @@ export default function BottlesCatalogPage() {
               <Link
                 key={bottle.id}
                 href={`/bottles/${bottle.id}`}
-                className="group bg-white/10 backdrop-blur-lg rounded-2xl overflow-hidden border border-white/20 hover:border-purple-500/50 transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-purple-500/20"
+                className="group bg-white/10 backdrop-blur-lg rounded-2xl overflow-hidden border border-white/20 hover:border-purple-500/50 transition-[colors,transform,box-shadow] hover:scale-[1.02] hover:shadow-xl hover:shadow-purple-500/20"
               >
                 {/* Image */}
                 {bottle.photo_url ? (
@@ -281,7 +295,7 @@ export default function BottlesCatalogPage() {
                       src={bottle.photo_url}
                       alt={bottle.name}
                       fill
-                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                      sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                       className="object-cover"
                     />
                   </div>
@@ -323,7 +337,7 @@ export default function BottlesCatalogPage() {
                       </div>
                       <div className="text-white/60 text-xs">
                         {bottle.total_ratings}{" "}
-                        {bottle.total_ratings === 1 ? "rating" : "ratings"}
+                        {bottle.total_ratings === 1 ? "classificação" : "classificações"}
                       </div>
                     </div>
                     <div className="text-3xl">
@@ -355,7 +369,7 @@ export default function BottlesCatalogPage() {
               <Link
                 key={bottle.id}
                 href={`/bottles/${bottle.id}`}
-                className="block bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 hover:border-purple-500/50 transition-all hover:shadow-xl hover:shadow-purple-500/20"
+                className="block bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 hover:border-purple-500/50 transition-[colors,box-shadow] hover:shadow-xl hover:shadow-purple-500/20"
               >
                 <div className="flex gap-6">
                   {/* Image */}
@@ -365,7 +379,7 @@ export default function BottlesCatalogPage() {
                         src={bottle.photo_url}
                         alt={bottle.name}
                         fill
-                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                        sizes="64px"
                         className="object-cover"
                       />
                     </div>
@@ -400,7 +414,7 @@ export default function BottlesCatalogPage() {
                         </div>
                         <div className="text-white/60 text-xs">
                           {bottle.total_ratings}{" "}
-                          {bottle.total_ratings === 1 ? "rating" : "ratings"}
+                          {bottle.total_ratings === 1 ? "classificação" : "classificações"}
                         </div>
                       </div>
                     </div>

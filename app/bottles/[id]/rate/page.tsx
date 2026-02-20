@@ -135,8 +135,8 @@ export default function RateBottlePage({
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="text-6xl mb-4 animate-spin">🍷</div>
-          <div className="text-white text-xl">A carregar vinho...</div>
+          <div className="text-6xl mb-4 motion-safe:animate-spin" aria-hidden="true">🍷</div>
+          <div role="status" className="text-white text-xl">A carregar vinho…</div>
         </div>
       </div>
     );
@@ -156,7 +156,7 @@ export default function RateBottlePage({
   const isBlindMode = bottle.dinner.status === "active";
 
   const scoreLabels = [
-    "",
+    "Não é vinho 💀",
     "É assim tão mau?",
     "Pobre",
     "Ninguém dá 3",
@@ -175,11 +175,12 @@ export default function RateBottlePage({
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <button
             onClick={() => router.back()}
-            className="text-white/80 hover:text-white text-2xl"
+            aria-label="Voltar"
+            className="text-white/80 hover:text-white text-2xl rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
           >
             ←
           </button>
-          <Link href="/" className="text-white/80 hover:text-white text-2xl">
+          <Link href="/" aria-label="Início" className="text-white/80 hover:text-white text-2xl rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50">
             🏠
           </Link>
         </div>
@@ -258,7 +259,7 @@ export default function RateBottlePage({
               : "A Tua Classificação"}
           </h2>
           <p className="text-purple-200 text-center mb-8">
-            Desliza para classificar este vinho
+            Desliza para classificar este vinho (0–10)
           </p>
 
           <div className="text-center mb-8">
@@ -274,10 +275,11 @@ export default function RateBottlePage({
           <div className="mb-8">
             <input
               type="range"
-              min="1"
+              min="0"
               max="10"
               step="0.5"
               value={score}
+              aria-label="Classificação"
               onChange={(e) => setScore(Number(e.target.value))}
               className="w-full h-3 bg-white/20 rounded-full appearance-none cursor-pointer
                 [&::-webkit-slider-thumb]:appearance-none
@@ -299,8 +301,8 @@ export default function RateBottlePage({
                 [&::-moz-range-thumb]:shadow-lg
                 [&::-moz-range-thumb]:cursor-pointer"
             />
-            <div className="flex justify-between mt-2 px-1">
-              <span className="text-white/60 text-xs">1</span>
+            <div className="flex justify-between mt-2">
+              <span className="text-white/60 text-xs">0</span>
               <span className="text-white/60 text-xs">5</span>
               <span className="text-white/60 text-xs">10</span>
             </div>
@@ -315,7 +317,7 @@ export default function RateBottlePage({
               onChange={(e) => setTastingNotes(e.target.value)}
               placeholder="Que sabores sentes? Como é o final? Características marcantes?"
               rows={4}
-              className="w-full bg-white/10 border-2 border-white/20 rounded-2xl px-4 py-3 text-white placeholder:text-white/40 focus:outline-none focus:border-purple-400 resize-none"
+              className="w-full bg-white/10 border-2 border-white/20 rounded-2xl px-4 py-3 text-white placeholder:text-white/40 focus:border-purple-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400/50 resize-none"
             />
           </div>
 
@@ -328,7 +330,7 @@ export default function RateBottlePage({
           <button
             onClick={submitRating}
             disabled={submitting}
-            className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white text-center px-6 py-5 rounded-2xl font-bold text-xl shadow-lg hover:shadow-purple-500/50 transform hover:scale-[1.02] transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white text-center px-6 py-5 rounded-2xl font-bold text-xl shadow-lg hover:shadow-purple-500/50 transform hover:scale-[1.02] transition-[colors,transform,box-shadow] duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400/70"
           >
             {submitting ? (
               <span>A submeter...</span>

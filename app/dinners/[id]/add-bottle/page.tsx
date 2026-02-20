@@ -48,10 +48,6 @@ export default function AddBottlePage({
 
       const token = localStorage.getItem("token");
 
-      // DEBUG - Remove depois
-      console.log("🔑 Token exists?", !!token);
-      console.log("🔑 Token length:", token?.length);
-      console.log("🔑 Token starts with:", token?.substring(0, 20));
       const response = await fetch("/api/upload", {
         method: "POST",
         headers: {
@@ -65,11 +61,11 @@ export default function AddBottlePage({
       if (data.success) {
         return data.url;
       } else {
-        throw new Error(data.error || "Failed to upload photo");
+        throw new Error(data.error || "Erro ao fazer upload da foto");
       }
     } catch (error: any) {
       console.error("Photo upload error:", error);
-      setError("Failed to upload photo: " + error.message);
+      setError("Erro ao fazer upload da foto: " + error.message);
       return null;
     } finally {
       setUploadingPhoto(false);
@@ -85,7 +81,7 @@ export default function AddBottlePage({
       const token = localStorage.getItem("token");
 
       if (!token) {
-        alert("Please login first");
+        alert("Por favor faz login primeiro");
         router.push("/login");
         return;
       }
@@ -119,20 +115,13 @@ export default function AddBottlePage({
 
       const data = await response.json();
 
-      // Debug: verificar se a garrafa criada tem ID
-      console.log("✅ Garrafa criada:", data);
-      if (data.bottle) {
-        console.log("🆔 ID da garrafa:", data.bottle.id);
-        console.log("📍 Posição da garrafa:", data.bottle.position);
-      }
-
       if (data.success) {
         router.push(`/dinners/${id}`);
       } else {
-        setError(data.error || "Failed to add bottle");
+        setError(data.error || "Erro ao adicionar garrafa");
       }
     } catch (error) {
-      setError("Network error. Please try again.");
+      setError("Erro de ligação. Tenta novamente.");
     } finally {
       setLoading(false);
     }
@@ -144,12 +133,13 @@ export default function AddBottlePage({
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <button
             onClick={() => router.back()}
+            aria-label="Voltar"
             className="text-white/80 hover:text-white text-2xl"
           >
             ←
           </button>
-          <Link href="/" className="text-white/80 hover:text-white text-2xl">
-            �
+          <Link href="/" aria-label="Início" className="text-white/80 hover:text-white text-2xl">
+            🏠
           </Link>
         </div>
       </header>
@@ -177,6 +167,7 @@ export default function AddBottlePage({
                     src={photoPreview}
                     alt="Pré-visualização"
                     fill
+                    sizes="(max-width: 672px) 100vw, 672px"
                     className="object-cover"
                   />
                   <button
@@ -218,6 +209,7 @@ export default function AddBottlePage({
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Barolo Riserva 2015"
                 required
+                autoComplete="off"
                 className="w-full bg-white/10 border-2 border-white/20 rounded-2xl px-4 py-4 text-white placeholder:text-white/40 focus:outline-none focus:border-purple-400 text-lg"
               />
             </div>
@@ -232,6 +224,7 @@ export default function AddBottlePage({
                 value={producer}
                 onChange={(e) => setProducer(e.target.value)}
                 placeholder="Marchesi di Barolo"
+                autoComplete="off"
                 className="w-full bg-white/10 border-2 border-white/20 rounded-2xl px-4 py-4 text-white placeholder:text-white/40 focus:outline-none focus:border-purple-400 text-lg"
               />
             </div>
@@ -249,6 +242,7 @@ export default function AddBottlePage({
                   placeholder="2015"
                   min="1900"
                   max="2025"
+                  autoComplete="off"
                   className="w-full bg-white/10 border-2 border-white/20 rounded-2xl px-4 py-4 text-white placeholder:text-white/40 focus:outline-none focus:border-purple-400 text-lg"
                 />
               </div>
@@ -294,6 +288,7 @@ export default function AddBottlePage({
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Full-bodied do Alentejo..."
                 rows={3}
+                autoComplete="off"
                 className="w-full bg-white/10 border-2 border-white/20 rounded-2xl px-4 py-3 text-white placeholder:text-white/40 focus:outline-none focus:border-purple-400 resize-none"
               />
             </div>
@@ -310,7 +305,7 @@ export default function AddBottlePage({
               <button
                 type="submit"
                 disabled={loading || uploadingPhoto}
-                className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-5 rounded-2xl font-bold text-xl shadow-lg hover:shadow-purple-500/50 transform hover:scale-[1.02] transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-5 rounded-2xl font-bold text-xl shadow-lg hover:shadow-purple-500/50 transform hover:scale-[1.02] transition-[colors,transform,box-shadow] duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400/70"
               >
                 {uploadingPhoto
                   ? "📸 A Carregar Foto..."

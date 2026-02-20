@@ -66,19 +66,18 @@ export default function SeasonDetailsPage() {
           <div className="container mx-auto px-4 py-4 flex items-center justify-between">
             <button
               onClick={() => router.back()}
-              aria-label="Voltar"
-              className="text-white/80 hover:text-white text-2xl rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
+              className="text-white/80 hover:text-white text-2xl"
             >
               ←
             </button>
-            <Link href="/" aria-label="Início" className="text-white/80 hover:text-white text-2xl rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50">
+            <Link href="/" className="text-white/80 hover:text-white text-2xl">
               �
             </Link>
           </div>
         </header>
 
         <div className="container mx-auto px-4 py-8">
-          <div className="text-white/60 text-center py-12" role="status">A carregar...</div>
+          <div className="text-white/60 text-center py-12">A carregar...</div>
         </div>
       </div>
     );
@@ -92,12 +91,11 @@ export default function SeasonDetailsPage() {
           <div className="container mx-auto px-4 py-4 flex items-center justify-between">
             <button
               onClick={() => router.back()}
-              aria-label="Voltar"
-              className="text-white/80 hover:text-white text-2xl rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
+              className="text-white/80 hover:text-white text-2xl"
             >
               ←
             </button>
-            <Link href="/" aria-label="Início" className="text-white/80 hover:text-white text-2xl rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50">
+            <Link href="/" className="text-white/80 hover:text-white text-2xl">
               �
             </Link>
           </div>
@@ -175,21 +173,16 @@ export default function SeasonDetailsPage() {
                 href={`/dinners/${dinner.id}`}
                 className="block"
               >
-                <Card className="p-5 hover:border-purple-400/50 transform hover:scale-[1.01] transition-[colors,transform] cursor-pointer">
+                <Card className="p-5 hover:border-purple-400/50 transform hover:scale-[1.01] transition-all cursor-pointer">
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-1">
-                        <span className="text-white/60 font-bold text-sm shrink-0">
+                        <span className="text-white/60 font-bold text-sm">
                           #{dinner.dinner_number_in_season}
                         </span>
                         <h3 className="text-xl font-semibold text-white">
                           {dinner.name}
                         </h3>
-                        {dinner.is_blind && (
-                          <span className="shrink-0 bg-purple-500/30 text-purple-200 px-2 py-1 rounded-full text-xs font-semibold">
-                            🎭 Prova Cega
-                          </span>
-                        )}
                       </div>
                       <div className="flex items-center gap-3 text-purple-200 text-sm">
                         <span>
@@ -199,6 +192,11 @@ export default function SeasonDetailsPage() {
                           )}
                         </span>
                         {dinner.location && <span>📍 {dinner.location}</span>}
+                        {dinner.is_blind && (
+                          <span className="bg-purple-500/30 text-purple-200 px-2 py-1 rounded-full text-xs font-semibold">
+                            🎭 Prova Cega
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -215,7 +213,7 @@ export default function SeasonDetailsPage() {
               Jantar Extra 🎁
             </h2>
             <Link href={`/dinners/${extraDinner.id}`} className="block">
-              <Card className="p-5 hover:border-amber-400/50 transform hover:scale-[1.01] transition-[colors,transform] cursor-pointer border-amber-400/30">
+              <Card className="p-5 hover:border-amber-400/50 transform hover:scale-[1.01] transition-all cursor-pointer border-amber-400/30">
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-1">

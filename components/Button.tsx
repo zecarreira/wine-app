@@ -25,11 +25,11 @@ export default function Button({
   ...props
 }: ButtonProps) {
   const baseClasses =
-    "font-bold rounded-2xl shadow-lg transform transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2";
+    "font-bold rounded-2xl shadow-lg transform transition-colors duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400/70 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent";
 
   const variantClasses = {
     primary:
-      "bg-linear-to-r from-purple-600 to-pink-600 text-white hover:shadow-purple-500/50 hover:scale-[1.02]",
+      "bg-linear-to-r from-purple-600 to-pink-600 text-white hover:shadow-purple-500/50 hover:scale-[1.02] transition-transform",
     secondary:
       "bg-white/10 backdrop-blur-lg text-white border-2 border-white/20 hover:bg-white/20 hover:scale-[1.02]",
     success:

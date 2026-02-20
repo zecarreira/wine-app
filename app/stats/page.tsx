@@ -110,10 +110,11 @@ export default function AllStatsPage() {
             <button
               onClick={() => window.history.back()}
               className="text-white/80 hover:text-white text-2xl"
+              aria-label="Voltar"
             >
               ←
             </button>
-            <Link href="/" className="text-white/80 hover:text-white text-2xl">
+            <Link href="/" className="text-white/80 hover:text-white text-2xl" aria-label="Início">
               🏠
             </Link>
           </div>

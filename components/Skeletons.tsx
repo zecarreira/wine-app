@@ -1,6 +1,6 @@
 export function DinnerCardSkeleton() {
   return (
-    <div className="bg-linear-to-br from-white/10 to-white/5 backdrop-blur-lg rounded-3xl p-6 border border-white/20 shadow-xl animate-pulse">
+    <div role="status" aria-label="A carregar" className="bg-linear-to-br from-white/10 to-white/5 backdrop-blur-lg rounded-3xl p-6 border border-white/20 shadow-xl motion-safe:animate-pulse">
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1">
           <div className="h-8 bg-white/10 rounded-lg w-3/4 mb-2"></div>
@@ -18,7 +18,7 @@ export function DinnerCardSkeleton() {
 
 export function BottleCardSkeleton() {
   return (
-    <div className="bg-linear-to-br from-white/10 to-white/5 backdrop-blur-lg rounded-3xl p-6 border border-white/20 shadow-xl animate-pulse">
+    <div role="status" aria-label="A carregar" className="bg-linear-to-br from-white/10 to-white/5 backdrop-blur-lg rounded-3xl p-6 border border-white/20 shadow-xl motion-safe:animate-pulse">
       <div className="flex items-start justify-between mb-4">
         <div className="w-14 h-14 bg-white/20 rounded-2xl"></div>
         <div className="w-16 h-8 bg-white/10 rounded-lg"></div>
@@ -38,7 +38,7 @@ export function BottleCardSkeleton() {
 
 export function ProfileSkeleton() {
   return (
-    <div className="bg-linear-to-br from-white/10 to-white/5 backdrop-blur-lg rounded-3xl p-8 border border-white/20 shadow-xl animate-pulse">
+    <div role="status" aria-label="A carregar" className="bg-linear-to-br from-white/10 to-white/5 backdrop-blur-lg rounded-3xl p-8 border border-white/20 shadow-xl motion-safe:animate-pulse">
       <div className="flex items-center gap-4 mb-6">
         <div className="w-20 h-20 bg-white/20 rounded-full"></div>
         <div className="flex-1 space-y-2">
@@ -57,7 +57,7 @@ export function ProfileSkeleton() {
 
 export function RankingsSkeleton() {
   return (
-    <div className="bg-linear-to-br from-white/10 to-white/5 backdrop-blur-lg rounded-3xl p-6 border border-white/20 shadow-xl animate-pulse">
+    <div role="status" aria-label="A carregar" className="bg-linear-to-br from-white/10 to-white/5 backdrop-blur-lg rounded-3xl p-6 border border-white/20 shadow-xl motion-safe:animate-pulse">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 bg-white/20 rounded-full"></div>

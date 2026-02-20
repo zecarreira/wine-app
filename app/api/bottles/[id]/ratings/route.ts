@@ -67,8 +67,8 @@ export async function POST(
     if (score === undefined || score === null) {
       return NextResponse.json({ error: "Score is required" }, { status: 400 });
     }
-    if (score < 1 || score > 10) {
-      return NextResponse.json({ error: "Score must be between 1 and 10" }, { status: 400 });
+    if (score < 0 || score > 10) {
+      return NextResponse.json({ error: "Score must be between 0 and 10" }, { status: 400 });
     }
 
     const [bottle] = await db.select({ id: bottles.id }).from(bottles).where(eq(bottles.id, bottleId)).limit(1);

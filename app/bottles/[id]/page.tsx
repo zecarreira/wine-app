@@ -263,7 +263,7 @@ export default function BottleDetailPage({
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="text-6xl mb-4 animate-spin">🍷</div>
+          <div className="text-6xl mb-4 motion-safe:animate-spin" aria-hidden="true">🍷</div>
           <div className="text-white text-xl">A carregar garrafa...</div>
         </div>
       </div>
@@ -281,6 +281,27 @@ export default function BottleDetailPage({
     );
   }
 
+  // Block access during blind tasting until reveal is complete
+  if (bottle.dinner?.is_blind && ["active", "ended", "revealing"].includes(bottle.dinner?.status)) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+        <div className="text-center p-8 max-w-sm">
+          <div className="text-8xl mb-6">🎭</div>
+          <h1 className="text-3xl font-bold text-white mb-3">Prova Cega em Curso</h1>
+          <p className="text-purple-200 mb-6">
+            Este vinho faz parte de uma prova cega ativa. A informação será revelada após a conclusão do jantar.
+          </p>
+          <button
+            onClick={() => router.back()}
+            className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-2xl font-semibold transition-colors"
+          >
+            ← Voltar
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   const sortedRatings = [...bottle.ratings].sort((a, b) => b.score - a.score);
 
   return (
@@ -290,11 +311,12 @@ export default function BottleDetailPage({
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <button
             onClick={() => router.back()}
-            className="text-white/80 hover:text-white text-2xl"
+            aria-label="Voltar"
+            className="text-white/80 hover:text-white text-2xl rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
           >
             ←
           </button>
-          <Link href="/" className="text-white/80 hover:text-white text-2xl">
+          <Link href="/" aria-label="Início" className="text-white/80 hover:text-white text-2xl rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50">
             🏠
           </Link>
         </div>
@@ -311,7 +333,7 @@ export default function BottleDetailPage({
                   onClick={handlePhotoClick}
                   className={`relative w-full aspect-[3/4] rounded-2xl overflow-hidden bg-black/20 ${
                     isEditing
-                      ? "cursor-pointer hover:ring-4 hover:ring-purple-400 transition-all"
+                      ? "cursor-pointer hover:ring-4 hover:ring-purple-400 transition-[box-shadow,outline]"
                       : ""
                   }`}
                 >
@@ -326,7 +348,7 @@ export default function BottleDetailPage({
                     </div>
                   )}
                   {isEditing && !uploadingPhoto && (
-                    <div className="absolute inset-0 bg-black/0 hover:bg-black/30 flex items-center justify-center transition-all opacity-0 hover:opacity-100">
+                    <div className="absolute inset-0 bg-black/0 hover:bg-black/30 flex items-center justify-center transition-[colors,opacity] opacity-0 hover:opacity-100">
                       <div className="text-center">
                         <div className="text-4xl mb-2">📷</div>
                         <div className="text-white text-sm font-medium">
@@ -339,6 +361,7 @@ export default function BottleDetailPage({
                     src={bottle.photo_url}
                     alt={bottle.name}
                     fill
+                    sizes="(max-width: 768px) 100vw, 50vw"
                     className="object-cover"
                   />
                 </div>
@@ -347,7 +370,7 @@ export default function BottleDetailPage({
                   onClick={handlePhotoClick}
                   className={`w-full aspect-[3/4] rounded-2xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center border-2 border-white/10 ${
                     isEditing
-                      ? "cursor-pointer hover:ring-4 hover:ring-purple-400 transition-all"
+                      ? "cursor-pointer hover:ring-4 hover:ring-purple-400 transition-[box-shadow,outline]"
                       : ""
                   }`}
                 >
@@ -380,7 +403,8 @@ export default function BottleDetailPage({
                       onChange={(e) =>
                         setEditForm({ ...editForm, name: e.target.value })
                       }
-                      className="w-full bg-white/10 border-2 border-white/20 rounded-xl px-3 md:px-4 py-2 text-white text-xl md:text-2xl font-bold focus:outline-none focus:border-purple-400"
+                      autoComplete="off"
+                      className="w-full bg-white/10 border-2 border-white/20 rounded-xl px-3 md:px-4 py-2 text-white text-xl md:text-2xl font-bold focus:border-purple-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400/50"
                       placeholder="Nome da garrafa *"
                     />
                   ) : (
@@ -432,7 +456,7 @@ export default function BottleDetailPage({
                   <div className="space-y-3 mb-6">
                     <div>
                       <label className="block text-white/60 text-xs mb-1">
-                        🏛️ Producer
+                        🏛️ Produtor
                       </label>
                       <input
                         type="text"
@@ -440,7 +464,8 @@ export default function BottleDetailPage({
                         onChange={(e) =>
                           setEditForm({ ...editForm, producer: e.target.value })
                         }
-                        className="w-full bg-white/10 border-2 border-white/20 rounded-xl px-3 py-2 text-white text-sm md:text-base focus:outline-none focus:border-purple-400"
+                        autoComplete="off"
+                        className="w-full bg-white/10 border-2 border-white/20 rounded-xl px-3 py-2 text-white text-sm md:text-base focus:border-purple-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400/50"
                         placeholder="Produtor"
                       />
                     </div>
@@ -448,7 +473,7 @@ export default function BottleDetailPage({
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <label className="block text-white/60 text-xs mb-1">
-                          📅 Vintage
+                          📅 Ano
                         </label>
                         <input
                           type="number"
@@ -459,14 +484,15 @@ export default function BottleDetailPage({
                               vintage: e.target.value,
                             })
                           }
-                          className="w-full bg-white/10 border-2 border-white/20 rounded-xl px-3 py-2 text-white text-sm md:text-base focus:outline-none focus:border-purple-400"
+                          autoComplete="off"
+                        className="w-full bg-white/10 border-2 border-white/20 rounded-xl px-3 py-2 text-white text-sm md:text-base focus:border-purple-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400/50"
                           placeholder="Ano"
                         />
                       </div>
 
                       <div>
                         <label className="block text-white/60 text-xs mb-1">
-                          🍷 Type
+                          🍷 Tipo
                         </label>
                         <input
                           type="text"
@@ -477,7 +503,8 @@ export default function BottleDetailPage({
                               wine_type: e.target.value,
                             })
                           }
-                          className="w-full bg-white/10 border-2 border-white/20 rounded-xl px-3 py-2 text-white text-sm md:text-base focus:outline-none focus:border-purple-400"
+                          autoComplete="off"
+                        className="w-full bg-white/10 border-2 border-white/20 rounded-xl px-3 py-2 text-white text-sm md:text-base focus:border-purple-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400/50"
                           placeholder="Tipo"
                         />
                       </div>
@@ -485,7 +512,7 @@ export default function BottleDetailPage({
 
                     <div>
                       <label className="block text-white/60 text-xs mb-1">
-                        📝 Description
+                        📝 Descrição
                       </label>
                       <textarea
                         value={editForm.description}
@@ -496,7 +523,8 @@ export default function BottleDetailPage({
                           })
                         }
                         rows={3}
-                        className="w-full bg-white/10 border-2 border-white/20 rounded-xl px-3 py-2 text-white text-sm md:text-base focus:outline-none focus:border-purple-400"
+                        autoComplete="off"
+                        className="w-full bg-white/10 border-2 border-white/20 rounded-xl px-3 py-2 text-white text-sm md:text-base focus:border-purple-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400/50"
                         placeholder="Descrição"
                       />
                     </div>
@@ -509,7 +537,7 @@ export default function BottleDetailPage({
                           <span className="text-2xl">🏛️</span>
                           <div>
                             <div className="text-white/60 text-xs">
-                              Producer
+                              Produtor
                             </div>
                             <div className="font-semibold text-lg">
                               {bottle.producer}
@@ -522,7 +550,7 @@ export default function BottleDetailPage({
                         <div className="flex items-center gap-3">
                           <span className="text-2xl">📅</span>
                           <div>
-                            <div className="text-white/60 text-xs">Vintage</div>
+                            <div className="text-white/60 text-xs">Ano</div>
                             <div className="font-semibold text-lg">
                               {bottle.vintage}
                             </div>
@@ -534,7 +562,7 @@ export default function BottleDetailPage({
                         <div className="flex items-center gap-3">
                           <span className="text-2xl">🍷</span>
                           <div>
-                            <div className="text-white/60 text-xs">Type</div>
+                            <div className="text-white/60 text-xs">Tipo</div>
                             <div className="font-semibold text-lg capitalize">
                               {bottle.wine_type}
                             </div>
@@ -547,7 +575,7 @@ export default function BottleDetailPage({
                           <span className="text-2xl">👤</span>
                           <div>
                             <div className="text-white/60 text-xs">
-                              Brought By
+                              Trazido Por
                             </div>
                             <div className="font-semibold text-lg">
                               {bottle.brought_by_user.name}
@@ -575,10 +603,10 @@ export default function BottleDetailPage({
                     <div className="text-6xl font-bold text-amber-400 mb-2">
                       {bottle.stats.average_score}
                     </div>
-                    <div className="text-white/80 text-sm">Average Score</div>
+                    <div className="text-white/80 text-sm">Média</div>
                     <div className="text-white/60 text-xs mt-1">
-                      {bottle.stats.total_ratings} rating
-                      {bottle.stats.total_ratings !== 1 ? "s" : ""}
+                      {bottle.stats.total_ratings}{" "}
+                      {bottle.stats.total_ratings !== 1 ? "classificações" : "classificação"}
                     </div>
                   </div>
                 </div>
@@ -592,7 +620,7 @@ export default function BottleDetailPage({
           <div className="flex items-center gap-3 mb-4">
             <span className="text-3xl">🍽️</span>
             <div>
-              <div className="text-white/60 text-sm">Served At</div>
+              <div className="text-white/60 text-sm">Servido em</div>
               <h2 className="text-2xl font-bold text-white">
                 {bottle.dinner.name}
               </h2>
@@ -603,10 +631,10 @@ export default function BottleDetailPage({
             <div className="flex items-center gap-2">
               <span className="text-xl">📅</span>
               <div>
-                <div className="text-white/60 text-xs">Date</div>
+                <div className="text-white/60 text-xs">Data</div>
                 <div className="font-semibold">
                   {new Date(bottle.dinner.event_date).toLocaleDateString(
-                    "en-US",
+                    "pt-PT",
                     {
                       month: "short",
                       day: "numeric",
@@ -621,7 +649,7 @@ export default function BottleDetailPage({
               <div className="flex items-center gap-2">
                 <span className="text-xl">📍</span>
                 <div>
-                  <div className="text-white/60 text-xs">Location</div>
+                  <div className="text-white/60 text-xs">Local</div>
                   <div className="font-semibold">{bottle.dinner.location}</div>
                 </div>
               </div>
@@ -630,7 +658,7 @@ export default function BottleDetailPage({
             <div className="flex items-center gap-2">
               <span className="text-xl">👑</span>
               <div>
-                <div className="text-white/60 text-xs">Host</div>
+                <div className="text-white/60 text-xs">Anfitrião</div>
                 <div className="font-semibold">{bottle.dinner.host.name}</div>
               </div>
             </div>
@@ -640,7 +668,7 @@ export default function BottleDetailPage({
             href={`/dinners/${bottle.dinner.id}`}
             className="mt-4 block w-full text-center bg-white/10 hover:bg-white/20 text-white py-3 rounded-xl font-semibold transition-colors"
           >
-            View Full Dinner →
+            Ver Jantar Completo →
           </Link>
         </div>
 
@@ -650,7 +678,7 @@ export default function BottleDetailPage({
             <div className="flex items-center gap-3 mb-6">
               <span className="text-3xl">⭐</span>
               <h2 className="text-2xl font-bold text-white">
-                Ratings ({bottle.ratings.length})
+                Classificações ({bottle.ratings.length})
               </h2>
             </div>
 
@@ -699,7 +727,7 @@ export default function BottleDetailPage({
         ) : (
           <div className="bg-white/5 backdrop-blur-sm rounded-3xl p-12 text-center border border-white/10">
             <div className="text-6xl mb-4">⭐</div>
-            <p className="text-white/60 text-lg">No ratings yet</p>
+            <p className="text-white/60 text-lg">Ainda sem classificações</p>
           </div>
         )}
       </main>

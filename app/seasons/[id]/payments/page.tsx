@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { use } from "react";
 import Link from "next/link";
-import { Header } from "@/components";
+import { useRouter } from "next/navigation";
 
 interface Season {
   id: string;
@@ -43,6 +43,7 @@ export default function SeasonPaymentStatsPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
+  const router = useRouter();
   const [season, setSeason] = useState<Season | null>(null);
   const [stats, setStats] = useState<SeasonStats | null>(null);
   const [dinners, setDinners] = useState<DinnerStats[]>([]);
@@ -75,8 +76,8 @@ export default function SeasonPaymentStatsPage({
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="text-6xl mb-4 animate-spin">📊</div>
-          <div className="text-white text-xl">A carregar estatísticas...</div>
+          <div className="text-6xl mb-4 motion-safe:animate-spin" aria-hidden="true">📊</div>
+          <div className="text-white text-xl" role="status">A carregar estatísticas...</div>
         </div>
       </div>
     );
@@ -92,7 +93,20 @@ export default function SeasonPaymentStatsPage({
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-      <Header />
+      <header className="bg-black/20 backdrop-blur-lg border-b border-white/10 sticky top-0 z-10">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+          <button
+            onClick={() => router.back()}
+            aria-label="Voltar"
+            className="text-white/80 hover:text-white text-2xl rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
+          >
+            ←
+          </button>
+          <Link href="/" aria-label="Início" className="text-white/80 hover:text-white text-2xl rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50">
+            🏠
+          </Link>
+        </div>
+      </header>
 
       <main className="max-w-5xl mx-auto px-3 md:px-4 py-4 md:py-8">
         {/* Header */}
@@ -144,7 +158,7 @@ export default function SeasonPaymentStatsPage({
 
             <div className="bg-orange-500/20 border border-orange-400/30 rounded-xl p-3 md:p-4 text-center">
               <div className="text-orange-400 text-xs md:text-sm font-semibold mb-1">
-                ⏳ Pendente
+                ⏳ Por Pagar
               </div>
               <div className="text-white text-2xl md:text-3xl font-bold">
                 {stats.pending_count}
@@ -182,7 +196,7 @@ export default function SeasonPaymentStatsPage({
 
             <div className="bg-orange-500/20 rounded-xl p-3 md:p-4 border border-orange-400/30">
               <div className="text-orange-300 text-xs md:text-sm mb-1">
-                ⏳ Pendente
+                ⏳ Por Receber
               </div>
               <div className="text-white text-xl md:text-2xl font-bold">
                 {stats.total_pending}

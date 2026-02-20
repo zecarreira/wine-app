@@ -1,0 +1,31 @@
+diff --git a/app/dinners/page.tsx b/app/dinners/page.tsx
+index 2277a8c..5af71ec 100644
+--- a/app/dinners/page.tsx
++++ b/app/dinners/page.tsx
+@@ -386,13 +386,23 @@ export default function DinnersPage() {
+                   <div className="mt-3 pt-3 border-t border-white/10">
+                     <span
+                       className={`text-xs font-semibold ${
+-                        dinner.is_completed || dinner.status === "completed"
++                        dinner.status === "completed" || dinner.is_completed
+                           ? "text-green-400"
+-                          : "text-amber-400"
++                          : dinner.status === "active"
++                          ? "text-green-300"
++                          : dinner.status === "ended" || dinner.status === "revealing"
++                          ? "text-amber-400"
++                          : "text-blue-300"
+                       }`}
+                     >
+-                      {dinner.is_completed || dinner.status === "completed"
++                      {dinner.status === "completed" || dinner.is_completed
+                         ? "Concluído"
++                        : dinner.status === "active"
++                        ? "🎭 Prova em Curso"
++                        : dinner.status === "ended"
++                        ? "A Revelar"
++                        : dinner.status === "revealing"
++                        ? "🎭 A Revelar"
+                         : "Agendado"}
+                     </span>
+                   </div>

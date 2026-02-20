@@ -81,11 +81,12 @@ export default function RankingsPage({
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <button
             onClick={() => router.back()}
+            aria-label="Voltar"
             className="text-white/80 hover:text-white text-2xl"
           >
             ←
           </button>
-          <Link href="/" className="text-white/80 hover:text-white text-2xl">
+          <Link href="/" aria-label="Início" className="text-white/80 hover:text-white text-2xl">
             🏠
           </Link>
         </div>
@@ -148,7 +149,7 @@ export default function RankingsPage({
                       📊 {bottle.stats.total_points} pts
                     </div>
                     <div className="text-amber-300/40 text-xs">
-                      ⭐ Max: {bottle.stats.highest_rating}
+                      ⭐ Máx: {bottle.stats.highest_rating}
                     </div>
                   </div>
                 </div>

@@ -1,0 +1,43 @@
+diff --git a/app/dinners/history/[id]/page.tsx b/page_hist_id.tsx.tmp
+index f99bdb9..5170c51 100644
+--- a/app/dinners/history/[id]/page.tsx
++++ b/page_hist_id.tsx.tmp
+@@ -67,10 +67,11 @@ export default function SeasonDetailsPage() {
+             <button
+               onClick={() => router.back()}
+               className="text-white/80 hover:text-white text-2xl"
++              aria-label="Voltar"
+             >
+               ←
+             </button>
+-            <Link href="/" className="text-white/80 hover:text-white text-2xl">
++            <Link href="/" className="text-white/80 hover:text-white text-2xl" aria-label="Início">
+               �
+             </Link>
+           </div>
+@@ -92,10 +93,11 @@ export default function SeasonDetailsPage() {
+             <button
+               onClick={() => router.back()}
+               className="text-white/80 hover:text-white text-2xl"
++              aria-label="Voltar"
+             >
+               ←
+             </button>
+-            <Link href="/" className="text-white/80 hover:text-white text-2xl">
++            <Link href="/" className="text-white/80 hover:text-white text-2xl" aria-label="Início">
+               �
+             </Link>
+           </div>
+@@ -122,10 +124,11 @@ export default function SeasonDetailsPage() {
+           <button
+             onClick={() => router.back()}
+             className="text-white/80 hover:text-white text-2xl"
++            aria-label="Voltar"
+           >
+             ←
+           </button>
+-          <Link href="/" className="text-white/80 hover:text-white text-2xl">
++          <Link href="/" className="text-white/80 hover:text-white text-2xl" aria-label="Início">
+             �
+           </Link>
+         </div>

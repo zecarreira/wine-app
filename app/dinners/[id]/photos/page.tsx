@@ -38,14 +38,19 @@ export default function DinnerPhotosPage({
 
   async function fetchDinnerAndPhotos() {
     try {
+      const token = localStorage.getItem("token");
+      const authHeaders = token ? { Authorization: `Bearer ${token}` } : {};
+
       // Fetch dinner info
-      const dinnerResponse = await fetch("/api/dinners");
+      const dinnerResponse = await fetch("/api/dinners", { headers: authHeaders });
       const dinnerData = await dinnerResponse.json();
       const currentDinner = dinnerData.dinners.find((d: any) => d.id === id);
       setDinner(currentDinner);
 
       // Fetch photos
-      const photosResponse = await fetch(`/api/dinners/${id}/photos`);
+      const photosResponse = await fetch(`/api/dinners/${id}/photos`, {
+        headers: authHeaders,
+      });
       const photosData = await photosResponse.json();
 
       if (photosData.success) {
@@ -153,11 +158,12 @@ export default function DinnerPhotosPage({
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <button
             onClick={() => router.back()}
+            aria-label="Voltar"
             className="text-white/80 hover:text-white text-2xl"
           >
             ←
           </button>
-          <Link href="/" className="text-white/80 hover:text-white text-2xl">
+          <Link href="/" aria-label="Início" className="text-white/80 hover:text-white text-2xl">
             🏠
           </Link>
         </div>
@@ -206,7 +212,7 @@ export default function DinnerPhotosPage({
               <button
                 onClick={uploadPhotos}
                 disabled={uploading}
-                className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-4 rounded-2xl font-bold text-lg shadow-lg hover:shadow-green-500/50 transform hover:scale-[1.02] transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-4 rounded-2xl font-bold text-lg shadow-lg hover:shadow-green-500/50 transform hover:scale-[1.02] transition-[colors,transform,box-shadow] duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-400/70"
               >
                 {uploading
                   ? "📤 A carregar..."
@@ -245,7 +251,7 @@ export default function DinnerPhotosPage({
                     src={photo.photo_url}
                     alt="Foto do jantar"
                     fill
-                    sizes="(max-width: 768px) calc(50vw - 24px), (max-width: 1024px) calc(33vw - 24px), calc(25vw - 24px)"
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                     className="object-cover group-hover:scale-110 transition-transform duration-300"
                   />
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-end p-3">
@@ -271,6 +277,7 @@ export default function DinnerPhotosPage({
                 e.stopPropagation();
                 setLightboxIndex(null);
               }}
+              aria-label="Fechar"
               className="absolute top-4 right-4 text-white text-4xl hover:text-red-400 transition-colors"
             >
               ×
@@ -282,6 +289,7 @@ export default function DinnerPhotosPage({
                   e.stopPropagation();
                   setLightboxIndex((prev) => (prev ?? 0) - 1);
                 }}
+                aria-label="Foto anterior"
                 className="absolute left-4 text-white text-6xl hover:text-purple-400 transition-colors"
               >
                 ‹
@@ -304,6 +312,7 @@ export default function DinnerPhotosPage({
                   e.stopPropagation();
                   setLightboxIndex((prev) => (prev ?? 0) + 1);
                 }}
+                aria-label="Próxima foto"
                 className="absolute right-4 text-white text-6xl hover:text-purple-400 transition-colors"
               >
                 ›

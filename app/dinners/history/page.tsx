@@ -61,7 +61,7 @@ export default function DinnersHistoryPage() {
           <h1 className="text-4xl font-bold text-white mb-6">
             Histórico de Temporadas
           </h1>
-          <div className="text-white/60 text-center py-12">A carregar...</div>
+          <div className="text-white/60 text-center py-12" role="status">A carregar...</div>
         </div>
       </div>
     );
@@ -99,7 +99,7 @@ export default function DinnersHistoryPage() {
                 href={`/dinners/history/${season.id}`}
                 className="block"
               >
-                <Card className="p-6 hover:border-purple-400/50 transform hover:scale-[1.01] transition-all duration-200 cursor-pointer">
+                <Card className="p-6 hover:border-purple-400/50 transform hover:scale-[1.01] transition-[colors,transform] duration-200 cursor-pointer">
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       <h2 className="text-2xl font-bold text-white mb-2">

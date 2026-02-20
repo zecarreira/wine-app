@@ -97,8 +97,8 @@ export default function AdminPanelPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="text-6xl mb-4 animate-spin">👑</div>
-          <div className="text-white text-xl">A carregar painel admin...</div>
+          <div className="text-6xl mb-4 motion-safe:animate-spin" aria-hidden="true">👑</div>
+          <div className="text-white text-xl" role="status">A carregar painel admin...</div>
         </div>
       </div>
     );
@@ -111,11 +111,12 @@ export default function AdminPanelPage() {
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <button
             onClick={() => router.back()}
-            className="text-white/80 hover:text-white text-2xl"
+            aria-label="Voltar"
+            className="text-white/80 hover:text-white text-2xl rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
           >
             ←
           </button>
-          <Link href="/" className="text-white/80 hover:text-white text-2xl">
+          <Link href="/" aria-label="Início" className="text-white/80 hover:text-white text-2xl rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50">
             🏠
           </Link>
         </div>
@@ -208,11 +209,11 @@ export default function AdminPanelPage() {
                           disabled={
                             updating === user.id || founderCount >= maxFounders
                           }
-                          className="bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 disabled:from-gray-600 disabled:to-gray-700 disabled:cursor-not-allowed text-white px-6 py-3 rounded-xl font-bold transition-all text-sm shadow-lg hover:shadow-amber-500/50 transform hover:scale-105 active:scale-95 flex items-center gap-2"
+                          className="bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 disabled:from-gray-600 disabled:to-gray-700 disabled:cursor-not-allowed text-white px-6 py-3 rounded-xl font-bold transition-[colors,transform,box-shadow] text-sm shadow-lg hover:shadow-amber-500/50 transform hover:scale-105 active:scale-95 flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/70"
                         >
                           {updating === user.id ? (
                             <>
-                              <span className="animate-spin">⏳</span>
+                              <span className="motion-safe:animate-spin" aria-hidden="true">⏳</span>
                               <span>A atualizar...</span>
                             </>
                           ) : (
@@ -227,11 +228,11 @@ export default function AdminPanelPage() {
                         <button
                           onClick={() => updateUserRole(user.id, "guest")}
                           disabled={updating === user.id}
-                          className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 disabled:from-gray-600 disabled:to-gray-700 text-white px-6 py-3 rounded-xl font-bold transition-all text-sm shadow-lg hover:shadow-blue-500/50 transform hover:scale-105 active:scale-95 flex items-center gap-2"
+                          className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 disabled:from-gray-600 disabled:to-gray-700 text-white px-6 py-3 rounded-xl font-bold transition-[colors,transform,box-shadow] text-sm shadow-lg hover:shadow-blue-500/50 transform hover:scale-105 active:scale-95 flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/70"
                         >
                           {updating === user.id ? (
                             <>
-                              <span className="animate-spin">⏳</span>
+                              <span className="motion-safe:animate-spin" aria-hidden="true">⏳</span>
                               <span>A atualizar...</span>
                             </>
                           ) : (

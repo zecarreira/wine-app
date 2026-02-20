@@ -44,6 +44,7 @@ export async function POST(
         vintage: bottles.vintage,
         producer: bottles.producer,
         wine_type: bottles.wine_type,
+        photo_url: bottles.photo_url,
         position: bottles.position,
         brought_by_user: { id: broughtByUser.id, name: broughtByUser.name },
       })
@@ -134,10 +135,10 @@ export async function POST(
     let message = "";
     let medal = "";
 
-    if (isWinner) { message = "🏆 AND THE WINNER IS..."; medal = "🏆"; }
-    else if (isRunnerUp) { message = "🥈 The Runner-Up Is..."; medal = "🥈"; }
-    else if (actualPosition === 3) { message = "🥉 Third Place Goes To..."; medal = "🥉"; }
-    else { message = `Position ${actualPosition}...`; medal = `#${actualPosition}`; }
+    if (isWinner) { message = "🏆 E O VENCEDOR É..."; medal = "🏆"; }
+    else if (isRunnerUp) { message = "🥈 O Segundo Classificado É..."; medal = "🥈"; }
+    else if (actualPosition === 3) { message = "🥉 O Terceiro Lugar vai para..."; medal = "🥉"; }
+    else { message = `Posição ${actualPosition}...`; medal = `#${actualPosition}`; }
 
     return NextResponse.json({
       success: true,

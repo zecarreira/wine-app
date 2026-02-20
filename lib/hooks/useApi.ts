@@ -142,7 +142,10 @@ export function useBottlesCatalog(params?: {
   return useQuery({
     queryKey: ["bottles", "catalog", params],
     queryFn: async () => {
-      const response = await fetch(`/api/bottles?${searchParams}`);
+      const token = localStorage.getItem("token");
+      const response = await fetch(`/api/bottles?${searchParams}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
       const data = await response.json();
       if (!data.success) throw new Error(data.error);
       return data;

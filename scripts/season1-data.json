@@ -1,0 +1,466 @@
+{
+  "season": {
+    "season_number": 1,
+    "start_date": "2017-09-29",
+    "end_date": "2023-10-28"
+  },
+  "users": [
+    {
+      "name": "Ivo Duarte",
+      "email": "EMAIL_IVO_DUARTE@xxx.com",
+      "role": "founder"
+    },
+    {
+      "name": "Ivo Rocha",
+      "email": "EMAIL_IVO_ROCHA@xxx.com",
+      "role": "founder"
+    },
+    {
+      "name": "João Diogo Carvalho",
+      "email": "Jdhcarvalho@hotmail.com",
+      "role": "founder"
+    },
+    {
+      "name": "José Carreira",
+      "email": "jlncarreira@gmail.com",
+      "role": "founder"
+    },
+    {
+      "name": "Manuel Alves",
+      "email": "Manueljnalves@hotmail.com",
+      "role": "founder"
+    },
+    {
+      "name": "Miguel Violante",
+      "email": "violante_miguel@hotmail.com",
+      "role": "founder"
+    },
+    {
+      "name": "Ricardo Ambrósio",
+      "email": "Ambrosio.ricardo@hotmail.com",
+      "role": "founder"
+    }
+  ],
+  "dinners": [
+    {
+      "number": 1,
+      "organizer": "José Carreira",
+      "location": "Estoril",
+      "date": "2017-09-29",
+      "bottles": [
+        {
+          "brought_by": "Ivo Duarte",
+          "name": null,
+          "vintage": null,
+          "region": null,
+          "total_points": null
+        },
+        {
+          "brought_by": "Ivo Rocha",
+          "name": null,
+          "vintage": null,
+          "region": null,
+          "total_points": null
+        },
+        {
+          "brought_by": "João Diogo Carvalho",
+          "name": null,
+          "vintage": null,
+          "region": null,
+          "total_points": null
+        },
+        {
+          "brought_by": "José Carreira",
+          "name": "Duas Quintas",
+          "vintage": null,
+          "region": "Douro",
+          "total_points": null
+        },
+        {
+          "brought_by": "Manuel Alves",
+          "name": "Monte dos Amigos",
+          "vintage": null,
+          "region": "Alentejo",
+          "total_points": null
+        },
+        {
+          "brought_by": "Manuel Alves",
+          "name": "Grous",
+          "vintage": null,
+          "region": "Alentejo",
+          "total_points": null
+        },
+        {
+          "brought_by": "Miguel Violante",
+          "name": "Aveleda Alvarinho",
+          "vintage": null,
+          "region": "Douro",
+          "total_points": null
+        },
+        {
+          "brought_by": "Miguel Violante",
+          "name": "Cartuxa",
+          "vintage": 2015,
+          "region": "Alentejo",
+          "total_points": null
+        },
+        {
+          "brought_by": "Ricardo Ambrósio",
+          "name": null,
+          "vintage": null,
+          "region": null,
+          "total_points": null
+        }
+      ]
+    },
+    {
+      "number": 2,
+      "organizer": "Ivo Duarte",
+      "location": "Santarém",
+      "date": "2017-11-19",
+      "bottles": [
+        {
+          "brought_by": "Ivo Duarte",
+          "name": null,
+          "vintage": null,
+          "region": null,
+          "total_points": null
+        },
+        {
+          "brought_by": "Ivo Rocha",
+          "name": null,
+          "vintage": null,
+          "region": null,
+          "total_points": null
+        },
+        {
+          "brought_by": "João Diogo Carvalho",
+          "name": null,
+          "vintage": null,
+          "region": null,
+          "total_points": null
+        },
+        {
+          "brought_by": "José Carreira",
+          "name": "Cancellus",
+          "vintage": null,
+          "region": "Douro",
+          "total_points": null
+        },
+        {
+          "brought_by": "Manuel Alves",
+          "name": "Algazarra",
+          "vintage": null,
+          "region": "Lisboa",
+          "total_points": null
+        },
+        {
+          "brought_by": "Miguel Violante",
+          "name": "Quinta da Badula Reserva",
+          "vintage": 2014,
+          "region": "Tejo",
+          "total_points": null
+        },
+        {
+          "brought_by": "Miguel Violante",
+          "name": "Tapada do Chaves",
+          "vintage": 2013,
+          "region": "Alentejo",
+          "total_points": null
+        },
+        {
+          "brought_by": "Ricardo Ambrósio",
+          "name": "Quinta do Couquinho",
+          "vintage": null,
+          "region": "Douro",
+          "total_points": null
+        }
+      ]
+    },
+    {
+      "number": 3,
+      "organizer": "Ivo Rocha",
+      "location": "Santarém",
+      "date": "2018-01-20",
+      "bottles": [
+        {
+          "brought_by": "Ivo Duarte",
+          "name": null,
+          "vintage": null,
+          "region": null,
+          "total_points": null
+        },
+        {
+          "brought_by": "Ivo Rocha",
+          "name": null,
+          "vintage": null,
+          "region": null,
+          "total_points": null
+        },
+        {
+          "brought_by": "João Diogo Carvalho",
+          "name": null,
+          "vintage": null,
+          "region": null,
+          "total_points": null
+        },
+        {
+          "brought_by": "José Carreira",
+          "name": null,
+          "vintage": null,
+          "region": null,
+          "total_points": null
+        },
+        {
+          "brought_by": "Manuel Alves",
+          "name": null,
+          "vintage": null,
+          "region": null,
+          "total_points": null
+        },
+        {
+          "brought_by": "Miguel Violante",
+          "name": "Quinta da Bacalhoa Cabernet Sauvignon",
+          "vintage": 2013,
+          "region": "Península de Setúbal",
+          "total_points": null
+        },
+        {
+          "brought_by": "Ricardo Ambrósio",
+          "name": "Volteface Reserva",
+          "vintage": null,
+          "region": "Alentejo",
+          "total_points": null
+        }
+      ]
+    },
+    {
+      "number": 4,
+      "organizer": "Miguel Violante",
+      "location": "Santarém",
+      "date": "2018-03-24",
+      "bottles": [
+        {
+          "brought_by": "Ivo Duarte",
+          "name": null,
+          "vintage": null,
+          "region": null,
+          "total_points": null
+        },
+        {
+          "brought_by": "Ivo Rocha",
+          "name": null,
+          "vintage": null,
+          "region": null,
+          "total_points": null
+        },
+        {
+          "brought_by": "João Diogo Carvalho",
+          "name": null,
+          "vintage": null,
+          "region": null,
+          "total_points": null
+        },
+        {
+          "brought_by": "José Carreira",
+          "name": null,
+          "vintage": null,
+          "region": null,
+          "total_points": null
+        },
+        {
+          "brought_by": "Manuel Alves",
+          "name": null,
+          "vintage": null,
+          "region": null,
+          "total_points": null
+        },
+        {
+          "brought_by": "Miguel Violante",
+          "name": null,
+          "vintage": null,
+          "region": null,
+          "total_points": null
+        },
+        {
+          "brought_by": "Ricardo Ambrósio",
+          "name": null,
+          "vintage": null,
+          "region": null,
+          "total_points": null
+        }
+      ]
+    },
+    {
+      "number": 5,
+      "organizer": "João Diogo Carvalho",
+      "location": "Santarém",
+      "date": "2021-10-23",
+      "bottles": [
+        {
+          "brought_by": "Ivo Duarte",
+          "name": "Rola",
+          "vintage": 2019,
+          "region": "Douro",
+          "total_points": 49
+        },
+        {
+          "brought_by": "Ivo Rocha",
+          "name": "Herdade de S. Miguel",
+          "vintage": null,
+          "region": "Alentejano",
+          "total_points": 54.5
+        },
+        {
+          "brought_by": "João Diogo Carvalho",
+          "name": "Vallegre",
+          "vintage": 2015,
+          "region": "Douro",
+          "total_points": 47
+        },
+        {
+          "brought_by": "José Carreira",
+          "name": "Perescuma",
+          "vintage": 2017,
+          "region": "Alentejano",
+          "total_points": 61
+        },
+        {
+          "brought_by": "Manuel Alves",
+          "name": "Senna",
+          "vintage": 2017,
+          "region": "Dão",
+          "total_points": 49
+        },
+        {
+          "brought_by": "Miguel Violante",
+          "name": "M.I.",
+          "vintage": 2018,
+          "region": "Douro",
+          "total_points": 46
+        },
+        {
+          "brought_by": "Ricardo Ambrósio",
+          "name": "Humanitas",
+          "vintage": 2016,
+          "region": "Alentejano",
+          "total_points": 31
+        }
+      ]
+    },
+    {
+      "number": 6,
+      "organizer": "José Carreira",
+      "location": "Santarém",
+      "date": "2023-04-15",
+      "bottles": [
+        {
+          "brought_by": "Ivo Duarte",
+          "name": "Senhor Doutor",
+          "vintage": 2019,
+          "region": "Alentejo",
+          "total_points": 35.5
+        },
+        {
+          "brought_by": "Ivo Rocha",
+          "name": "Baías e Enseadas",
+          "vintage": 2020,
+          "region": "Lisboa",
+          "total_points": 31.5
+        },
+        {
+          "brought_by": "José Carreira",
+          "name": "Quinta da Leda",
+          "vintage": 2017,
+          "region": "Douro",
+          "total_points": 34
+        },
+        {
+          "brought_by": "José Carreira",
+          "name": "Marquez de Castelo Rodrigo",
+          "vintage": 2017,
+          "region": "Beira Interior",
+          "total_points": 42
+        },
+        {
+          "brought_by": "Manuel Alves",
+          "name": "Vinhas Improváveis",
+          "vintage": 2019,
+          "region": "Douro",
+          "total_points": 40
+        },
+        {
+          "brought_by": "Miguel Violante",
+          "name": "Vinhas Velhas",
+          "vintage": 2018,
+          "region": "Alentejo",
+          "total_points": 39
+        },
+        {
+          "brought_by": "Ricardo Ambrósio",
+          "name": "Mouchão",
+          "vintage": 2014,
+          "region": "Alentejo",
+          "total_points": 30.5
+        }
+      ]
+    },
+    {
+      "number": 7,
+      "organizer": "Ivo Duarte",
+      "location": "Santarém",
+      "date": "2023-10-28",
+      "bottles": [
+        {
+          "brought_by": "Ivo Duarte",
+          "name": null,
+          "vintage": null,
+          "region": null,
+          "total_points": null
+        },
+        {
+          "brought_by": "Ivo Rocha",
+          "name": null,
+          "vintage": null,
+          "region": null,
+          "total_points": null
+        },
+        {
+          "brought_by": "João Diogo Carvalho",
+          "name": null,
+          "vintage": null,
+          "region": null,
+          "total_points": null
+        },
+        {
+          "brought_by": "José Carreira",
+          "name": null,
+          "vintage": null,
+          "region": null,
+          "total_points": null
+        },
+        {
+          "brought_by": "Manuel Alves",
+          "name": null,
+          "vintage": null,
+          "region": null,
+          "total_points": null
+        },
+        {
+          "brought_by": "Miguel Violante",
+          "name": null,
+          "vintage": null,
+          "region": null,
+          "total_points": null
+        },
+        {
+          "brought_by": "Ricardo Ambrósio",
+          "name": null,
+          "vintage": null,
+          "region": null,
+          "total_points": null
+        }
+      ]
+    }
+  ]
+}

@@ -42,8 +42,11 @@ export default function ProfilePage() {
       }
 
       const currentUser = JSON.parse(userStr);
+      const token = localStorage.getItem("token");
 
-      const response = await fetch(`/api/users/${currentUser.id}`);
+      const response = await fetch(`/api/users/${currentUser.id}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
       const data = await response.json();
 
       if (data.success) {
@@ -148,8 +151,8 @@ export default function ProfilePage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="text-5xl mb-3 animate-spin">👤</div>
-          <div className="text-white text-lg">A carregar perfil...</div>
+          <div className="text-5xl mb-3 motion-safe:animate-spin" aria-hidden="true">👤</div>
+          <div role="status" className="text-white text-lg">A carregar perfil…</div>
         </div>
       </div>
     );
@@ -173,11 +176,12 @@ export default function ProfilePage() {
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
           <button
             onClick={() => router.back()}
-            className="text-white/80 hover:text-white text-2xl"
+            aria-label="Voltar"
+            className="text-white/80 hover:text-white text-2xl rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
           >
             ←
           </button>
-          <Link href="/" className="text-white/80 hover:text-white text-2xl">
+          <Link href="/" aria-label="Início" className="text-white/80 hover:text-white text-2xl rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50">
             🏠
           </Link>
         </div>
@@ -338,8 +342,8 @@ export default function ProfilePage() {
         {/* Favorite Wine */}
         {user.favorite_wine &&
           !(
-            user.favorite_wine.bottle.dinner.status === "active" &&
-            user.favorite_wine.bottle.dinner.is_blind
+            user.favorite_wine.bottle.dinner.is_blind &&
+            ["active", "ended", "revealing"].includes(user.favorite_wine.bottle.dinner.status)
           ) && (
             <div className="bg-gradient-to-br from-amber-500/20 to-orange-500/10 backdrop-blur-lg rounded-3xl p-5 mb-4 border-2 border-amber-400/30 shadow-2xl">
               <div className="flex items-center gap-2 mb-3">
@@ -388,8 +392,8 @@ export default function ProfilePage() {
             <div className="space-y-2.5">
               {user.recent_ratings.map((rating) => {
                 const isBlindActive =
-                  rating.bottle.dinner.status === "active" &&
-                  rating.bottle.dinner.is_blind;
+                  rating.bottle.dinner.is_blind &&
+                  ["active", "ended", "revealing"].includes(rating.bottle.dinner.status);
 
                 return (
                   <Link
@@ -414,7 +418,7 @@ export default function ProfilePage() {
                     {rating.tasting_notes && (
                       <p className="text-white/70 text-xs mt-1.5 italic">
                         &quot;{rating.tasting_notes.substring(0, 100)}
-                        {rating.tasting_notes.length > 100 ? "..." : ""}&quot;
+                        {rating.tasting_notes.length > 100 ? "…" : ""}&quot;
                       </p>
                     )}
                   </Link>
@@ -435,40 +439,45 @@ export default function ProfilePage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {user.bottles_brought.map((bottle) => (
-                <Link
-                  key={bottle.id}
-                  href={`/bottles/${bottle.id}`}
-                  className="block bg-white/5 rounded-2xl p-3 hover:bg-white/10 transition-colors"
-                >
-                  <div className="flex gap-2">
-                    {bottle.photo_url && (
-                      <div className="relative w-14 h-14 rounded-lg overflow-hidden flex-shrink-0">
-                        <Image
-                          src={bottle.photo_url}
-                          alt={bottle.name}
-                          fill
-                          sizes="56px"
-                          className="object-cover"
-                        />
-                      </div>
-                    )}
-                    <div className="flex-1">
-                      <h3 className="text-base font-semibold text-white mb-0.5">
-                        {bottle.name}
-                      </h3>
-                      {bottle.producer && (
-                        <p className="text-purple-200 text-xs">
-                          {bottle.producer}
-                        </p>
+              {user.bottles_brought.map((bottle) => {
+                const isBlindBottle =
+                  bottle.dinner?.is_blind &&
+                  ["active", "ended", "revealing"].includes(bottle.dinner?.status);
+                return (
+                  <Link
+                    key={bottle.id}
+                    href={`/bottles/${bottle.id}`}
+                    className="block bg-white/5 rounded-2xl p-3 hover:bg-white/10 transition-colors"
+                  >
+                    <div className="flex gap-2">
+                      {bottle.photo_url && !isBlindBottle && (
+                        <div className="relative w-14 h-14 rounded-lg overflow-hidden flex-shrink-0">
+                          <Image
+                            src={bottle.photo_url}
+                            alt={bottle.name}
+                            fill
+                            sizes="56px"
+                            className="object-cover"
+                          />
+                        </div>
                       )}
-                      <p className="text-white/60 text-xs mt-0.5">
-                        {bottle.dinner.name}
-                      </p>
+                      <div className="flex-1">
+                        <h3 className="text-base font-semibold text-white mb-0.5">
+                          {isBlindBottle ? "🎭 Vinho em Prova Cega" : bottle.name}
+                        </h3>
+                        {!isBlindBottle && bottle.producer && (
+                          <p className="text-purple-200 text-xs">
+                            {bottle.producer}
+                          </p>
+                        )}
+                        <p className="text-white/60 text-xs mt-0.5">
+                          {bottle.dinner.name}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                </Link>
-              ))}
+                  </Link>
+                );
+              })}
             </div>
           </div>
         )}

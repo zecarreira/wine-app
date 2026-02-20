@@ -65,7 +65,10 @@ export function PaymentsSection({ dinnerId, isAdmin }: PaymentsSectionProps) {
   async function fetchPayments() {
     try {
       setLoading(true);
-      const response = await fetch(`/api/dinners/${dinnerId}/payments`);
+      const token = localStorage.getItem("token");
+      const response = await fetch(`/api/dinners/${dinnerId}/payments`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
       const data = await response.json();
 
       if (data.success) {
@@ -416,7 +419,8 @@ export function PaymentsSection({ dinnerId, isAdmin }: PaymentsSectionProps) {
                           <button
                             onClick={() => openEditFineModal(payment.id, fine)}
                             disabled={actionLoading}
-                            className="bg-blue-500/30 text-blue-300 border border-blue-400/50 hover:bg-blue-500/40 px-2 py-1 rounded text-[10px] font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                            aria-label="Editar multa"
+                            className="bg-blue-500/30 text-blue-300 border border-blue-400/50 hover:bg-blue-500/40 px-2 py-1 rounded text-[10px] font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/50"
                           >
                             ✏️
                           </button>
@@ -425,7 +429,8 @@ export function PaymentsSection({ dinnerId, isAdmin }: PaymentsSectionProps) {
                               handleDeleteFine(payment.id, fine.id, fine.amount)
                             }
                             disabled={actionLoading}
-                            className="bg-red-600/30 text-red-300 border border-red-400/50 hover:bg-red-600/40 px-2 py-1 rounded text-[10px] font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                            aria-label="Remover multa"
+                            className="bg-red-600/30 text-red-300 border border-red-400/50 hover:bg-red-600/40 px-2 py-1 rounded text-[10px] font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50"
                           >
                             🗑️
                           </button>
@@ -449,7 +454,7 @@ export function PaymentsSection({ dinnerId, isAdmin }: PaymentsSectionProps) {
                 <button
                   onClick={() => handleMarkAsPaid(payment.id, payment.status)}
                   disabled={actionLoading}
-                  className={`px-3 py-2 rounded-lg text-xs font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
+                  className={`px-3 py-2 rounded-lg text-xs font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 ${
                     payment.status === "paid"
                       ? "bg-orange-500/30 text-orange-300 border border-orange-400/50 hover:bg-orange-500/40"
                       : "bg-green-500/30 text-green-300 border border-green-400/50 hover:bg-green-500/40"
@@ -462,7 +467,7 @@ export function PaymentsSection({ dinnerId, isAdmin }: PaymentsSectionProps) {
                 <button
                   onClick={() => openFineModal(payment.id)}
                   disabled={actionLoading}
-                  className="bg-red-500/30 text-red-300 border border-red-400/50 hover:bg-red-500/40 px-3 py-2 rounded-lg text-xs font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="bg-red-500/30 text-red-300 border border-red-400/50 hover:bg-red-500/40 px-3 py-2 rounded-lg text-xs font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50"
                 >
                   🚨 Adicionar Multa
                 </button>
@@ -482,28 +487,31 @@ export function PaymentsSection({ dinnerId, isAdmin }: PaymentsSectionProps) {
 
             <div className="space-y-4 mb-6">
               <div>
-                <label className="block text-white/70 text-xs md:text-sm font-semibold mb-2">
+                <label htmlFor="fine-amount" className="block text-white/70 text-xs md:text-sm font-semibold mb-2">
                   Valor
                 </label>
                 <input
+                  id="fine-amount"
                   type="number"
                   min="1"
                   value={fineAmount}
                   onChange={(e) => setFineAmount(e.target.value)}
-                  className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-red-400/50"
+                  autoComplete="off"
+                  className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:ring-2 focus:ring-red-400/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50"
                   placeholder="Insere o valor da multa"
                 />
               </div>
 
               <div>
-                <label className="block text-white/70 text-xs md:text-sm font-semibold mb-2">
+                <label htmlFor="fine-reason" className="block text-white/70 text-xs md:text-sm font-semibold mb-2">
                   Motivo
                 </label>
                 <textarea
+                  id="fine-reason"
                   value={fineReason}
                   onChange={(e) => setFineReason(e.target.value)}
                   rows={3}
-                  className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-red-400/50 resize-none"
+                  className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:ring-2 focus:ring-red-400/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50 resize-none"
                   placeholder="Porque é que esta multa está a ser adicionada?"
                 />
               </div>
@@ -513,14 +521,14 @@ export function PaymentsSection({ dinnerId, isAdmin }: PaymentsSectionProps) {
               <button
                 onClick={closeFineModal}
                 disabled={actionLoading}
-                className="flex-1 bg-white/10 border border-white/20 text-white px-4 md:px-6 py-2 md:py-3 rounded-xl text-sm md:text-base font-bold hover:bg-white/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 bg-white/10 border border-white/20 text-white px-4 md:px-6 py-2 md:py-3 rounded-xl text-sm md:text-base font-bold hover:bg-white/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleAddFine}
                 disabled={actionLoading}
-                className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 md:px-6 py-2 md:py-3 rounded-xl text-sm md:text-base font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 md:px-6 py-2 md:py-3 rounded-xl text-sm md:text-base font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/70"
               >
                 {actionLoading
                   ? "A guardar..."

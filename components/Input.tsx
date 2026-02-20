@@ -20,7 +20,7 @@ export default function Input({ label, error, fullWidth = true, className = "", 
         id={inputId}
         className={`bg-white/10 border-2 ${
           error ? "border-red-500" : "border-white/20"
-        } rounded-2xl px-4 py-4 text-white placeholder:text-white/40 focus:outline-none focus:border-purple-400 text-lg ${
+        } rounded-2xl px-4 py-4 text-white placeholder:text-white/40 focus:border-purple-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400/50 text-lg ${
           fullWidth ? "w-full" : ""
         } ${className}`}
         {...props}

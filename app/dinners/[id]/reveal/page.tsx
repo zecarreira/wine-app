@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { use } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 
 interface RevealedBottle {
@@ -12,6 +13,7 @@ interface RevealedBottle {
   vintage: number;
   wine_type: string;
   description: string;
+  photo_url: string | null;
   position: number;
   brought_by_user: {
     name: string;
@@ -80,12 +82,13 @@ export default function RevealCeremonyPage({
     fetchRevealStatus();
   }, [fetchRevealStatus]);
 
-  // Se já está tudo revelado, redireciona para rankings
+  // Redireciona para rankings só se já está tudo revelado no carregamento inicial
+  // (quando lastRevealed está definido, o redirect é feito pelo setTimeout em handleRevealNext)
   useEffect(() => {
-    if (revealStatus?.remainingCount === 0 && revealStatus) {
+    if (revealStatus?.remainingCount === 0 && revealStatus && !lastRevealed) {
       router.push(`/dinners/${id}/rankings`);
     }
-  }, [revealStatus, id, router]);
+  }, [revealStatus, id, router, lastRevealed]);
 
   async function handleRevealNext() {
     setRevealing(true);
@@ -106,11 +109,7 @@ export default function RevealCeremonyPage({
 
         await fetchRevealStatus();
 
-        if (data.isComplete) {
-          setTimeout(() => {
-            router.push(`/dinners/${id}/rankings`);
-          }, 3000);
-        }
+        // isComplete: o botão "Fim Jantar" fica visível para o utilizador clicar manualmente
       } else {
         alert(data.error || "Erro ao revelar");
       }
@@ -136,7 +135,9 @@ export default function RevealCeremonyPage({
 
   const isComplete = revealStatus?.remainingCount === 0;
 
-  if (!revealStatus || !revealStatus.canReveal) {
+  // Só mostra erro se não há nada a exibir — se lastRevealed estiver definido,
+  // a última garrafa acabou de ser revelada e ainda precisa de ser vista pelo utilizador
+  if (!revealStatus || (!revealStatus.canReveal && !lastRevealed)) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
         <div className="text-center">
@@ -162,12 +163,13 @@ export default function RevealCeremonyPage({
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <button
             onClick={() => router.back()}
+            aria-label="Voltar"
             className="text-white/80 hover:text-white text-2xl"
           >
             ←
           </button>
-          <Link href="/" className="text-white/80 hover:text-white text-2xl">
-            �
+          <Link href="/" aria-label="Início" className="text-white/80 hover:text-white text-2xl">
+            🏠
           </Link>
         </div>
       </header>
@@ -208,6 +210,20 @@ export default function RevealCeremonyPage({
                 <h2 className="text-3xl font-bold text-white mb-4 text-center">
                   {lastRevealed.bottle.name}
                 </h2>
+
+                {lastRevealed.bottle.photo_url && (
+                  <div className="flex justify-center mb-5">
+                    <div className="relative w-40 h-56 rounded-2xl overflow-hidden shadow-2xl">
+                      <Image
+                        src={lastRevealed.bottle.photo_url}
+                        alt={lastRevealed.bottle.name}
+                        fill
+                        sizes="160px"
+                        className="object-cover"
+                      />
+                    </div>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-2 gap-4 text-purple-200 mb-4">
                   {lastRevealed.bottle.producer && (
@@ -271,8 +287,9 @@ export default function RevealCeremonyPage({
                     <div className="text-white font-semibold text-center mb-3">
                       Classificações Individuais:
                     </div>
-                    {lastRevealed.bottle.ratings.map(
-                      (rating, index: number) => (
+                    {[...lastRevealed.bottle.ratings]
+                      .sort((a, b) => b.score - a.score)
+                      .map((rating, index: number) => (
                         <div key={index} className="bg-white/5 rounded-xl p-3">
                           <div className="flex justify-between items-center mb-1">
                             <span className="text-white font-semibold">
@@ -298,27 +315,18 @@ export default function RevealCeremonyPage({
 
         {isComplete ? (
           <div className="text-center">
-            <div className="bg-gradient-to-r from-amber-500/20 to-orange-500/20 backdrop-blur-lg rounded-3xl p-8 border-2 border-amber-400/30 mb-6">
-              <div className="text-6xl mb-4">🎉</div>
-              <h2 className="text-3xl font-bold text-white mb-2">
-                Todas as Garrafas Reveladas!
-              </h2>
-              <p className="text-purple-200">
-                A redirecionar para os rankings finais...
-              </p>
-            </div>
             <Link
               href={`/dinners/${id}/rankings`}
-              className="inline-block bg-gradient-to-r from-amber-500 to-orange-500 text-white px-8 py-4 rounded-2xl font-bold text-lg shadow-lg hover:shadow-amber-500/50 transform hover:scale-[1.02] transition-all"
+              className="inline-block w-full bg-gradient-to-r from-amber-500 to-orange-500 text-white px-8 py-6 rounded-3xl font-bold text-2xl shadow-2xl hover:shadow-amber-500/50 transform hover:scale-[1.02] transition-[colors,transform,box-shadow]"
             >
-              Ver Rankings Finais 🏆
+              🏁 Fim Jantar
             </Link>
           </div>
         ) : (
           <button
             onClick={handleRevealNext}
             disabled={revealing}
-            className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white px-8 py-6 rounded-3xl font-bold text-2xl shadow-2xl hover:shadow-purple-500/50 transform hover:scale-[1.02] transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white px-8 py-6 rounded-3xl font-bold text-2xl shadow-2xl hover:shadow-purple-500/50 transform hover:scale-[1.02] transition-[colors,transform,box-shadow] duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400/70"
           >
             {revealing ? (
               <span>A revelar...</span>

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { bottles, dinners, ratings, users } from "@/lib/schema";
-import { eq, ilike, sql, asc, desc, and } from "drizzle-orm";
+import { eq, ilike, sql, asc, desc, and, or, isNull } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { requireAuth } from "@/lib/middleware";
 
@@ -29,6 +29,10 @@ export async function GET(request: NextRequest) {
     }
 
     const whereConditions = [];
+    // Exclude bottles from blind dinners that haven't completed the reveal yet
+    whereConditions.push(
+      or(isNull(dinners.id), eq(dinners.is_blind, false), eq(dinners.status, "setup"), eq(dinners.status, "completed"))!
+    );
     if (producer) whereConditions.push(ilike(bottles.producer, `%${producer}%`));
     if (wineType && wineType !== "all") whereConditions.push(eq(bottles.wine_type, wineType));
 

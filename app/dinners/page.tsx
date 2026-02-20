@@ -154,7 +154,7 @@ export default function DinnersPage() {
           <div className="flex items-end justify-between mb-8">
             <div>
               <h1 className="text-4xl font-bold text-white mb-2">Jantares</h1>
-              <p className="text-purple-200">A carregar temporada ativa...</p>
+              <p className="text-purple-200" role="status">A carregar temporada ativa...</p>
             </div>
           </div>
 
@@ -323,7 +323,7 @@ export default function DinnersPage() {
                 href={`/dinners/${dinner.id}`}
                 className="block"
               >
-                <Card className="p-4 hover:border-purple-400/50 transform hover:scale-[1.01] transition-all duration-200 active:scale-[0.98] cursor-pointer">
+                <Card className="p-4 hover:border-purple-400/50 transform hover:scale-[1.01] transition-[colors,transform] duration-200 active:scale-[0.98] cursor-pointer">
                   {/* Header Row */}
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">

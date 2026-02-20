@@ -1,0 +1,35 @@
+diff --git a/app/dinners/history/[id]/page.tsx b/app/dinners/history/[id]/page.tsx
+index bce386f..f99bdb9 100644
+--- a/app/dinners/history/[id]/page.tsx
++++ b/app/dinners/history/[id]/page.tsx
+@@ -177,12 +177,17 @@ export default function SeasonDetailsPage() {
+                   <div className="flex items-center justify-between">
+                     <div className="flex-1">
+                       <div className="flex items-center gap-3 mb-1">
+-                        <span className="text-white/60 font-bold text-sm">
++                        <span className="text-white/60 font-bold text-sm shrink-0">
+                           #{dinner.dinner_number_in_season}
+                         </span>
+                         <h3 className="text-xl font-semibold text-white">
+                           {dinner.name}
+                         </h3>
++                        {dinner.is_blind && (
++                          <span className="shrink-0 bg-purple-500/30 text-purple-200 px-2 py-1 rounded-full text-xs font-semibold">
++                            🎭 Prova Cega
++                          </span>
++                        )}
+                       </div>
+                       <div className="flex items-center gap-3 text-purple-200 text-sm">
+                         <span>
+@@ -192,11 +197,6 @@ export default function SeasonDetailsPage() {
+                           )}
+                         </span>
+                         {dinner.location && <span>📍 {dinner.location}</span>}
+-                        {dinner.is_blind && (
+-                          <span className="bg-purple-500/30 text-purple-200 px-2 py-1 rounded-full text-xs font-semibold">
+-                            🎭 Prova Cega
+-                          </span>
+-                        )}
+                       </div>
+                     </div>
+                   </div>

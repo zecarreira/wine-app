@@ -77,7 +77,8 @@ export default function RegisterPage() {
                 onChange={(e) => setName(e.target.value)}
                 placeholder="O teu nome"
                 required
-                className="w-full bg-white/10 border-2 border-white/20 rounded-2xl px-4 py-2.5 md:py-3 text-white placeholder:text-white/40 focus:outline-none focus:border-purple-400 text-sm md:text-base"
+                autoComplete="name"
+                className="w-full bg-white/10 border-2 border-white/20 rounded-2xl px-4 py-2.5 md:py-3 text-white placeholder:text-white/40 focus:border-purple-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400/50 text-sm md:text-base"
               />
             </div>
 
@@ -92,7 +93,8 @@ export default function RegisterPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="teu@email.com"
                 required
-                className="w-full bg-white/10 border-2 border-white/20 rounded-2xl px-4 py-2.5 md:py-3 text-white placeholder:text-white/40 focus:outline-none focus:border-purple-400 text-sm md:text-base"
+                autoComplete="email"
+                className="w-full bg-white/10 border-2 border-white/20 rounded-2xl px-4 py-2.5 md:py-3 text-white placeholder:text-white/40 focus:border-purple-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400/50 text-sm md:text-base"
               />
             </div>
 
@@ -108,7 +110,8 @@ export default function RegisterPage() {
                 placeholder="••••••••"
                 required
                 minLength={6}
-                className="w-full bg-white/10 border-2 border-white/20 rounded-2xl px-4 py-2.5 md:py-3 text-white placeholder:text-white/40 focus:outline-none focus:border-purple-400 text-sm md:text-base"
+                autoComplete="new-password"
+                className="w-full bg-white/10 border-2 border-white/20 rounded-2xl px-4 py-2.5 md:py-3 text-white placeholder:text-white/40 focus:border-purple-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400/50 text-sm md:text-base"
               />
               <p className="text-white/40 text-xs mt-1">Mínimo 6 caracteres</p>
             </div>
@@ -136,7 +139,7 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-linear-to-r from-purple-600 to-pink-600 text-white px-6 py-3.5 md:py-4 rounded-2xl font-bold text-base md:text-lg shadow-lg hover:shadow-purple-500/50 transform hover:scale-[1.02] transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-linear-to-r from-purple-600 to-pink-600 text-white px-6 py-3.5 md:py-4 rounded-2xl font-bold text-base md:text-lg shadow-lg hover:shadow-purple-500/50 transform hover:scale-[1.02] transition-[colors,transform,box-shadow] duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400/70"
             >
               {loading ? "A criar conta..." : "Registar 🍷"}
             </button>

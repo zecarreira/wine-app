@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { use } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { PaymentsSection } from "@/components/PaymentsSection";
 
 interface Bottle {
@@ -14,6 +15,7 @@ interface Bottle {
   producer: string;
   wine_type: string;
   position: number;
+  photo_url?: string;
   brought_by?: string;
   stats?: {
     total_ratings: number;
@@ -77,6 +79,7 @@ export default function DinnerDetailPage({
   const [actionLoading, setActionLoading] = useState(false);
   const [isHost, setIsHost] = useState(false);
   const [isAdmin] = useState(() => {
+    if (typeof window === "undefined") return false;
     const userStr = localStorage.getItem("user");
     if (userStr) {
       const user = JSON.parse(userStr);
@@ -165,7 +168,7 @@ export default function DinnerDetailPage({
   async function handleStartDinner() {
     if (
       !confirm(
-        "Start the blind tasting? Bottle names will be hidden and order will be shuffled!"
+        "Iniciar a prova cega? Os nomes dos vinhos ficarão escondidos e a ordem será baralada!"
       )
     )
       return;
@@ -282,7 +285,7 @@ export default function DinnerDetailPage({
     );
   }
 
-  const isBlindActive = dinner.status === "active";
+  const isBlindActive = dinner.is_blind && ["active", "ended", "revealing"].includes(dinner.status);
 
   // Prepare display bottles - shuffle if blind mode active
   // Filter out bottles without position and sort by position
@@ -311,11 +314,12 @@ export default function DinnerDetailPage({
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <button
             onClick={() => router.back()}
+            aria-label="Voltar"
             className="text-white/80 hover:text-white text-2xl"
           >
             ←
           </button>
-          <Link href="/" className="text-white/80 hover:text-white text-2xl">
+          <Link href="/" aria-label="Início" className="text-white/80 hover:text-white text-2xl">
             🏠
           </Link>
         </div>
@@ -372,7 +376,13 @@ export default function DinnerDetailPage({
                           ? "🎭"
                           : "✅"}
                       </span>
-                      <span className="uppercase">{dinner.status}</span>
+                      <span className="uppercase">
+                        {dinner.status === "setup" ? "Agendado"
+                          : dinner.status === "active" ? "Em Curso"
+                          : dinner.status === "ended" ? "Terminado"
+                          : dinner.status === "revealing" ? "A Revelar"
+                          : "Concluído"}
+                      </span>
                     </div>
                   </>
                 )}
@@ -384,7 +394,7 @@ export default function DinnerDetailPage({
             <div className="flex items-center gap-2">
               <span className="text-xl">📅</span>
               <span className="text-base">
-                {new Date(dinner.event_date).toLocaleDateString("en-US", {
+                {new Date(dinner.event_date).toLocaleDateString("pt-PT", {
                   weekday: "long",
                   month: "long",
                   day: "numeric",
@@ -419,17 +429,49 @@ export default function DinnerDetailPage({
           </div>
         </div>
 
-        {/* PAYMENTS SECTION */}
-        <PaymentsSection dinnerId={id} isAdmin={isAdmin} />
+        {/* PAYMENTS SECTION - Escondido no jantar extra */}
+        {!dinner.is_extra_dinner && <PaymentsSection dinnerId={id} isAdmin={isAdmin} />}
 
-        {/* HOST CONTROL PANEL */}
-        {isHost && (
+        {/* HOST CONTROL PANEL - Jantar extra: só botão de concluir */}
+        {isHost && dinner.is_extra_dinner && dinner.status === "setup" && (
+          <div className="bg-gradient-to-br from-amber-500/20 to-orange-500/10 backdrop-blur-lg rounded-3xl p-6 mb-6 border-2 border-amber-400/30 shadow-2xl">
+            <button
+              onClick={async () => {
+                if (!confirm("Marcar este jantar extra como concluído?")) return;
+                setActionLoading(true);
+                try {
+                  const token = localStorage.getItem("token");
+                  const response = await fetch(`/api/dinners/${id}/end`, {
+                    method: "POST",
+                    headers: { Authorization: `Bearer ${token}` },
+                  });
+                  const data = await response.json();
+                  if (data.success) {
+                    fetchDinnerAndBottles();
+                  } else {
+                    alert(data.error || "Erro ao concluir jantar");
+                  }
+                } catch {
+                  alert("Erro ao concluir jantar");
+                }
+                setActionLoading(false);
+              }}
+              disabled={actionLoading}
+              className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-4 rounded-2xl font-bold text-lg shadow-lg hover:shadow-green-500/50 transform hover:scale-[1.02] transition-[colors,transform,box-shadow] duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current/50"
+            >
+              {actionLoading ? "..." : "✅ Concluir Jantar"}
+            </button>
+          </div>
+        )}
+
+        {/* HOST CONTROL PANEL - Escondido no jantar extra (sem prova de vinhos) */}
+        {isHost && !dinner.is_extra_dinner && (
           <div className="bg-gradient-to-br from-amber-500/20 to-orange-500/10 backdrop-blur-lg rounded-3xl p-6 mb-6 border-2 border-amber-400/30 shadow-2xl">
             <div className="flex items-center gap-3 mb-4">
               <div className="text-3xl">👑</div>
               <div>
-                <h2 className="text-xl font-bold text-white">Host Controls</h2>
-                <p className="text-amber-200 text-sm">Only you can see this</p>
+                <h2 className="text-xl font-bold text-white">Controlo do Anfitrião</h2>
+                <p className="text-amber-200 text-sm">Só tu podes ver isto</p>
               </div>
             </div>
 
@@ -439,13 +481,13 @@ export default function DinnerDetailPage({
                 <button
                   onClick={handleStartDinner}
                   disabled={actionLoading || bottles.length === 0}
-                  className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-4 rounded-2xl font-bold text-lg shadow-lg hover:shadow-green-500/50 transform hover:scale-[1.02] transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-4 rounded-2xl font-bold text-lg shadow-lg hover:shadow-green-500/50 transform hover:scale-[1.02] transition-[colors,transform,box-shadow] duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current/50"
                 >
                   {actionLoading
                     ? "..."
                     : bottles.length === 0
-                    ? "⚠️ Add bottles first"
-                    : "🎭 Start Blind Tasting"}
+                    ? "⚠️ Adiciona garrafas primeiro"
+                    : "🎭 Iniciar Prova Cega"}
                 </button>
               )}
 
@@ -453,16 +495,16 @@ export default function DinnerDetailPage({
                 <button
                   onClick={handleEndDinner}
                   disabled={actionLoading}
-                  className="w-full bg-gradient-to-r from-orange-600 to-red-600 text-white px-6 py-4 rounded-2xl font-bold text-lg shadow-lg hover:shadow-orange-500/50 transform hover:scale-[1.02] transition-all duration-200 active:scale-[0.98] disabled:opacity-50"
+                  className="w-full bg-gradient-to-r from-orange-600 to-red-600 text-white px-6 py-4 rounded-2xl font-bold text-lg shadow-lg hover:shadow-orange-500/50 transform hover:scale-[1.02] transition-[colors,transform,box-shadow] duration-200 active:scale-[0.98] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current/50"
                 >
-                  {actionLoading ? "..." : "⏸️ End Dinner & Prepare Reveal"}
+                  {actionLoading ? "..." : "⏸️ Terminar Jantar"}
                 </button>
               )}
 
               {(dinner.status === "ended" || dinner.status === "revealing") && (
                 <Link
                   href={`/dinners/${id}/reveal`}
-                  className="block w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white text-center px-6 py-4 rounded-2xl font-bold text-lg shadow-lg hover:shadow-purple-500/50 transform hover:scale-[1.02] transition-all duration-200 active:scale-[0.98]"
+                  className="block w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white text-center px-6 py-4 rounded-2xl font-bold text-lg shadow-lg hover:shadow-purple-500/50 transform hover:scale-[1.02] transition-[colors,transform,box-shadow] duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
                 >
                   🎭{" "}
                   {dinner.status === "ended"
@@ -506,7 +548,7 @@ export default function DinnerDetailPage({
           <div className="mb-6">
             <Link
               href={`/dinners/${id}/add-bottle`}
-              className="flex items-center justify-center gap-3 w-full bg-gradient-to-r from-blue-600 to-cyan-600 text-white px-6 py-4 rounded-2xl font-bold text-lg shadow-lg hover:shadow-blue-500/50 transform hover:scale-[1.02] transition-all duration-200 active:scale-[0.98]"
+              className="flex items-center justify-center gap-3 w-full bg-gradient-to-r from-blue-600 to-cyan-600 text-white px-6 py-4 rounded-2xl font-bold text-lg shadow-lg hover:shadow-blue-500/50 transform hover:scale-[1.02] transition-[colors,transform,box-shadow] duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
             >
               <span className="text-2xl">+</span>
               <span>Adicionar Garrafa</span>
@@ -514,27 +556,11 @@ export default function DinnerDetailPage({
           </div>
         )}
 
-        {/* Extra Dinner Warning - No Bottles Allowed */}
-        {dinner.status === "setup" && dinner.is_extra_dinner && (
-          <div className="mb-6 bg-amber-500/20 backdrop-blur-sm rounded-3xl p-4 border border-amber-400/30">
-            <div className="flex items-center gap-3">
-              <span className="text-3xl">🎁</span>
-              <div>
-                <p className="text-white font-semibold">Jantar Extra</p>
-                <p className="text-amber-200 text-sm">
-                  Este é um jantar especial apenas para fotos e convívio. Não é
-                  permitido adicionar garrafas.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Photo Gallery Button */}
         <div className="mb-6">
           <Link
             href={`/dinners/${id}/photos`}
-            className="flex items-center justify-center gap-3 w-full bg-gradient-to-r from-pink-600 to-rose-600 text-white px-6 py-4 rounded-2xl font-bold text-lg shadow-lg hover:shadow-pink-500/50 transform hover:scale-[1.02] transition-all duration-200 active:scale-[0.98]"
+            className="flex items-center justify-center gap-3 w-full bg-gradient-to-r from-pink-600 to-rose-600 text-white px-6 py-4 rounded-2xl font-bold text-lg shadow-lg hover:shadow-pink-500/50 transform hover:scale-[1.02] transition-[colors,transform,box-shadow] duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
           >
             <span className="text-2xl">📸</span>
             <span>Ver Fotos</span>
@@ -569,6 +595,7 @@ export default function DinnerDetailPage({
                               e.stopPropagation();
                               handleDeleteBottle(bottle.id);
                             }}
+                            aria-label="Remover garrafa"
                             className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 md:px-3 md:py-2 rounded-lg text-xs md:text-sm font-semibold transition-colors shadow-lg"
                           >
                             🗑️
@@ -576,13 +603,16 @@ export default function DinnerDetailPage({
                         </div>
                       )}
 
-                    {/* Clickable Card Wrapper - Only if bottle has valid ID */}
+                    {/* Clickable Card Wrapper - Disabled during blind active tasting */}
                     {bottle.id ? (
-                      <Link href={`/bottles/${bottle.id}`} className="block">
-                        <div className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-lg rounded-3xl p-6 border border-white/20 shadow-xl hover:border-purple-400/50 hover:shadow-purple-500/20 transition-all cursor-pointer">
-                          {/* Position Badge */}
-                          <div className="flex items-start justify-between mb-4">
-                            <div className="bg-gradient-to-br from-purple-500 to-pink-500 text-white w-14 h-14 rounded-2xl flex items-center justify-center font-bold text-2xl shadow-lg">
+                      <div
+                        className="block"
+                        onClick={() => { if (!isBlindActive) router.push(`/bottles/${bottle.id}`); }}
+                      >
+                        <div className={`bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-lg rounded-3xl p-6 border border-white/20 shadow-xl transition-colors ${!isBlindActive ? "hover:border-purple-400/50 hover:shadow-purple-500/20 cursor-pointer" : ""}`}>
+                          {/* Position Badge + Rating */}
+                          <div className="flex items-center justify-between mb-4">
+                            <div className="bg-gradient-to-br from-purple-500 to-pink-500 text-white w-10 h-10 rounded-xl flex items-center justify-center font-bold text-lg shadow-lg">
                               {bottle.displayLabel}
                             </div>
                             {bottle.stats &&
@@ -594,9 +624,7 @@ export default function DinnerDetailPage({
                                   </div>
                                   <div className="text-xs text-white/60">
                                     {bottle.stats.total_ratings} rating
-                                    {bottle.stats.total_ratings !== 1
-                                      ? "s"
-                                      : ""}
+                                    {bottle.stats.total_ratings !== 1 ? "s" : ""}
                                   </div>
                                 </div>
                               )}
@@ -606,48 +634,79 @@ export default function DinnerDetailPage({
                           {isBlindActive ? (
                             <div>
                               <h3 className="text-2xl font-bold text-white mb-3">
-                                Wine {bottle.displayLabel}
+                                Vinho {bottle.displayLabel}
                               </h3>
                               <p className="text-purple-200 text-sm mb-4">
-                                🎭 Wine details hidden until reveal
+                                🎭 Detalhes escondidos até à revelação
                               </p>
                             </div>
                           ) : (
-                            <div>
-                              <h3 className="text-2xl font-bold text-white mb-3">
-                                {bottle.name}
-                              </h3>
-
-                              <div className="space-y-1.5 text-purple-200 mb-4">
-                                {bottle.producer && (
-                                  <div className="flex items-center gap-2 text-sm">
-                                    <span>🏛️</span>
-                                    <span>{bottle.producer}</span>
+                            <div className="grid grid-cols-2 gap-4">
+                              {/* Photo */}
+                              <div>
+                                {bottle.photo_url ? (
+                                  <div className="relative w-full aspect-[3/4] rounded-2xl overflow-hidden bg-black/20">
+                                    <Image
+                                      src={bottle.photo_url}
+                                      alt={bottle.name}
+                                      fill
+                                      sizes="(max-width: 640px) 100vw, 50vw"
+                                      className="object-cover"
+                                    />
                                   </div>
-                                )}
-                                {bottle.vintage && (
-                                  <div className="flex items-center gap-2 text-sm">
-                                    <span>📅</span>
-                                    <span>{bottle.vintage}</span>
-                                  </div>
-                                )}
-                                {bottle.wine_type && (
-                                  <div className="flex items-center gap-2 text-sm capitalize">
-                                    <span>🍷</span>
-                                    <span>{bottle.wine_type}</span>
+                                ) : (
+                                  <div className="w-full aspect-[3/4] rounded-2xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center border-2 border-white/10">
+                                    <div className="text-5xl">🍷</div>
                                   </div>
                                 )}
                               </div>
 
-                              {bottle.description && (
-                                <p className="text-white/80 text-sm mb-4 italic leading-relaxed">
-                                  &quot;{bottle.description}&quot;
-                                </p>
-                              )}
+                              {/* Info */}
+                              <div className="flex flex-col justify-between">
+                                <div>
+                                  <h3 className="text-xl font-bold text-white mb-3">
+                                    {bottle.name}
+                                  </h3>
+                                  <div className="space-y-2 text-purple-200 mb-4">
+                                    {bottle.producer && (
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-lg">🏛️</span>
+                                        <div>
+                                          <div className="text-white/60 text-xs">Produtor</div>
+                                          <div className="font-semibold text-sm">{bottle.producer}</div>
+                                        </div>
+                                      </div>
+                                    )}
+                                    {bottle.vintage && (
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-lg">📅</span>
+                                        <div>
+                                          <div className="text-white/60 text-xs">Ano</div>
+                                          <div className="font-semibold text-sm">{bottle.vintage}</div>
+                                        </div>
+                                      </div>
+                                    )}
+                                    {bottle.wine_type && (
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-lg">🍷</span>
+                                        <div>
+                                          <div className="text-white/60 text-xs">Tipo</div>
+                                          <div className="font-semibold text-sm capitalize">{bottle.wine_type}</div>
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                  {bottle.description && (
+                                    <p className="text-white/70 text-xs italic leading-relaxed">
+                                      &quot;{bottle.description}&quot;
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
                             </div>
                           )}
                         </div>
-                      </Link>
+                      </div>
                     ) : (
                       /* No ID - Display error card without link */
                       <div className="bg-red-500/10 backdrop-blur-lg rounded-3xl p-6 border-2 border-red-400/50 shadow-xl">
@@ -657,10 +716,10 @@ export default function DinnerDetailPage({
                           </div>
                           <div>
                             <h3 className="text-xl font-bold text-red-200">
-                              Error Loading Bottle
+                              Erro ao carregar garrafa
                             </h3>
                             <p className="text-red-300 text-sm">
-                              Bottle ID is missing. Please refresh the page.
+                              ID da garrafa em falta. Atualiza a página.
                             </p>
                           </div>
                         </div>
@@ -671,19 +730,19 @@ export default function DinnerDetailPage({
                     {dinner.status === "active" && bottle.id ? (
                       <Link
                         href={`/bottles/${bottle.id}/rate`}
-                        className="block w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white text-center px-6 py-4 rounded-2xl font-bold text-lg shadow-lg hover:shadow-purple-500/50 transform hover:scale-[1.02] transition-all duration-200 active:scale-[0.98] mt-4"
+                        className="block w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white text-center px-6 py-4 rounded-2xl font-bold text-lg shadow-lg hover:shadow-purple-500/50 transform hover:scale-[1.02] transition-[colors,transform,box-shadow] duration-200 active:scale-[0.98] mt-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400/70"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <div className="flex items-center justify-center gap-2">
                           <span>⭐</span>
-                          <span>Rate This Wine</span>
+                          <span>Classificar Este Vinho</span>
                         </div>
                       </Link>
                     ) : dinner.status === "active" && !bottle.id ? (
                       <div className="mt-4 bg-red-500/20 backdrop-blur-sm rounded-2xl p-4 border border-red-400/30">
                         <div className="flex items-center gap-2 text-red-200 text-sm">
                           <span>⚠️</span>
-                          <span>Error: Bottle ID missing. Please refresh.</span>
+                          <span>Erro: ID da garrafa em falta. Atualiza a página.</span>
                         </div>
                       </div>
                     ) : null}
@@ -699,11 +758,11 @@ export default function DinnerDetailPage({
           <div className="mt-8">
             <Link
               href={`/dinners/${id}/rankings`}
-              className="block w-full bg-gradient-to-r from-amber-500 to-orange-500 text-white text-center px-6 py-5 rounded-2xl font-bold text-lg shadow-lg hover:shadow-amber-500/50 transform hover:scale-[1.02] transition-all duration-200 active:scale-[0.98]"
+              className="block w-full bg-gradient-to-r from-amber-500 to-orange-500 text-white text-center px-6 py-5 rounded-2xl font-bold text-lg shadow-lg hover:shadow-amber-500/50 transform hover:scale-[1.02] transition-[colors,transform,box-shadow] duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
             >
               <div className="flex items-center justify-center gap-2">
                 <span>🏆</span>
-                <span>View Final Rankings</span>
+                <span>Ver Rankings Finais</span>
               </div>
             </Link>
           </div>

@@ -27,7 +27,7 @@ export default function Home() {
       <main className="relative min-h-screen flex flex-col items-center justify-center px-4 py-6">
         <div className="text-center mb-6 space-y-3">
           <div className="inline-block">
-            <div className="text-5xl mb-3 animate-bounce">🍷</div>
+            <div className="text-5xl mb-3 motion-safe:animate-bounce">🍷</div>
           </div>
           <h1 className="text-3xl md:text-4xl font-bold text-white mb-2 tracking-tight">
             Jantar do <span className="text-amber-400">Vinho</span>
@@ -50,7 +50,7 @@ export default function Home() {
               <>
                 <Link
                   href="/dinners"
-                  className="block w-full bg-linear-to-r from-purple-600 to-pink-600 text-white text-center px-5 py-3.5 rounded-xl font-bold text-base shadow-xl hover:shadow-purple-500/50 transform hover:scale-105 transition-all duration-200 active:scale-95"
+                  className="block w-full bg-linear-to-r from-purple-600 to-pink-600 text-white text-center px-5 py-3.5 rounded-xl font-bold text-base shadow-xl hover:shadow-purple-500/50 transform hover:scale-105 transition-[colors,transform,box-shadow] duration-200 active:scale-95"
                 >
                   <div className="flex items-center justify-center gap-2">
                     <span className="text-lg">🍽️</span>
@@ -60,7 +60,7 @@ export default function Home() {
 
                 <Link
                   href="/bottles"
-                  className="block w-full bg-linear-to-r from-amber-600 to-orange-600 text-white text-center px-5 py-3.5 rounded-xl font-bold text-base shadow-xl hover:shadow-amber-500/50 transform hover:scale-105 transition-all duration-200 active:scale-95"
+                  className="block w-full bg-linear-to-r from-amber-600 to-orange-600 text-white text-center px-5 py-3.5 rounded-xl font-bold text-base shadow-xl hover:shadow-amber-500/50 transform hover:scale-105 transition-[colors,transform,box-shadow] duration-200 active:scale-95"
                 >
                   <div className="flex items-center justify-center gap-2">
                     <span className="text-lg">🍷</span>
@@ -70,7 +70,7 @@ export default function Home() {
 
                 <Link
                   href="/stats"
-                  className="block w-full bg-linear-to-r from-blue-600 to-cyan-600 text-white text-center px-5 py-3.5 rounded-xl font-bold text-base shadow-xl hover:shadow-blue-500/50 transform hover:scale-105 transition-all duration-200 active:scale-95"
+                  className="block w-full bg-linear-to-r from-blue-600 to-cyan-600 text-white text-center px-5 py-3.5 rounded-xl font-bold text-base shadow-xl hover:shadow-blue-500/50 transform hover:scale-105 transition-[colors,transform,box-shadow] duration-200 active:scale-95"
                 >
                   <div className="flex items-center justify-center gap-2">
                     <span className="text-lg">📊</span>
@@ -80,7 +80,7 @@ export default function Home() {
 
                 <Link
                   href="/mandamentos"
-                  className="block w-full bg-linear-to-r from-emerald-600 to-teal-600 text-white text-center px-5 py-3.5 rounded-xl font-bold text-base shadow-xl hover:shadow-emerald-500/50 transform hover:scale-105 transition-all duration-200 active:scale-95"
+                  className="block w-full bg-linear-to-r from-emerald-600 to-teal-600 text-white text-center px-5 py-3.5 rounded-xl font-bold text-base shadow-xl hover:shadow-emerald-500/50 transform hover:scale-105 transition-[colors,transform,box-shadow] duration-200 active:scale-95"
                 >
                   <div className="flex items-center justify-center gap-2">
                     <span className="text-lg">📜</span>
@@ -90,7 +90,7 @@ export default function Home() {
 
                 <Link
                   href="/profile"
-                  className="block w-full bg-white/10 backdrop-blur-lg text-white text-center px-5 py-3.5 rounded-xl font-semibold text-base border border-white/20 hover:bg-white/20 transform hover:scale-105 transition-all duration-200 active:scale-95"
+                  className="block w-full bg-white/10 backdrop-blur-lg text-white text-center px-5 py-3.5 rounded-xl font-semibold text-base border border-white/20 hover:bg-white/20 transform hover:scale-105 transition-[colors,transform,box-shadow] duration-200 active:scale-95"
                 >
                   <div className="flex items-center justify-center gap-2">
                     <span className="text-lg">👤</span>
@@ -102,7 +102,7 @@ export default function Home() {
               <div className="space-y-2.5">
                 <Link
                   href="/login"
-                  className="block w-full bg-linear-to-r from-purple-600 to-pink-600 text-white text-center px-5 py-3.5 rounded-xl font-bold text-base shadow-xl hover:shadow-purple-500/50 transform hover:scale-105 transition-all duration-200 active:scale-95"
+                  className="block w-full bg-linear-to-r from-purple-600 to-pink-600 text-white text-center px-5 py-3.5 rounded-xl font-bold text-base shadow-xl hover:shadow-purple-500/50 transform hover:scale-105 transition-[colors,transform,box-shadow] duration-200 active:scale-95"
                 >
                   <div className="flex items-center justify-center gap-2">
                     <span className="text-lg">🔐</span>
@@ -111,7 +111,7 @@ export default function Home() {
                 </Link>
                 <Link
                   href="/register"
-                  className="block w-full bg-white/10 backdrop-blur-lg text-white text-center px-5 py-3 rounded-xl font-semibold text-sm border border-white/20 hover:bg-white/20 transition-all duration-200"
+                  className="block w-full bg-white/10 backdrop-blur-lg text-white text-center px-5 py-3 rounded-xl font-semibold text-sm border border-white/20 hover:bg-white/20 transition-colors duration-200"
                 >
                   <div className="flex items-center justify-center gap-2">
                     <span>✍️</span>

@@ -97,17 +97,20 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         {toasts.map((toast) => (
           <div
             key={toast.id}
+            role={toast.type === "error" || toast.type === "warning" ? "alert" : "status"}
+            aria-live={toast.type === "error" || toast.type === "warning" ? "assertive" : "polite"}
             className={`${getToastStyles(
               toast.type
-            )} backdrop-blur-lg border-2 rounded-2xl px-6 py-4 shadow-2xl text-white font-semibold flex items-center gap-3 animate-slide-in-right pointer-events-auto min-w-[300px] max-w-[500px]`}
+            )} backdrop-blur-lg border-2 rounded-2xl px-6 py-4 shadow-2xl text-white font-semibold flex items-center gap-3 motion-safe:animate-slide-in-right pointer-events-auto min-w-[300px] max-w-[500px]`}
           >
-            <span className="text-2xl">{getToastIcon(toast.type)}</span>
+            <span className="text-2xl" aria-hidden="true">{getToastIcon(toast.type)}</span>
             <span className="flex-1">{toast.message}</span>
             <button
               onClick={() =>
                 setToasts((prev) => prev.filter((t) => t.id !== toast.id))
               }
-              className="text-white/80 hover:text-white text-xl"
+              aria-label="Fechar notificação"
+              className="text-white/80 hover:text-white text-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 rounded"
             >
               ×
             </button>

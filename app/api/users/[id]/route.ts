@@ -76,6 +76,8 @@ export async function GET(
         dinner_id: dinnerForBottle.id,
         dinner_name: dinnerForBottle.name,
         dinner_event_date: dinnerForBottle.event_date,
+        dinner_status: dinnerForBottle.status,
+        dinner_is_blind: dinnerForBottle.is_blind,
       })
       .from(bottles)
       .leftJoin(dinnerForBottle, eq(bottles.dinner_id, dinnerForBottle.id))
@@ -140,7 +142,7 @@ export async function GET(
       producer: b.producer,
       vintage: b.vintage,
       photo_url: b.photo_url,
-      dinner: b.dinner_id ? { id: b.dinner_id, name: b.dinner_name, event_date: b.dinner_event_date } : null,
+      dinner: b.dinner_id ? { id: b.dinner_id, name: b.dinner_name, event_date: b.dinner_event_date, status: b.dinner_status, is_blind: b.dinner_is_blind } : null,
     }));
 
     return NextResponse.json({

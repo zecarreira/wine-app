@@ -79,9 +79,6 @@ export async function POST(request: NextRequest) {
     if (!name || !event_date) {
       return NextResponse.json({ error: "Name and event date are required" }, { status: 400 });
     }
-    if (!organizer_id) {
-      return NextResponse.json({ error: "Organizer is required" }, { status: 400 });
-    }
 
     if (isNaN(new Date(event_date).getTime())) {
       return NextResponse.json({ error: "Invalid date" }, { status: 400 });
@@ -100,32 +97,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const [organizer] = await db
-      .select({ id: users.id, role: users.role })
-      .from(users)
-      .where(eq(users.id, organizer_id))
-      .limit(1);
-
-    if (!organizer) {
-      return NextResponse.json({ error: "Invalid organizer selected" }, { status: 400 });
-    }
-    if (organizer.role !== "founder" && organizer.role !== "admin") {
-      return NextResponse.json({ error: "Organizer must be a founder or admin" }, { status: 400 });
-    }
-
-    const [existingDinner] = await db
-      .select({ id: dinners.id })
-      .from(dinners)
-      .where(and(eq(dinners.season_id, activeSeason.id), eq(dinners.organizer_id, organizer_id)))
-      .limit(1);
-
-    if (existingDinner) {
-      return NextResponse.json(
-        { error: "Este founder já organizou um jantar nesta temporada. Por favor escolhe outro organizador." },
-        { status: 400 }
-      );
-    }
-
     const [{ value: dinnerCount }] = await db
       .select({ value: count() })
       .from(dinners)
@@ -140,6 +111,39 @@ export async function POST(request: NextRequest) {
 
     const dinnerNumber = dinnerCount + 1;
     const isExtraDinner = is_extra === true || dinnerNumber === 8;
+
+    // O jantar extra não requer organizador
+    if (!isExtraDinner) {
+      if (!organizer_id) {
+        return NextResponse.json({ error: "Organizer is required" }, { status: 400 });
+      }
+
+      const [organizer] = await db
+        .select({ id: users.id, role: users.role })
+        .from(users)
+        .where(eq(users.id, organizer_id))
+        .limit(1);
+
+      if (!organizer) {
+        return NextResponse.json({ error: "Invalid organizer selected" }, { status: 400 });
+      }
+      if (organizer.role !== "founder" && organizer.role !== "admin") {
+        return NextResponse.json({ error: "Organizer must be a founder or admin" }, { status: 400 });
+      }
+
+      const [existingDinner] = await db
+        .select({ id: dinners.id })
+        .from(dinners)
+        .where(and(eq(dinners.season_id, activeSeason.id), eq(dinners.organizer_id, organizer_id)))
+        .limit(1);
+
+      if (existingDinner) {
+        return NextResponse.json(
+          { error: "Este founder já organizou um jantar nesta temporada. Por favor escolhe outro organizador." },
+          { status: 400 }
+        );
+      }
+    }
 
     const [newDinner] = await db
       .insert(dinners)
