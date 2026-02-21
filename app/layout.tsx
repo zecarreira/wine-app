@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ToastProvider } from "@/components/ToastProvider";
@@ -17,6 +17,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Jantar do Vinho",
   description: "Classifica vinhos em provas cegas com amigos",
+};
+
+export const viewport: Viewport = {
   themeColor: "#0a0a0a",
 };
 

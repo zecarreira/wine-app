@@ -39,10 +39,14 @@ export default function DinnerPhotosPage({
   async function fetchDinnerAndPhotos() {
     try {
       const token = localStorage.getItem("token");
-      const authHeaders = token ? { Authorization: `Bearer ${token}` } : {};
+      const authHeaders: Record<string, string> = token
+        ? { Authorization: `Bearer ${token}` }
+        : {};
 
       // Fetch dinner info
-      const dinnerResponse = await fetch("/api/dinners", { headers: authHeaders });
+      const dinnerResponse = await fetch("/api/dinners", {
+        headers: authHeaders,
+      });
       const dinnerData = await dinnerResponse.json();
       const currentDinner = dinnerData.dinners.find((d: any) => d.id === id);
       setDinner(currentDinner);
@@ -105,7 +109,10 @@ export default function DinnerPhotosPage({
 
       const uploadData = await uploadResponse.json().catch(() => null);
       if (!uploadData?.success) {
-        alert("Erro ao fazer upload das fotos: " + (uploadData?.error ?? "Erro desconhecido"));
+        alert(
+          "Erro ao fazer upload das fotos: " +
+            (uploadData?.error ?? "Erro desconhecido"),
+        );
         setUploading(false);
         return;
       }
@@ -128,7 +135,9 @@ export default function DinnerPhotosPage({
 
       const photoData = await photoResponse.json().catch(() => null);
       if (!photoData?.success) {
-        alert("Erro ao guardar foto: " + (photoData?.error ?? "Erro desconhecido"));
+        alert(
+          "Erro ao guardar foto: " + (photoData?.error ?? "Erro desconhecido"),
+        );
         setUploading(false);
         return;
       }
@@ -163,7 +172,11 @@ export default function DinnerPhotosPage({
           >
             ←
           </button>
-          <Link href="/" aria-label="Início" className="text-white/80 hover:text-white text-2xl">
+          <Link
+            href="/"
+            aria-label="Início"
+            className="text-white/80 hover:text-white text-2xl"
+          >
             🏠
           </Link>
         </div>
