@@ -65,19 +65,24 @@ export async function GET(
       .where(inArray(fines.payment_id, paymentIds))
       .orderBy(asc(fines.created_at));
 
-    // Agregar fines por payment
+    // Agregar fines por payment (single pass group)
+    const finesByPayment = new Map<string, typeof allFines>();
+    for (const f of allFines) {
+      const list = finesByPayment.get(f.payment_id) ?? [];
+      list.push(f);
+      finesByPayment.set(f.payment_id, list);
+    }
+
     const paymentsWithFines = allPayments.map(payment => {
-      const paymentFines = allFines
-        .filter(f => f.payment_id === payment.id)
-        .map(f => ({
-          id: f.id,
-          payment_id: f.payment_id,
-          amount: f.amount,
-          reason: f.reason,
-          created_at: f.created_at,
-          created_by: f.created_by,
-          admin: f.admin_id ? { id: f.admin_id, name: f.admin_name } : null,
-        }));
+      const paymentFines = (finesByPayment.get(payment.id) ?? []).map(f => ({
+        id: f.id,
+        payment_id: f.payment_id,
+        amount: f.amount,
+        reason: f.reason,
+        created_at: f.created_at,
+        created_by: f.created_by,
+        admin: f.admin_id ? { id: f.admin_id, name: f.admin_name } : null,
+      }));
       const totalFines = paymentFines.reduce((sum, f) => sum + f.amount, 0);
       const totalAmount = payment.base_amount + totalFines;
       return {

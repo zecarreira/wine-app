@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { use } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api-client";
 
 interface Season {
@@ -45,34 +45,22 @@ export default function SeasonPaymentStatsPage({
 }) {
   const { id } = use(params);
   const router = useRouter();
-  const [season, setSeason] = useState<Season | null>(null);
-  const [stats, setStats] = useState<SeasonStats | null>(null);
-  const [dinners, setDinners] = useState<DinnerStats[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchSeasonStats();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
-
-  async function fetchSeasonStats() {
-    try {
-      setLoading(true);
-      const data = await apiFetch<{
+  const { data, isLoading: loading } = useQuery({
+    queryKey: ["seasons", id, "stats"],
+    queryFn: async () => {
+      return apiFetch<{
         success: boolean;
         season: Season;
         stats: SeasonStats;
         dinners: DinnerStats[];
       }>(`/api/seasons/${id}/stats`);
-      setSeason(data.season);
-      setStats(data.stats);
-      setDinners(data.dinners);
-    } catch (error) {
-      console.error("Failed to fetch season stats:", error);
-    } finally {
-      setLoading(false);
-    }
-  }
+    },
+  });
+
+  const season = data?.season ?? null;
+  const stats = data?.stats ?? null;
+  const dinners = data?.dinners ?? [];
 
   if (loading) {
     return (
@@ -118,9 +106,9 @@ export default function SeasonPaymentStatsPage({
           </h1>
           <p className="text-lg md:text-xl text-purple-300">{season.name}</p>
           <p className="text-white/60 text-xs md:text-sm">
-            {new Date(season.start_date).toLocaleDateString("pt-PT")}
+            {new Date(season.start_date).toLocaleDateString("pt-PT", { timeZone: "Europe/Lisbon" })}
             {season.end_date &&
-              ` - ${new Date(season.end_date).toLocaleDateString("pt-PT")}`}
+              ` - ${new Date(season.end_date).toLocaleDateString("pt-PT", { timeZone: "Europe/Lisbon" })}`}
           </p>
         </div>
 
@@ -242,9 +230,7 @@ export default function SeasonPaymentStatsPage({
                         {dinner.dinner_name}
                       </h3>
                       <p className="text-white/60 text-xs md:text-sm">
-                        {new Date(dinner.dinner_date).toLocaleDateString(
-                          "pt-PT"
-                        )}
+                        {new Date(dinner.dinner_date).toLocaleDateString("pt-PT", { timeZone: "Europe/Lisbon" })}
                       </p>
                     </div>
                     <Link

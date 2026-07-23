@@ -292,6 +292,7 @@ export default function DinnersPage() {
                         {new Date(dinner.event_date).toLocaleDateString(
                           "pt-PT",
                           {
+                            timeZone: "Europe/Lisbon",
                             weekday: "short",
                             month: "short",
                             day: "numeric",

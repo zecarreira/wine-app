@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -60,12 +59,6 @@ export default function ProfilePage() {
   const { user: authUser, loading: authLoading, logout } = useAuth();
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
-  useEffect(() => {
-    if (!authLoading && !authUser) {
-      router.push("/login");
-    }
-  }, [authLoading, authUser, router]);
-
   const {
     data: user,
     isLoading: profileLoading,
@@ -81,7 +74,6 @@ export default function ProfilePage() {
       } catch (error) {
         if (error instanceof ApiError && error.status === 401) {
           await logout();
-          router.push("/login");
         }
         throw error;
       }
@@ -162,6 +154,24 @@ export default function ProfilePage() {
         <div className="text-center">
           <div className="text-5xl mb-3 motion-safe:animate-spin" aria-hidden="true">👤</div>
           <div role="status" className="text-white text-lg">A carregar perfil…</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!authUser) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center px-4">
+        <div className="text-center max-w-md">
+          <div className="text-5xl mb-4">🔒</div>
+          <h1 className="text-2xl font-bold text-white mb-2">Login necessário</h1>
+          <p className="text-purple-200 mb-6">Precisas de iniciar sessão para ver o teu perfil.</p>
+          <Link
+            href="/login"
+            className="inline-block bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-2xl font-bold shadow-lg hover:shadow-purple-500/50"
+          >
+            Ir para Login
+          </Link>
         </div>
       </div>
     );
@@ -422,7 +432,7 @@ export default function ProfilePage() {
                     </div>
                     <p className="text-white/60 text-xs">
                       {rating.bottle.dinner.name} •{" "}
-                      {new Date(rating.created_at).toLocaleDateString()}
+                      {new Date(rating.created_at).toLocaleDateString("pt-PT", { timeZone: "Europe/Lisbon" })}
                     </p>
                     {rating.tasting_notes && (
                       <p className="text-white/70 text-xs mt-1.5 italic">

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { use } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/components/AuthProvider";
 import { apiFetch, ApiError } from "@/lib/api-client";
 
@@ -51,58 +52,51 @@ export default function RateBottlePage({
   const { id } = use(params);
   const router = useRouter();
   const { user: authUser } = useAuth();
-  const [bottle, setBottle] = useState<Bottle | null>(null);
   const [score, setScore] = useState(5);
   const [tastingNotes, setTastingNotes] = useState("");
-  const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [existingRating, setExistingRating] = useState<ExistingRating | null>(
     null
   );
 
-  async function fetchBottleAndRating() {
-    try {
+  const { data: bottle, isLoading: bottleLoading } = useQuery({
+    queryKey: ["bottles", id],
+    queryFn: async () => {
       const bottleData = await apiFetch<{ success: boolean; bottle: Bottle }>(
         `/api/bottles/${id}`
       );
-      setBottle(bottleData.bottle);
+      return bottleData.bottle;
+    },
+  });
 
-      try {
-        const ratingsData = await apiFetch<{
-          success: boolean;
-          ratings: Array<{
-            user_id: string;
-            score: number;
-            tasting_notes?: string;
-            id: string;
-          }>;
-        }>(`/api/bottles/${id}/ratings`);
+  const { data: ratingsData, isLoading: ratingsLoading } = useQuery({
+    queryKey: ["bottles", id, "ratings"],
+    queryFn: async () => {
+      return apiFetch<{
+        success: boolean;
+        ratings: Array<{
+          user_id: string;
+          score: number;
+          tasting_notes?: string;
+          id: string;
+        }>;
+      }>(`/api/bottles/${id}/ratings`);
+    },
+    enabled: !!authUser,
+  });
 
-        if (ratingsData.ratings && authUser) {
-          const myRating = ratingsData.ratings.find(
-            (r) => r.user_id === authUser.id
-          );
-          if (myRating) {
-            setExistingRating(myRating);
-            setScore(myRating.score);
-            setTastingNotes(myRating.tasting_notes || "");
-          }
-        }
-      } catch {
-        /* ratings optional if unauthenticated */
-      }
-    } catch (error) {
-      console.error("Error fetching data:", error);
-    } finally {
-      setLoading(false);
-    }
-  }
+  const loading = bottleLoading || (!!authUser && ratingsLoading);
 
   useEffect(() => {
-    fetchBottleAndRating();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, authUser?.id]);
+    if (!ratingsData?.ratings || !authUser) return;
+    const myRating = ratingsData.ratings.find((r) => r.user_id === authUser.id);
+    if (myRating) {
+      setExistingRating(myRating);
+      setScore(myRating.score);
+      setTastingNotes(myRating.tasting_notes || "");
+    }
+  }, [ratingsData, authUser]);
 
   async function submitRating() {
     setSubmitting(true);
@@ -111,9 +105,6 @@ export default function RateBottlePage({
     try {
       if (!authUser) {
         setError("Por favor faz login primeiro");
-        setTimeout(() => {
-          router.push("/login");
-        }, 2000);
         return;
       }
 

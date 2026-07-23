@@ -2,34 +2,17 @@ import { z } from "zod";
 
 // Login validation
 export const loginSchema = z.object({
-  email: z.string().email("Email inválido"),
+  email: z.email("Email inválido"),
   password: z.string().min(6, "Password deve ter pelo menos 6 caracteres"),
 });
-
-export type LoginFormData = z.infer<typeof loginSchema>;
 
 /** API login body (same as form). */
 export const loginApiSchema = loginSchema;
 
-// Register validation
-export const registerSchema = z
-  .object({
-    name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
-    email: z.string().email("Email inválido"),
-    password: z.string().min(12, "Password deve ter pelo menos 12 caracteres"),
-    confirmPassword: z.string(),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "As passwords não coincidem",
-    path: ["confirmPassword"],
-  });
-
-export type RegisterFormData = z.infer<typeof registerSchema>;
-
 /** API register body — no confirmPassword; role is ignored server-side. */
 export const registerApiSchema = z.object({
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
-  email: z.string().email("Email inválido"),
+  email: z.email("Email inválido"),
   password: z.string().min(12, "Password deve ter pelo menos 12 caracteres"),
 });
 
@@ -42,7 +25,7 @@ export const createDinnerSchema = z.object({
   location: z.string().optional().nullable(),
   is_blind: z.boolean().default(true),
   is_extra: z.boolean().optional(),
-  organizer_id: z.string().uuid("Organizer ID inválido").nullable().optional(),
+  organizer_id: z.uuid("Organizer ID inválido").nullable().optional(),
 });
 
 export type CreateDinnerFormData = z.infer<typeof createDinnerSchema>;
@@ -69,13 +52,15 @@ export const addBottleSchema = z.object({
     .number()
     .int()
     .min(1900)
-    .max(new Date().getFullYear() + 1)
-    .nullish(),
+    .nullish()
+    .refine((y) => y == null || y <= new Date().getFullYear() + 1, {
+      message: "Vintage inválido",
+    }),
   wine_type: z
     .enum(["red", "white", "rosé", "sparkling", "dessert", "other"])
     .nullish(),
   description: z.string().max(500, "Máximo 500 caracteres").nullish(),
-  photo_url: z.string().url().nullish(),
+  photo_url: z.url().nullish(),
   position: z.number().int().positive().nullish(),
 });
 
@@ -87,7 +72,7 @@ export const fineSchema = z.object({
 });
 
 export const paymentCreateSchema = z.object({
-  user_id: z.string().uuid("user_id inválido"),
+  user_id: z.uuid("user_id inválido"),
   base_amount: z.number().int().positive().optional(),
 });
 

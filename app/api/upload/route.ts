@@ -2,6 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/middleware";
 import { uploadToR2, VALID_BUCKETS } from "@/lib/storage/r2";
 
+const MIME_TO_EXT: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+  "image/gif": "gif",
+};
+
 export async function POST(request: NextRequest) {
   try {
     const auth = await requireAuth(request);
@@ -23,12 +30,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "File too large (max 5MB)" }, { status: 400 });
     }
 
-    const MIME_TO_EXT: Record<string, string> = {
-      "image/jpeg": "jpg",
-      "image/png": "png",
-      "image/webp": "webp",
-      "image/gif": "gif",
-    };
     const fileExt = MIME_TO_EXT[file.type];
     if (!fileExt) {
       return NextResponse.json({ success: false, error: "Only JPEG, PNG, WebP, or GIF images allowed" }, { status: 400 });

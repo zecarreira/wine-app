@@ -128,7 +128,7 @@ export default function SeasonDetailsPage() {
           <div className="flex items-center gap-4 text-purple-200">
             <span>
               📅{" "}
-              {new Date(season.start_date).toLocaleDateString("pt-PT", {
+              {new Date(season.start_date).toLocaleDateString("pt-PT", { timeZone: "Europe/Lisbon",
                 day: "numeric",
                 month: "long",
                 year: "numeric",
@@ -136,7 +136,7 @@ export default function SeasonDetailsPage() {
               {season.end_date && (
                 <>
                   {" - "}
-                  {new Date(season.end_date).toLocaleDateString("pt-PT", {
+                  {new Date(season.end_date).toLocaleDateString("pt-PT", { timeZone: "Europe/Lisbon",
                     day: "numeric",
                     month: "long",
                     year: "numeric",
@@ -181,9 +181,7 @@ export default function SeasonDetailsPage() {
                       <div className="flex items-center gap-3 text-purple-200 text-sm">
                         <span>
                           📅{" "}
-                          {new Date(dinner.event_date).toLocaleDateString(
-                            "pt-PT"
-                          )}
+                          {new Date(dinner.event_date).toLocaleDateString("pt-PT", { timeZone: "Europe/Lisbon" })}
                         </span>
                         {dinner.location && <span>📍 {dinner.location}</span>}
                       </div>
@@ -216,9 +214,7 @@ export default function SeasonDetailsPage() {
                     <div className="flex items-center gap-3 text-purple-200 text-sm">
                       <span>
                         📅{" "}
-                        {new Date(extraDinner.event_date).toLocaleDateString(
-                          "pt-PT"
-                        )}
+                        {new Date(extraDinner.event_date).toLocaleDateString("pt-PT", { timeZone: "Europe/Lisbon" })}
                       </span>
                       {extraDinner.location && (
                         <span>📍 {extraDinner.location}</span>

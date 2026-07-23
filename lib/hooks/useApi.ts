@@ -2,28 +2,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api-client";
 import type { CatalogBottle } from "@/components/BottleCard";
 
-// Types
-interface Dinner {
-  id: string;
-  name: string;
-  event_date: string;
-  location: string;
-  is_blind: boolean;
-  status: string;
-  host_id: string;
-  created_by: string;
-}
-
-interface Bottle {
-  id: string;
-  name: string;
-  description: string;
-  vintage: number;
-  producer: string;
-  wine_type: string;
-  position: number;
-}
-
 export interface ActiveSeasonDinner {
   id: string;
   name: string;
@@ -106,47 +84,6 @@ export function useActiveSeason() {
   });
 }
 
-// Fetch dinners
-export function useDinners() {
-  return useQuery({
-    queryKey: ["dinners"],
-    queryFn: async () => {
-      const data = await apiFetch<{ success: boolean; dinners: Dinner[] }>(
-        "/api/dinners"
-      );
-      return data.dinners;
-    },
-  });
-}
-
-// Fetch dinner by ID
-export function useDinner(id: string) {
-  return useQuery({
-    queryKey: ["dinners", id],
-    queryFn: async () => {
-      const data = await apiFetch<{ success: boolean; dinner: Dinner }>(
-        `/api/dinners/${id}`
-      );
-      return data.dinner;
-    },
-    enabled: !!id,
-  });
-}
-
-// Fetch bottles for a dinner
-export function useDinnerBottles(dinnerId: string) {
-  return useQuery({
-    queryKey: ["dinners", dinnerId, "bottles"],
-    queryFn: async () => {
-      const data = await apiFetch<{ success: boolean; bottles: Bottle[] }>(
-        `/api/dinners/${dinnerId}/bottles`
-      );
-      return data.bottles;
-    },
-    enabled: !!dinnerId,
-  });
-}
-
 // Fetch ratings/rankings for a dinner
 export function useDinnerRatings(dinnerId: string) {
   return useQuery({
@@ -155,55 +92,6 @@ export function useDinnerRatings(dinnerId: string) {
       return apiFetch<DinnerRatingsResponse>(`/api/dinners/${dinnerId}/ratings`);
     },
     enabled: !!dinnerId,
-  });
-}
-
-// Create dinner mutation
-export function useCreateDinner() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (dinnerData: {
-      name: string;
-      event_date: string;
-      location?: string | null;
-      is_blind: boolean;
-      is_extra?: boolean;
-      organizer_id?: string | null;
-    }) => {
-      const data = await apiFetch<{ success: boolean; dinner: Dinner }>(
-        "/api/dinners",
-        { method: "POST", body: dinnerData }
-      );
-      return data.dinner;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["dinners"] });
-      queryClient.invalidateQueries({ queryKey: ["seasons", "active"] });
-    },
-  });
-}
-
-// Submit rating mutation
-export function useSubmitRating(bottleId: string) {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (ratingData: {
-      score: number;
-      tasting_notes?: string;
-    }) => {
-      const data = await apiFetch<{ success: boolean; rating: unknown }>(
-        `/api/bottles/${bottleId}/ratings`,
-        { method: "POST", body: ratingData }
-      );
-      return data.rating;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["bottles", bottleId, "ratings"],
-      });
-    },
   });
 }
 

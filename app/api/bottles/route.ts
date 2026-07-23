@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
       ? await baseQuery.where(whereConditions.length === 1 ? whereConditions[0] : and(...whereConditions))
       : await baseQuery;
 
-    const producers = [...new Set(result.map((b) => b.producer).filter(Boolean).sort() as string[])];
+    const producers = [...new Set(result.flatMap((b) => (b.producer ? [b.producer] : [])))].sort();
 
     return NextResponse.json({ success: true, bottles: result, producers, total: result.length });
   } catch (error) {

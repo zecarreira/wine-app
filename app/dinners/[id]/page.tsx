@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import { use } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { PaymentsSection } from "@/components/PaymentsSection";
 import { shuffleArray } from "@/lib/domain";
 import { apiFetch } from "@/lib/api-client";
@@ -77,22 +78,13 @@ export default function DinnerDetailPage({
   const router = useRouter();
   const { success, error: toastError } = useToast();
   const { user: authUser } = useAuth();
-  const [bottles, setBottles] = useState<Bottle[]>([]);
-  const [dinner, setDinner] = useState<Dinner | null>(null);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [actionLoading, setActionLoading] = useState(false);
-  const [isHost, setIsHost] = useState(false);
   const isAdmin = authUser?.role === "admin";
-  const [participants, setParticipants] = useState<
-    Array<{ id: string; name: string }>
-  >([]);
 
-  function checkIfHost() {
-    return authUser?.id ?? null;
-  }
-
-  async function fetchDinnerAndBottles() {
-    try {
+  const { data: dinnerBundle, isLoading: loading } = useQuery({
+    queryKey: ["dinners", id, "detail", authUser?.id],
+    queryFn: async () => {
       const [dinnerData, bottlesData, ratingsData] = await Promise.all([
         apiFetch<DinnerApiResponse>(`/api/dinners/${id}`),
         apiFetch<BottlesApiResponse>(`/api/dinners/${id}/bottles`),
@@ -100,56 +92,45 @@ export default function DinnerDetailPage({
       ]);
 
       const currentDinner =
-        dinnerData.dinner ?? dinnerData.dinners?.find((d) => d.id === id);
-      setDinner(currentDinner ?? null);
+        dinnerData.dinner ?? dinnerData.dinners?.find((d) => d.id === id) ?? null;
 
-      // Check if user is host
-      const userId = checkIfHost();
-      if (userId && currentDinner) {
-        if (
-          userId === currentDinner.host_id ||
-          userId === currentDinner.created_by
-        ) {
-          setIsHost(true);
-        } else {
-          setIsHost(false);
+      const bottles = bottlesData.success ? bottlesData.bottles : [];
+
+      const uniqueParticipants = new Map<string, { id: string; name: string }>();
+      if (ratingsData.success && ratingsData.bottles) {
+        for (const bottle of ratingsData.bottles) {
+          if (!bottle.ratings) continue;
+          for (const rating of bottle.ratings) {
+            if (rating.user) {
+              uniqueParticipants.set(rating.user.id, {
+                id: rating.user.id,
+                name: rating.user.name,
+              });
+            }
+          }
         }
       }
 
-      if (bottlesData.success) {
-        setBottles(bottlesData.bottles);
-      }
+      return {
+        dinner: currentDinner,
+        bottles,
+        participants: Array.from(uniqueParticipants.values()),
+      };
+    },
+  });
 
-      if (ratingsData.success && ratingsData.bottles) {
-        const uniqueParticipants = new Map<
-          string,
-          { id: string; name: string }
-        >();
-        ratingsData.bottles.forEach((bottle) => {
-          if (bottle.ratings) {
-            bottle.ratings.forEach((rating) => {
-              if (rating.user) {
-                uniqueParticipants.set(rating.user.id, {
-                  id: rating.user.id,
-                  name: rating.user.name,
-                });
-              }
-            });
-          }
-        });
-        setParticipants(Array.from(uniqueParticipants.values()));
-      }
-    } catch (error) {
-      console.error("Error fetching dinner data:", error);
-    } finally {
-      setLoading(false);
-    }
+  const dinner = dinnerBundle?.dinner ?? null;
+  const bottles = dinnerBundle?.bottles ?? [];
+  const participants = dinnerBundle?.participants ?? [];
+
+  const isHost = useMemo(() => {
+    if (!authUser?.id || !dinner) return false;
+    return authUser.id === dinner.host_id || authUser.id === dinner.created_by;
+  }, [authUser?.id, dinner]);
+
+  function fetchDinnerAndBottles() {
+    void queryClient.invalidateQueries({ queryKey: ["dinners", id] });
   }
-
-  useEffect(() => {
-    fetchDinnerAndBottles();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, authUser?.id]);
 
   async function handleStartDinner() {
     if (
@@ -227,20 +208,26 @@ export default function DinnerDetailPage({
 
   const isBlindActive = dinner.is_blind && ["active", "ended", "revealing"].includes(dinner.status);
 
-  // Prepare display bottles - shuffle if blind mode active
-  // Filter out bottles without position and sort by position
+  // Prepare display bottles - shuffle if blind mode active (single-pass build)
   const validBottles = bottles
-    .filter((b) => b.id && b.position != null)
+    .reduce<Bottle[]>((acc, b) => {
+      if (b.id && b.position != null) acc.push(b);
+      return acc;
+    }, [])
     .sort((a, b) => a.position - b.position);
 
   const displayBottles: DisplayBottle[] = isBlindActive
-    ? shuffleArray(validBottles, id)
-        .filter((b) => b != null && b.id) // Safety check: filter out any undefined/null elements
-        .map((bottle, index) => ({
-          ...bottle,
-          displayPosition: index + 1,
-          displayLabel: String.fromCharCode(65 + index), // A, B, C, D...
-        }))
+    ? shuffleArray(validBottles, id).flatMap((bottle, index) =>
+        bottle != null && bottle.id
+          ? [
+              {
+                ...bottle,
+                displayPosition: index + 1,
+                displayLabel: String.fromCharCode(65 + index),
+              },
+            ]
+          : []
+      )
     : validBottles.map((bottle) => ({
         ...bottle,
         displayPosition: bottle.position,
@@ -335,6 +322,7 @@ export default function DinnerDetailPage({
               <span className="text-xl">📅</span>
               <span className="text-base">
                 {new Date(dinner.event_date).toLocaleDateString("pt-PT", {
+                  timeZone: "Europe/Lisbon",
                   weekday: "long",
                   month: "long",
                   day: "numeric",

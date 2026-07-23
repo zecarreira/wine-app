@@ -5,6 +5,7 @@ import { use } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/components/ToastProvider";
 import { useAuth } from "@/components/AuthProvider";
 import { apiFetch, ApiError } from "@/lib/api-client";
@@ -63,8 +64,6 @@ export default function BottleDetailPage({
   const router = useRouter();
   const { success, error: toastError } = useToast();
   const { user: authUser } = useAuth();
-  const [bottle, setBottle] = useState<BottleWithDetails | null>(null);
-  const [loading, setLoading] = useState(true);
   const currentUserId = authUser?.id ?? null;
   const [isEditing, setIsEditing] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
@@ -76,31 +75,36 @@ export default function BottleDetailPage({
     description: "",
     photo_url: "",
   });
-  async function fetchBottle() {
-    try {
+
+  const {
+    data: bottle,
+    isLoading: loading,
+    refetch: refetchBottle,
+  } = useQuery({
+    queryKey: ["bottles", id],
+    queryFn: async () => {
       const data = await apiFetch<{ success: boolean; bottle: BottleWithDetails }>(
         `/api/bottles/${id}`
       );
-      setBottle(data.bottle);
-      setEditForm({
-        name: data.bottle.name || "",
-        producer: data.bottle.producer || "",
-        vintage: data.bottle.vintage?.toString() || "",
-        wine_type: data.bottle.wine_type || "",
-        description: data.bottle.description || "",
-        photo_url: data.bottle.photo_url || "",
-      });
-    } catch (error) {
-      console.error("Error fetching bottle:", error);
-    } finally {
-      setLoading(false);
-    }
-  }
+      return data.bottle;
+    },
+  });
 
   useEffect(() => {
-    fetchBottle();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+    if (!bottle) return;
+    setEditForm({
+      name: bottle.name || "",
+      producer: bottle.producer || "",
+      vintage: bottle.vintage?.toString() || "",
+      wine_type: bottle.wine_type || "",
+      description: bottle.description || "",
+      photo_url: bottle.photo_url || "",
+    });
+  }, [bottle]);
+
+  function fetchBottle() {
+    void refetchBottle();
+  }
 
   function handleEdit() {
     setIsEditing(true);
@@ -630,6 +634,7 @@ export default function BottleDetailPage({
                   {new Date(bottle.dinner.event_date).toLocaleDateString(
                     "pt-PT",
                     {
+                      timeZone: "Europe/Lisbon",
                       month: "short",
                       day: "numeric",
                       year: "numeric",
@@ -698,7 +703,7 @@ export default function BottleDetailPage({
                           {rating.user.name}
                         </div>
                         <div className="text-white/40 text-xs">
-                          {new Date(rating.created_at).toLocaleDateString()}
+                          {new Date(rating.created_at).toLocaleDateString("pt-PT", { timeZone: "Europe/Lisbon" })}
                         </div>
                       </div>
                     </div>

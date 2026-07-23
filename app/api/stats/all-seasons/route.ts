@@ -9,30 +9,28 @@ export async function GET(request: NextRequest) {
     const auth = await requireAuth(request);
     if (auth instanceof NextResponse) return auth;
 
-    const allSeasons = await db
-      .select({ id: seasons.id, season_number: seasons.season_number, status: seasons.status, created_at: seasons.created_at })
-      .from(seasons)
-      .orderBy(desc(seasons.created_at));
-
-    const allDinners = await db
-      .select({ id: dinners.id, season_id: dinners.season_id, status: dinners.status })
-      .from(dinners);
-
-    // Fetch payments joined with their dinner's season_id
-    const allPayments = await db
-      .select({
-        id: payments.id,
-        dinner_id: payments.dinner_id,
-        base_amount: payments.base_amount,
-        status: payments.status,
-        season_id: dinners.season_id,
-      })
-      .from(payments)
-      .leftJoin(dinners, eq(payments.dinner_id, dinners.id));
-
-    const allFines = await db
-      .select({ id: fines.id, payment_id: fines.payment_id, amount: fines.amount })
-      .from(fines);
+    const [allSeasons, allDinners, allPayments, allFines] = await Promise.all([
+      db
+        .select({ id: seasons.id, season_number: seasons.season_number, status: seasons.status, created_at: seasons.created_at })
+        .from(seasons)
+        .orderBy(desc(seasons.created_at)),
+      db
+        .select({ id: dinners.id, season_id: dinners.season_id, status: dinners.status })
+        .from(dinners),
+      db
+        .select({
+          id: payments.id,
+          dinner_id: payments.dinner_id,
+          base_amount: payments.base_amount,
+          status: payments.status,
+          season_id: dinners.season_id,
+        })
+        .from(payments)
+        .leftJoin(dinners, eq(payments.dinner_id, dinners.id)),
+      db
+        .select({ id: fines.id, payment_id: fines.payment_id, amount: fines.amount })
+        .from(fines),
+    ]);
 
     const seasonStats = allSeasons.map((season) => {
       const seasonDinners = allDinners.filter((d) => d.season_id === season.id);

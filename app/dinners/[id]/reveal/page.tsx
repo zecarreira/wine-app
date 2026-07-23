@@ -89,14 +89,6 @@ export default function RevealCeremonyPage({
     fetchRevealStatus();
   }, [fetchRevealStatus]);
 
-  // Redireciona para rankings só se já está tudo revelado no carregamento inicial
-  // (quando lastRevealed está definido, o redirect é feito pelo setTimeout em handleRevealNext)
-  useEffect(() => {
-    if (revealStatus?.remainingCount === 0 && revealStatus && !lastRevealed) {
-      router.push(`/dinners/${id}/rankings`);
-    }
-  }, [revealStatus, id, router, lastRevealed]);
-
   async function handleRevealNext() {
     setRevealing(true);
     try {

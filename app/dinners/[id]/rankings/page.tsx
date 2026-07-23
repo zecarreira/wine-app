@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useDinnerRatings } from "@/lib/hooks/useApi";
 
+const MEDALS = ["🥇", "🥈", "🥉"] as const;
+
 export default function RankingsPage({
   params,
 }: {
@@ -35,8 +37,6 @@ export default function RankingsPage({
       </div>
     );
   }
-
-  const medals = ["🥇", "🥈", "🥉"];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
@@ -87,7 +87,7 @@ export default function RankingsPage({
                   <div className="flex items-center gap-4">
                     {/* Medal or Position */}
                     <div className="text-5xl">
-                      {index < 3 ? medals[index] : `#${index + 1}`}
+                      {index < 3 ? MEDALS[index] : `#${index + 1}`}
                     </div>
                     <div className="flex-1">
                       <h2 className="text-2xl font-bold text-white mb-1">

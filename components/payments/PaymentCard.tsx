@@ -83,7 +83,7 @@ export function PaymentCard({
                   <div className="text-white/60 text-xs">{fine.reason}</div>
                   <div className="text-white/40 text-[10px] mt-1">
                     Adicionada por {fine.admin.name} •{" "}
-                    {new Date(fine.created_at).toLocaleDateString("pt-PT")}
+                    {new Date(fine.created_at).toLocaleDateString("pt-PT", { timeZone: "Europe/Lisbon" })}
                   </div>
                 </div>
                 {isAdmin && (
@@ -116,7 +116,7 @@ export function PaymentCard({
 
       {payment.paid_at && (
         <div className="text-green-300 text-xs mb-3">
-          Pago em {new Date(payment.paid_at).toLocaleDateString("pt-PT")}
+          Pago em {new Date(payment.paid_at).toLocaleDateString("pt-PT", { timeZone: "Europe/Lisbon" })}
         </div>
       )}
 

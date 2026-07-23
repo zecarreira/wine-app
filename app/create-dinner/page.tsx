@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/components/ToastProvider";
+import { useAuth } from "@/components/AuthProvider";
 import { apiFetch, ApiError } from "@/lib/api-client";
 
 interface Founder {
@@ -15,43 +17,39 @@ interface Founder {
 export default function CreateDinnerPage() {
   const router = useRouter();
   const { error: toastError } = useToast();
+  const { user: authUser, loading: authLoading } = useAuth();
   const [name, setName] = useState("");
   const [eventDate, setEventDate] = useState("");
   const [location, setLocation] = useState("");
   const [isBlind, setIsBlind] = useState(true);
   const [organizerId, setOrganizerId] = useState("");
-  const [availableFounders, setAvailableFounders] = useState<Founder[]>([]);
   const [loading, setLoading] = useState(false);
-  const [loadingFounders, setLoadingFounders] = useState(true);
   const [error, setError] = useState("");
 
-  // Fetch available founders on mount
-  useEffect(() => {
-    async function fetchFounders() {
-      try {
-        const data = await apiFetch<{
-          success: boolean;
-          founders: Founder[];
-          error?: string;
-        }>("/api/seasons/active/available-organizers");
-        setAvailableFounders(data.founders);
-      } catch (err) {
-        if (err instanceof ApiError && err.status === 401) {
-          router.push("/login");
-          return;
-        }
-        setError(
-          err instanceof ApiError
-            ? err.message
-            : "Erro ao carregar fundadores"
-        );
-      } finally {
-        setLoadingFounders(false);
-      }
-    }
+  const {
+    data: availableFounders = [],
+    isLoading: loadingFounders,
+    error: foundersError,
+  } = useQuery({
+    queryKey: ["seasons", "active", "available-organizers"],
+    queryFn: async () => {
+      const data = await apiFetch<{
+        success: boolean;
+        founders: Founder[];
+        error?: string;
+      }>("/api/seasons/active/available-organizers");
+      return data.founders;
+    },
+    enabled: !!authUser && !authLoading,
+  });
 
-    fetchFounders();
-  }, [router]);
+  // Surface query errors (except 401 which shows login CTA)
+  const foundersQueryError =
+    foundersError instanceof ApiError && foundersError.status !== 401
+      ? foundersError.message
+      : foundersError && !(foundersError instanceof ApiError)
+        ? "Erro ao carregar fundadores"
+        : "";
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -76,7 +74,7 @@ export default function CreateDinnerPage() {
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
         toastError("Por favor faz login primeiro");
-        router.push("/login");
+        setError("Por favor faz login primeiro");
         return;
       }
       setError(
@@ -87,6 +85,36 @@ export default function CreateDinnerPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-5xl mb-3 motion-safe:animate-spin" aria-hidden="true">🍽️</div>
+          <div role="status" className="text-white text-lg">A carregar…</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!authUser) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center px-4">
+        <div className="text-center max-w-md">
+          <div className="text-5xl mb-4">🔒</div>
+          <h1 className="text-2xl font-bold text-white mb-2">Login necessário</h1>
+          <p className="text-purple-200 mb-6">Precisas de iniciar sessão para criar um jantar.</p>
+          <Link
+            href="/login"
+            className="inline-block bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-2xl font-bold shadow-lg hover:shadow-purple-500/50"
+          >
+            Ir para Login
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -234,9 +262,9 @@ export default function CreateDinnerPage() {
             </div>
 
             {/* Error Message */}
-            {error && (
+            {(error || foundersQueryError) && (
               <div className="bg-red-500/20 border-2 border-red-500/50 rounded-2xl p-3 text-red-200 text-center text-sm">
-                {error}
+                {error || foundersQueryError}
               </div>
             )}
 

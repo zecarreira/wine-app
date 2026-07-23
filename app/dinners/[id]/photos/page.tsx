@@ -181,7 +181,7 @@ export default function DinnerPhotosPage({
           {dinner && (
             <p className="text-purple-200">
               {dinner.name} •{" "}
-              {new Date(dinner.event_date).toLocaleDateString("pt-PT")}
+              {new Date(dinner.event_date).toLocaleDateString("pt-PT", { timeZone: "Europe/Lisbon" })}
             </p>
           )}
         </div>

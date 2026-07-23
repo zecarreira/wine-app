@@ -7,6 +7,50 @@ import { requireAuth } from "@/lib/middleware";
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
+type UserRatingRow = {
+  id: string;
+  score: number | string;
+  tasting_notes: string | null;
+  created_at: Date | string;
+  bottle_id: string | null;
+  bottle_name: string | null;
+  bottle_producer: string | null;
+  bottle_vintage: number | null;
+  bottle_photo_url: string | null;
+  dinner_id: string | null;
+  dinner_name: string | null;
+  dinner_event_date: string | null;
+  dinner_status: string | null;
+  dinner_is_blind: boolean | null;
+};
+
+function formatRating(r: UserRatingRow) {
+  return {
+    id: r.id,
+    score: r.score,
+    tasting_notes: r.tasting_notes,
+    created_at: r.created_at,
+    bottle: r.bottle_id
+      ? {
+          id: r.bottle_id,
+          name: r.bottle_name,
+          producer: r.bottle_producer,
+          vintage: r.bottle_vintage,
+          photo_url: r.bottle_photo_url,
+          dinner: r.dinner_id
+            ? {
+                id: r.dinner_id,
+                name: r.dinner_name,
+                event_date: r.dinner_event_date,
+                status: r.dinner_status,
+                is_blind: r.dinner_is_blind,
+              }
+            : null,
+        }
+      : null,
+  };
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -84,7 +128,9 @@ export async function GET(
       .where(eq(bottles.brought_by, userId));
 
     // Calculate dinner count (unique across created + rated)
-    const dinnerIdsFromRatings = userRatings.map(r => r.dinner_id).filter(Boolean) as string[];
+    const dinnerIdsFromRatings = userRatings.flatMap((r) =>
+      r.dinner_id ? [r.dinner_id] : []
+    );
     const uniqueDinnerIds = new Set([...createdDinners.map(d => d.id), ...dinnerIdsFromRatings]);
     const totalDinners = uniqueDinnerIds.size;
 
@@ -119,22 +165,6 @@ export async function GET(
     const favoriteWineRaw = userRatings.length > 0
       ? userRatings.reduce((prev, current) => Number(current.score) > Number(prev.score) ? current : prev)
       : null;
-
-    // Reconstruct nested objects
-    const formatRating = (r: typeof userRatings[0]) => ({
-      id: r.id,
-      score: r.score,
-      tasting_notes: r.tasting_notes,
-      created_at: r.created_at,
-      bottle: r.bottle_id ? {
-        id: r.bottle_id,
-        name: r.bottle_name,
-        producer: r.bottle_producer,
-        vintage: r.bottle_vintage,
-        photo_url: r.bottle_photo_url,
-        dinner: r.dinner_id ? { id: r.dinner_id, name: r.dinner_name, event_date: r.dinner_event_date, status: r.dinner_status, is_blind: r.dinner_is_blind } : null,
-      } : null,
-    });
 
     const bottlesFormatted = bottlesBrought.map(b => ({
       id: b.id,
