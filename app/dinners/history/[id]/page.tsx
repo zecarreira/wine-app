@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import Card from "@/components/Card";
-import { useToast } from "@/components/ToastProvider";
 import { apiFetch } from "@/lib/api-client";
 
 interface Dinner {
@@ -29,27 +28,22 @@ interface SeasonDetails {
 export default function SeasonDetailsPage() {
   const params = useParams();
   const router = useRouter();
-  const [season, setSeason] = useState<SeasonDetails | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const { showToast } = useToast();
+  const seasonId = params.id as string;
 
-  useEffect(() => {
-    fetchSeason();
-  }, [params.id]);
-
-  async function fetchSeason() {
-    try {
+  const {
+    data: season,
+    isLoading,
+    isError,
+  } = useQuery({
+    queryKey: ["seasons", seasonId],
+    queryFn: async () => {
       const data = await apiFetch<{ success: boolean; season: SeasonDetails }>(
-        `/api/seasons/${params.id}`
+        `/api/seasons/${seasonId}`
       );
-      setSeason(data.season);
-    } catch (error) {
-      console.error("Error fetching season:", error);
-      showToast("Erro ao carregar temporada", "error");
-    } finally {
-      setIsLoading(false);
-    }
-  }
+      return data.season;
+    },
+    enabled: !!seasonId,
+  });
 
   if (isLoading) {
     return (
@@ -65,7 +59,7 @@ export default function SeasonDetailsPage() {
               ←
             </button>
             <Link href="/" aria-label="Início" className="text-white/80 hover:text-white text-2xl rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50">
-              �
+              🏠
             </Link>
           </div>
         </header>
@@ -77,7 +71,7 @@ export default function SeasonDetailsPage() {
     );
   }
 
-  if (!season) {
+  if (isError || !season) {
     return (
       <div className="min-h-screen bg-linear-to-br from-slate-900 via-purple-900 to-slate-900">
         {/* Header */}
@@ -91,7 +85,7 @@ export default function SeasonDetailsPage() {
               ←
             </button>
             <Link href="/" aria-label="Início" className="text-white/80 hover:text-white text-2xl rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50">
-              �
+              🏠
             </Link>
           </div>
         </header>
@@ -121,7 +115,7 @@ export default function SeasonDetailsPage() {
             ←
           </button>
           <Link href="/" className="text-white/80 hover:text-white text-2xl">
-            �
+            🏠
           </Link>
         </div>
       </header>
