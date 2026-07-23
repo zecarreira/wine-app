@@ -1,5 +1,3 @@
-import { getAuthToken } from "./auth-client";
-
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -14,32 +12,37 @@ export class ApiError extends Error {
 type ApiFetchOptions = {
   method?: string;
   body?: unknown;
-  auth?: boolean; // default true
+  /** Kept for call-site compatibility; session is always cookie-based. */
+  auth?: boolean;
   headers?: Record<string, string>;
 };
 
+/**
+ * Same-origin fetch that always sends cookies (httpOnly session).
+ * Does not read JWT from localStorage or set Authorization Bearer.
+ */
 export async function apiFetch<T = unknown>(
   path: string,
   options: ApiFetchOptions = {}
 ): Promise<T> {
-  const { method = "GET", body, auth = true, headers = {} } = options;
+  const { method = "GET", body, headers = {} } = options;
   const h: Record<string, string> = { ...headers };
   if (body !== undefined) h["Content-Type"] = "application/json";
-  if (auth) {
-    const token = getAuthToken();
-    if (token) h["Authorization"] = `Bearer ${token}`;
-  }
+
   const res = await fetch(path, {
     method,
     headers: h,
+    credentials: "same-origin",
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
+
   let data: any = null;
   try {
     data = await res.json();
   } catch {
-    /* empty */
+    /* empty or non-JSON body */
   }
+
   if (!res.ok) {
     throw new ApiError(
       data?.error ?? `Request failed (${res.status})`,

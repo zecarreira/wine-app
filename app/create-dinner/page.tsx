@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/ToastProvider";
+import { apiFetch, ApiError } from "@/lib/api-client";
 
 interface Founder {
   id: string;
@@ -28,30 +29,22 @@ export default function CreateDinnerPage() {
   useEffect(() => {
     async function fetchFounders() {
       try {
-        const token = localStorage.getItem("token");
-        if (!token) {
+        const data = await apiFetch<{
+          success: boolean;
+          founders: Founder[];
+          error?: string;
+        }>("/api/seasons/active/available-organizers");
+        setAvailableFounders(data.founders);
+      } catch (err) {
+        if (err instanceof ApiError && err.status === 401) {
           router.push("/login");
           return;
         }
-
-        const response = await fetch(
-          "/api/seasons/active/available-organizers",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
+        setError(
+          err instanceof ApiError
+            ? err.message
+            : "Erro ao carregar fundadores"
         );
-
-        const data = await response.json();
-
-        if (data.success) {
-          setAvailableFounders(data.founders);
-        } else {
-          setError(data.error || "Erro ao carregar fundadores");
-        }
-      } catch (err) {
-        setError("Erro ao carregar fundadores");
       } finally {
         setLoadingFounders(false);
       }
@@ -66,38 +59,31 @@ export default function CreateDinnerPage() {
     setError("");
 
     try {
-      const token = localStorage.getItem("token");
-
-      if (!token) {
-        toastError("Por favor faz login primeiro");
-        router.push("/login");
-        return;
-      }
-
-      const response = await fetch("/api/dinners", {
+      const data = await apiFetch<{
+        success: boolean;
+        dinner: { id: string };
+      }>("/api/dinners", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
+        body: {
           name,
           event_date: eventDate,
           location: location || null,
           is_blind: isBlind,
           ...(organizerId ? { organizer_id: organizerId } : {}),
-        }),
+        },
       });
-
-      const data = await response.json();
-
-      if (data.success) {
-        router.push(`/dinners/${data.dinner.id}`);
-      } else {
-        setError(data.error || "Erro ao criar jantar");
+      router.push(`/dinners/${data.dinner.id}`);
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 401) {
+        toastError("Por favor faz login primeiro");
+        router.push("/login");
+        return;
       }
-    } catch (error) {
-      setError("Erro de conexão. Tenta novamente.");
+      setError(
+        err instanceof ApiError
+          ? err.message
+          : "Erro de conexão. Tenta novamente."
+      );
     } finally {
       setLoading(false);
     }

@@ -47,8 +47,13 @@ export async function POST(request: NextRequest) {
     const res = NextResponse.json({
       success: true,
       message: "Login successful",
-      user: { id: user.id, name: user.name, email: user.email, role: user.role },
-      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        profile_photo_url: user.profile_photo_url ?? null,
+      },
     });
     res.cookies.set(AUTH_COOKIE, token, authCookieOptions());
     return res;

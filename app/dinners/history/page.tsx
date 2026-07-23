@@ -5,6 +5,7 @@ import Link from "next/link";
 import Header from "@/components/Header";
 import Card from "@/components/Card";
 import { useToast } from "@/components/ToastProvider";
+import { apiFetch } from "@/lib/api-client";
 
 interface Season {
   id: string;
@@ -24,22 +25,13 @@ export default function DinnersHistoryPage() {
 
   const fetchSeasons = async () => {
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch("/api/seasons", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        // Filter out active season (show only completed)
-        const completedSeasons = data.seasons.filter(
-          (s: Season) => s.status === "completed"
-        );
-        setSeasons(completedSeasons);
-      }
+      const data = await apiFetch<{ success: boolean; seasons: Season[] }>(
+        "/api/seasons"
+      );
+      const completedSeasons = data.seasons.filter(
+        (s: Season) => s.status === "completed"
+      );
+      setSeasons(completedSeasons);
     } catch (error) {
       console.error("Error fetching seasons:", error);
       showToast("Erro ao carregar histórico", "error");

@@ -6,8 +6,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api-client";
-import { getAuthToken } from "@/lib/auth-client";
 import { useToast } from "@/components/ToastProvider";
+import { useAuth } from "@/components/AuthProvider";
 
 interface Photo {
   id: string;
@@ -33,6 +33,7 @@ export default function DinnerPhotosPage({
   const { id } = use(params);
   const router = useRouter();
   const { success, error: toastError } = useToast();
+  const { user: authUser } = useAuth();
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [dinner, setDinner] = useState<Dinner | null>(null);
   const [loading, setLoading] = useState(true);
@@ -73,8 +74,7 @@ export default function DinnerPhotosPage({
 
     setUploading(true);
 
-    const token = getAuthToken();
-    if (!token) {
+    if (!authUser) {
       toastError("Por favor faz login primeiro");
       router.push("/login");
       setUploading(false);
@@ -83,14 +83,14 @@ export default function DinnerPhotosPage({
 
     // Upload each file
     for (const file of selectedFiles) {
-      // 1. Upload to storage (FormData — keep native fetch)
+      // 1. Upload to storage (FormData — cookie session)
       const formData = new FormData();
       formData.append("file", file);
       formData.append("bucket", "dinner-photos");
 
       const uploadResponse = await fetch("/api/upload", {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: "same-origin",
         body: formData,
       }).catch(() => null);
 

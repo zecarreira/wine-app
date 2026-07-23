@@ -6,9 +6,13 @@ import Link from "next/link";
 import Button from "@/components/Button";
 import Input from "@/components/Input";
 import Card from "@/components/Card";
+import { useAuth } from "@/components/AuthProvider";
+import { apiFetch, ApiError } from "@/lib/api-client";
+import type { AuthUser } from "@/lib/auth-client";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { setUser } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -20,32 +24,21 @@ export default function LoginPage() {
     setError("");
 
     try {
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        // Store token in localStorage
-        localStorage.setItem("token", data.token);
-        localStorage.setItem("user", JSON.stringify(data.user));
-
-        // Redirect to home page
-        router.push("/");
-      } else {
-        if (data.error) {
-          setError(data.error);
-        } else {
-          setError("Falha no login");
+      const data = await apiFetch<{ success: boolean; user: AuthUser }>(
+        "/api/auth/login",
+        {
+          method: "POST",
+          body: { email, password },
         }
+      );
+      setUser(data.user);
+      router.push("/");
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setError(err.message || "Falha no login");
+      } else {
+        setError("Erro de conexão. Tenta novamente.");
       }
-    } catch {
-      setError("Erro de conexão. Tenta novamente.");
     }
     setLoading(false);
   }

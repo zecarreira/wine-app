@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { useToast } from "@/components/ToastProvider";
+import { apiFetch, ApiError } from "@/lib/api-client";
 
 export default function AddBottlePage({
   params,
@@ -48,13 +49,9 @@ export default function AddBottlePage({
       formData.append("file", photo);
       formData.append("bucket", "bottle-photos");
 
-      const token = localStorage.getItem("token");
-
       const response = await fetch("/api/upload", {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        credentials: "same-origin",
         body: formData,
       });
 
@@ -65,9 +62,10 @@ export default function AddBottlePage({
       } else {
         throw new Error(data.error || "Erro ao fazer upload da foto");
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Photo upload error:", error);
-      setError("Erro ao fazer upload da foto: " + error.message);
+      const msg = error instanceof Error ? error.message : "Erro desconhecido";
+      setError("Erro ao fazer upload da foto: " + msg);
       return null;
     } finally {
       setUploadingPhoto(false);
@@ -80,14 +78,6 @@ export default function AddBottlePage({
     setError("");
 
     try {
-      const token = localStorage.getItem("token");
-
-      if (!token) {
-        toastError("Por favor faz login primeiro");
-        router.push("/login");
-        return;
-      }
-
       // Upload photo first if exists
       let photoUrl = null;
       if (photo) {
@@ -98,32 +88,29 @@ export default function AddBottlePage({
         }
       }
 
-      // Create bottle
-      const response = await fetch(`/api/dinners/${id}/bottles`, {
+      await apiFetch(`/api/dinners/${id}/bottles`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
+        body: {
           name,
           producer: producer || null,
           vintage: vintage ? parseInt(vintage) : null,
           wine_type: wineType,
           description: description || null,
           photo_url: photoUrl,
-        }),
+        },
       });
-
-      const data = await response.json();
-
-      if (data.success) {
-        router.push(`/dinners/${id}`);
-      } else {
-        setError(data.error || "Erro ao adicionar garrafa");
+      router.push(`/dinners/${id}`);
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 401) {
+        toastError("Por favor faz login primeiro");
+        router.push("/login");
+        return;
       }
-    } catch (error) {
-      setError("Erro de ligação. Tenta novamente.");
+      setError(
+        err instanceof ApiError
+          ? err.message
+          : "Erro de ligação. Tenta novamente."
+      );
     } finally {
       setLoading(false);
     }

@@ -6,17 +6,17 @@ import Button from "@/components/Button";
 import Card from "@/components/Card";
 import { DinnerCardSkeleton } from "@/components/Skeletons";
 import { useToast } from "@/components/ToastProvider";
-import { getUser } from "@/lib/auth-client";
+import { useAuth } from "@/components/AuthProvider";
 import {
   useActiveSeason,
   useCloseSeason,
   useCreateSeason,
 } from "@/lib/hooks/useApi";
-import { useState } from "react";
 
 export default function DinnersPage() {
   const { showToast } = useToast();
-  const [userRole] = useState(() => getUser()?.role ?? null);
+  const { user } = useAuth();
+  const userRole = user?.role ?? null;
 
   const { data: activeSeason, isLoading, refetch } = useActiveSeason();
   const closeSeason = useCloseSeason();

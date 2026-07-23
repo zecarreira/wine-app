@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import Card from "@/components/Card";
 import { useToast } from "@/components/ToastProvider";
+import { apiFetch } from "@/lib/api-client";
 
 interface Dinner {
   id: string;
@@ -38,18 +39,10 @@ export default function SeasonDetailsPage() {
 
   async function fetchSeason() {
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(`/api/seasons/${params.id}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        setSeason(data.season);
-      }
+      const data = await apiFetch<{ success: boolean; season: SeasonDetails }>(
+        `/api/seasons/${params.id}`
+      );
+      setSeason(data.season);
     } catch (error) {
       console.error("Error fetching season:", error);
       showToast("Erro ao carregar temporada", "error");

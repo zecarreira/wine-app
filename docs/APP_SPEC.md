@@ -1,7 +1,7 @@
 # Jantar do Vinho — Especificação Completa da Aplicação
 
 > **Documento vivo.** Corrige iterativamente conforme necessário.
-> Última atualização: 2026-03-26
+> Última atualização: 2026-07-23
 
 ---
 
@@ -14,7 +14,7 @@
 - **Backend:** Next.js API Routes (Edge-compatible)
 - **Base de dados:** PostgreSQL via Neon (serverless), ORM Drizzle
 - **Armazenamento de ficheiros:** Cloudflare R2 (S3-compatible)
-- **Auth:** JWT (jsonwebtoken) + bcrypt (bcryptjs), token em localStorage
+- **Auth:** JWT (jsonwebtoken) + bcrypt (bcryptjs), sessão em cookie httpOnly (não em localStorage)
 - **Monitorização:** Vercel Speed Insights + Analytics
 
 ---
@@ -148,23 +148,31 @@
 
 ## 4. Autenticação
 
-- **Mecanismo:** JWT Bearer Token (7 dias de validade)
-- **Armazenamento:** `localStorage` (chaves `"token"` e `"user"`)
+- **Mecanismo:** JWT em cookie **httpOnly** (`wine_auth_token`, 7 dias de validade)
+- **Armazenamento cliente:** **não** guarda token nem user em `localStorage`. O user em memória vem de `GET /api/auth/me` via `AuthProvider` / `useAuth()`.
+- **Cookie:** `httpOnly`, `SameSite=Lax`, `Secure` em produção, `path=/` (`lib/auth-cookie.ts`)
 - **Payload JWT:** `{ userId: string, role: string }`
 - **Bcrypt rounds:** 12
 - **Password mínima:** 12 caracteres
 - **Registo:** Qualquer pessoa pode registar-se (role padrão: `guest`)
-- **Auto-logout:** `checkAuthStatus()` verifica expiração do token em cada visita
+- **Sessão:** Login/registo definem o cookie e devolvem `{ success, user }` **sem** campo `token` no JSON. Logout limpa o cookie (`POST /api/auth/logout`).
+- **Cliente:** `apiFetch` usa sempre `credentials: "same-origin"` (envia o cookie). Não envia `Authorization: Bearer` a partir do browser.
+- **CSRF:** App same-origin; cookie `SameSite=Lax` mitiga CSRF clássico de formulários cross-site. Sem tokens CSRF adicionais por agora.
+- **Compat servidor:** `authenticate()` lê **primeiro** o cookie; ainda aceita `Authorization: Bearer` durante transição de deploy (o cliente já não envia Bearer).
 
-**Headers de autenticação:**
-```
-Authorization: Bearer <token>
-```
+**Endpoints de auth:**
+| Método | Rota | Auth | Descrição |
+|--------|------|------|-----------|
+| POST | `/api/auth/login` | ❌ | Login; Set-Cookie httpOnly; body sem `token` |
+| POST | `/api/auth/register` | ❌ | Registo; Set-Cookie; body sem `token` |
+| POST | `/api/auth/logout` | ❌ | Limpa cookie |
+| GET | `/api/auth/me` | ✅ | User atual (sem `password_hash`) |
 
 **Funções de middleware no servidor:**
-- `authenticate(req)` → retorna `{ userId, userRole }` ou `null`
+- `authenticate(req)` (interno) → retorna `{ userId, userRole }` ou `null`
 - `requireAuth(req)` → retorna auth ou `NextResponse 401`
 - `requireFounder(req)` → retorna auth ou `NextResponse 401/403` (só `admin`/`founder`)
+- `requireAdmin(req)` → revalida role na DB
 
 ---
 
@@ -252,7 +260,7 @@ Authorization: Bearer <token>
 
 ### Login — `/login`
 - Form email + password
-- Armazena token e user em localStorage
+- Define cookie httpOnly no servidor; `setUser` via AuthProvider (sem localStorage)
 - Link para registo
 
 ### Registo — `/register`
@@ -449,7 +457,7 @@ Authorization: Bearer <token>
 | Hook | Descrição |
 |------|-----------|
 | `useDinners()` | Lista todos os jantares (`GET /api/dinners`) |
-| `useDinner(id)` | Jantar por ID com Bearer token |
+| `useDinner(id)` | Jantar por ID (cookie session via apiFetch) |
 | `useDinnerBottles(dinnerId)` | Garrafas de um jantar |
 | `useCreateDinner()` | Mutation POST, invalida cache `["dinners"]` |
 | `useSubmitRating(bottleId)` | Mutation POST rating, invalida cache do bottle |
@@ -468,9 +476,15 @@ Authorization: Bearer <token>
 > Nota: Login mantém min 6 no cliente (servidor valida credenciais). Registo exige min **12** no schema e na API. Score mínimo é **1** (não 0), em passos de 0.5.
 
 ### `lib/auth-client.ts`
-- `getUser()` — retorna user do localStorage (com try/catch)
-- `getAuthToken()` — retorna token
-- `checkAuthStatus()` — verifica se token é válido e não expirou (auto-remove se expirado)
+- `AuthUser` type; `getUser()` / `setCachedUser()` — cache em memória (sincronizado pelo AuthProvider)
+- `clearClientAuthState()` — remove chaves legadas `token`/`user` do localStorage
+- `logout()` — POST `/api/auth/logout` com credentials + limpa cache
+- `getAuthToken()` / `setAuthToken()` — deprecados (no-op / null); sessão só por cookie
+
+### `components/AuthProvider.tsx`
+- Context: `{ user, loading, refresh, setUser, logout }`
+- No mount: purge localStorage legado + `GET /api/auth/me`
+- Hook `useAuth()`
 
 ---
 

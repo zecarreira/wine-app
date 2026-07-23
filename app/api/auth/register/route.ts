@@ -49,8 +49,8 @@ export async function POST(request: NextRequest) {
           name: newUser.name,
           email: newUser.email,
           role: newUser.role,
+          profile_photo_url: newUser.profile_photo_url ?? null,
         },
-        token,
       },
       { status: 201 }
     );

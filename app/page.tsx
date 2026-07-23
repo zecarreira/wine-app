@@ -1,23 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import Link from "next/link";
-import { getUser, checkAuthStatus } from "@/lib/auth-client";
+import { useAuth } from "@/components/AuthProvider";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
 
 export default function Home() {
-  const [user, setUser] = useState<ReturnType<typeof getUser> | null>(null);
-
-  useEffect(() => {
-    const isAuthenticated = checkAuthStatus();
-    if (isAuthenticated) {
-      // Defer the state update to the next microtask to avoid synchronous setState in the effect
-      Promise.resolve().then(() => {
-        setUser(getUser());
-      });
-    }
-  }, []);
+  const { user, loading } = useAuth();
 
   return (
     <div className="min-h-screen bg-linear-to-br from-slate-900 via-purple-900 to-slate-900 relative">
@@ -46,7 +35,11 @@ export default function Home() {
 
           {/* CTA Buttons - Mobile Optimized */}
           <div className="w-full max-w-sm space-y-2.5 mt-6 px-4">
-            {user ? (
+            {loading ? (
+              <div className="text-white/60 text-sm py-3" role="status">
+                A verificar sessão…
+              </div>
+            ) : user ? (
               <>
                 <Link
                   href="/dinners"

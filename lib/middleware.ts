@@ -15,13 +15,15 @@ async function authenticate(
   request: NextRequest
 ): Promise<{ userId: string; userRole: string } | null> {
   try {
-    const authHeader = request.headers.get("authorization");
-    let token: string | undefined;
+    // Cookie primary (httpOnly session); Bearer still accepted for deploy transition.
+    let token: string | undefined =
+      request.cookies.get(AUTH_COOKIE)?.value ?? undefined;
 
-    if (authHeader?.startsWith("Bearer ")) {
-      token = authHeader.substring(7);
-    } else {
-      token = request.cookies.get(AUTH_COOKIE)?.value;
+    if (!token) {
+      const authHeader = request.headers.get("authorization");
+      if (authHeader?.startsWith("Bearer ")) {
+        token = authHeader.substring(7);
+      }
     }
 
     if (!token) {

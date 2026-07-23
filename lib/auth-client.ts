@@ -1,68 +1,65 @@
-// Auth utilities for client-side
+// Client-side auth utilities — session is httpOnly cookie only (no JWT in localStorage).
 
-// User type from database
-interface User {
+export type AuthUser = {
   id: string;
   name: string;
   email: string;
   role: "admin" | "founder" | "guest";
+  profile_photo_url?: string | null;
+};
+
+/** Module cache for sync reads (e.g. getUser()?.role). Kept in sync by AuthProvider. */
+let cachedUser: AuthUser | null = null;
+
+export function getUser(): AuthUser | null {
+  return cachedUser;
 }
 
+export function setCachedUser(user: AuthUser | null): void {
+  cachedUser = user;
+}
+
+/** @deprecated Cookie session only — always returns null. */
 export function getAuthToken(): string | null {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem("token");
+  return null;
 }
 
-export function setAuthToken(token: string): void {
+/** @deprecated Cookie session only — no-op. */
+export function setAuthToken(_token: string): void {
+  // no-op
+}
+
+/** Remove leftover localStorage keys from pre-cookie auth. */
+export function clearClientAuthState(): void {
   if (typeof window === "undefined") return;
-  localStorage.setItem("token", token);
-}
-
-export function removeAuthToken(): void {
-  if (typeof window === "undefined") return;
-  localStorage.removeItem("token");
-  localStorage.removeItem("user");
-  // Dual session: clear httpOnly cookie without removing localStorage dual-mode yet
-  void fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
-}
-
-export function getUser(): User | null {
-  if (typeof window === "undefined") return null;
-  const userStr = localStorage.getItem("user");
-  if (!userStr) return null;
   try {
-    return JSON.parse(userStr);
-  } catch {
+    localStorage.removeItem("token");
     localStorage.removeItem("user");
-    return null;
-  }
-}
-
-export function setUser(user: User): void {
-  if (typeof window === "undefined") return;
-  localStorage.setItem("user", JSON.stringify(user));
-}
-
-// Check if token is expired (JWT tokens have expiration)
-export function isTokenExpired(token: string): boolean {
-  try {
-    const payload = JSON.parse(atob(token.split(".")[1]));
-    const expiration = payload.exp * 1000; // Convert to milliseconds
-    return Date.now() >= expiration;
   } catch {
-    return true;
+    /* private mode / blocked storage */
   }
 }
 
-// Auto-logout if token expired
-export function checkAuthStatus(): boolean {
-  const token = getAuthToken();
-  if (!token) return false;
+/** @deprecated Use clearClientAuthState + logout(). Clears storage only (no network). */
+export function removeAuthToken(): void {
+  clearClientAuthState();
+  cachedUser = null;
+}
 
-  if (isTokenExpired(token)) {
-    removeAuthToken();
-    return false;
+export async function logout(): Promise<void> {
+  clearClientAuthState();
+  cachedUser = null;
+  try {
+    await fetch("/api/auth/logout", {
+      method: "POST",
+      credentials: "same-origin",
+    });
+  } catch {
+    /* ignore network errors on logout */
   }
+}
 
-  return true;
+/** True if module cache has a user (after AuthProvider loads /me or login). */
+export function checkAuthStatus(): boolean {
+  return cachedUser !== null;
 }

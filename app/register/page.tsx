@@ -3,9 +3,13 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useAuth } from "@/components/AuthProvider";
+import { apiFetch, ApiError } from "@/lib/api-client";
+import type { AuthUser } from "@/lib/auth-client";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { setUser } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -18,32 +22,21 @@ export default function RegisterPage() {
     setError("");
 
     try {
-      const response = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name,
-          email,
-          password,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        // Save token and user
-        localStorage.setItem("token", data.token);
-        localStorage.setItem("user", JSON.stringify(data.user));
-
-        // Redirect to home page
-        router.push("/");
+      const data = await apiFetch<{ success: boolean; user: AuthUser }>(
+        "/api/auth/register",
+        {
+          method: "POST",
+          body: { name, email, password },
+        }
+      );
+      setUser(data.user);
+      router.push("/");
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setError(err.message || "Falha no registo");
       } else {
-        setError(data.error || "Falha no registo");
+        setError("Erro de conexão. Tenta novamente.");
       }
-    } catch {
-      setError("Erro de conexão. Tenta novamente.");
     } finally {
       setLoading(false);
     }

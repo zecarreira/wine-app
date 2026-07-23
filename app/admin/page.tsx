@@ -4,6 +4,8 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/ToastProvider";
+import { useAuth } from "@/components/AuthProvider";
+import { apiFetch, ApiError } from "@/lib/api-client";
 
 interface User {
   id: string;
@@ -22,47 +24,43 @@ export default function AdminPanelPage() {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
 
+  const { user: authUser, loading: authLoading } = useAuth();
+
   const checkAdminAndFetchUsers = useCallback(async () => {
+    if (!authUser) {
+      router.push("/login");
+      setLoading(false);
+      return;
+    }
+
+    if (authUser.role !== "admin") {
+      toastError("Acesso de admin necessário");
+      router.push("/dinners");
+      setLoading(false);
+      return;
+    }
+
     try {
-      const userStr = localStorage.getItem("user");
-      if (!userStr) {
-        router.push("/login");
-        return;
-      }
-
-      const currentUser = JSON.parse(userStr);
-
-      if (currentUser.role !== "admin") {
-        toastError("Acesso de admin necessário");
-        router.push("/dinners");
-        return;
-      }
-
-      const token = localStorage.getItem("token");
-      const response = await fetch("/api/admin/users", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        setUsers(data.users);
-        setFounderCount(data.founderCount);
-      } else {
-        toastError("Erro ao carregar utilizadores");
-      }
+      const data = await apiFetch<{
+        success: boolean;
+        users: User[];
+        founderCount: number;
+      }>("/api/admin/users");
+      setUsers(data.users);
+      setFounderCount(data.founderCount);
     } catch {
       console.error("Error loading users");
+      toastError("Erro ao carregar utilizadores");
     } finally {
       setLoading(false);
     }
-  }, [router]);
+  }, [authUser, router, toastError]);
 
   useEffect(() => {
-    checkAdminAndFetchUsers();
-  }, [checkAdminAndFetchUsers]);
+    if (authLoading) return;
+    setLoading(true);
+    void checkAdminAndFetchUsers();
+  }, [authLoading, checkAdminAndFetchUsers]);
 
   async function updateUserRole(userId: string, newRole: string) {
     const roleText = newRole === "founder" ? "Fundador" : "Convidado";
@@ -70,32 +68,22 @@ export default function AdminPanelPage() {
 
     setUpdating(userId);
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(`/api/admin/users/${userId}`, {
+      await apiFetch(`/api/admin/users/${userId}`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ role: newRole }),
+        body: { role: newRole },
       });
-
-      const data = await response.json();
-
-      if (data.success) {
-        await checkAdminAndFetchUsers();
-        success(`Utilizador promovido a ${roleText}!`);
-      } else {
-        toastError(data.error || "Erro ao atualizar role");
-      }
-    } catch {
-      toastError("Erro ao atualizar role");
+      await checkAdminAndFetchUsers();
+      success(`Utilizador promovido a ${roleText}!`);
+    } catch (err) {
+      toastError(
+        err instanceof ApiError ? err.message : "Erro ao atualizar role"
+      );
     } finally {
       setUpdating(null);
     }
   }
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
         <div className="text-center">

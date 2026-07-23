@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { use } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { apiFetch } from "@/lib/api-client";
 
 interface Season {
   id: string;
@@ -57,17 +58,15 @@ export default function SeasonPaymentStatsPage({
   async function fetchSeasonStats() {
     try {
       setLoading(true);
-      const token = localStorage.getItem("token");
-      const response = await fetch(`/api/seasons/${id}/stats`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-      const data = await response.json();
-
-      if (data.success) {
-        setSeason(data.season);
-        setStats(data.stats);
-        setDinners(data.dinners);
-      }
+      const data = await apiFetch<{
+        success: boolean;
+        season: Season;
+        stats: SeasonStats;
+        dinners: DinnerStats[];
+      }>(`/api/seasons/${id}/stats`);
+      setSeason(data.season);
+      setStats(data.stats);
+      setDinners(data.dinners);
     } catch (error) {
       console.error("Failed to fetch season stats:", error);
     } finally {

@@ -6,6 +6,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/ToastProvider";
+import { useAuth } from "@/components/AuthProvider";
+import { apiFetch, ApiError } from "@/lib/api-client";
 
 interface Rating {
   id: string;
@@ -60,9 +62,10 @@ export default function BottleDetailPage({
   const { id } = use(params);
   const router = useRouter();
   const { success, error: toastError } = useToast();
+  const { user: authUser } = useAuth();
   const [bottle, setBottle] = useState<BottleWithDetails | null>(null);
   const [loading, setLoading] = useState(true);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const currentUserId = authUser?.id ?? null;
   const [isEditing, setIsEditing] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [editForm, setEditForm] = useState({
@@ -76,43 +79,31 @@ export default function BottleDetailPage({
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
-  useEffect(() => {
-    // Get current user
-    const userStr = localStorage.getItem("user");
-    if (userStr) {
-      const user = JSON.parse(userStr);
-      setCurrentUserId(user.id);
-    }
-
-    fetchBottle();
-  }, [id]);
-
   async function fetchBottle() {
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(`/api/bottles/${id}`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      const data = await apiFetch<{ success: boolean; bottle: BottleWithDetails }>(
+        `/api/bottles/${id}`
+      );
+      setBottle(data.bottle);
+      setEditForm({
+        name: data.bottle.name || "",
+        producer: data.bottle.producer || "",
+        vintage: data.bottle.vintage?.toString() || "",
+        wine_type: data.bottle.wine_type || "",
+        description: data.bottle.description || "",
+        photo_url: data.bottle.photo_url || "",
       });
-      const data = await response.json();
-
-      if (data.success) {
-        setBottle(data.bottle);
-        // Initialize edit form with bottle data
-        setEditForm({
-          name: data.bottle.name || "",
-          producer: data.bottle.producer || "",
-          vintage: data.bottle.vintage?.toString() || "",
-          wine_type: data.bottle.wine_type || "",
-          description: data.bottle.description || "",
-          photo_url: data.bottle.photo_url || "",
-        });
-      }
     } catch (error) {
       console.error("Error fetching bottle:", error);
     } finally {
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    fetchBottle();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
   function handleEdit() {
     setIsEditing(true);
@@ -153,49 +144,34 @@ export default function BottleDetailPage({
 
       setUploadingPhoto(true);
       try {
-        const token = localStorage.getItem("token");
-
-        // Create FormData with bucket parameter
         const formData = new FormData();
         formData.append("file", file);
         formData.append("bucket", "bottle-photos");
 
-        // Upload photo
         const response = await fetch("/api/upload", {
           method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          credentials: "same-origin",
           body: formData,
         });
 
         const data = await response.json();
 
         if (data.success && data.url) {
-          // Update bottle with new photo URL
-          const updateResponse = await fetch(`/api/bottles/${id}`, {
+          await apiFetch(`/api/bottles/${id}`, {
             method: "PATCH",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({
-              photo_url: data.url,
-            }),
+            body: { photo_url: data.url },
           });
-
-          const updateData = await updateResponse.json();
-          if (updateData.success) {
-            success("Foto atualizada com sucesso!");
-            fetchBottle(); // Refresh to show new photo
-          } else {
-            toastError(updateData.error || "Erro ao atualizar foto");
-          }
+          success("Foto atualizada com sucesso!");
+          fetchBottle();
         } else {
           toastError(data.error || "Erro ao fazer upload da foto");
         }
       } catch (_error) {
-        toastError("Erro ao fazer upload da foto");
+        toastError(
+          _error instanceof ApiError
+            ? _error.message
+            : "Erro ao fazer upload da foto"
+        );
       } finally {
         setUploadingPhoto(false);
       }
@@ -211,32 +187,23 @@ export default function BottleDetailPage({
     }
 
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(`/api/bottles/${id}`, {
+      await apiFetch(`/api/bottles/${id}`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
+        body: {
           name: editForm.name,
           producer: editForm.producer || null,
           vintage: editForm.vintage ? parseInt(editForm.vintage) : null,
           wine_type: editForm.wine_type || null,
           description: editForm.description || null,
-        }),
+        },
       });
-
-      const data = await response.json();
-      if (data.success) {
-        success("Garrafa atualizada com sucesso!");
-        setIsEditing(false);
-        fetchBottle(); // Refresh data
-      } else {
-        toastError(data.error || "Erro ao atualizar garrafa");
-      }
+      success("Garrafa atualizada com sucesso!");
+      setIsEditing(false);
+      fetchBottle();
     } catch (error) {
-      toastError("Erro ao atualizar garrafa");
+      toastError(
+        error instanceof ApiError ? error.message : "Erro ao atualizar garrafa"
+      );
     }
   }
 
@@ -244,23 +211,13 @@ export default function BottleDetailPage({
     if (!confirm("Tens a certeza que queres apagar esta garrafa?")) return;
 
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(`/api/bottles/${id}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      const data = await response.json();
-      if (data.success) {
-        success("Garrafa apagada com sucesso!");
-        router.push(`/dinners/${bottle?.dinner.id}`);
-      } else {
-        toastError(data.error || "Erro ao apagar garrafa");
-      }
+      await apiFetch(`/api/bottles/${id}`, { method: "DELETE" });
+      success("Garrafa apagada com sucesso!");
+      router.push(`/dinners/${bottle?.dinner.id}`);
     } catch (error) {
-      toastError("Erro ao apagar garrafa");
+      toastError(
+        error instanceof ApiError ? error.message : "Erro ao apagar garrafa"
+      );
     }
   }
 

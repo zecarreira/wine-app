@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/ToastProvider";
+import { useAuth } from "@/components/AuthProvider";
+import { apiFetch, ApiError } from "@/lib/api-client";
 
-interface User {
+interface ProfileUser {
   id: string;
   name: string;
   email: string;
@@ -28,49 +30,44 @@ interface User {
 export default function ProfilePage() {
   const router = useRouter();
   const toast = useToast();
-  const [user, setUser] = useState<User | null>(null);
+  const { user: authUser, loading: authLoading, logout } = useAuth();
+  const [user, setUser] = useState<ProfileUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
-  async function fetchProfile() {
+  const fetchProfile = useCallback(async () => {
+    if (!authUser) {
+      setLoading(false);
+      return;
+    }
+
     try {
-      const userStr = localStorage.getItem("user");
-
-      if (!userStr) {
-        router.push("/login");
-        return;
-      }
-
-      const currentUser = JSON.parse(userStr);
-      const token = localStorage.getItem("token");
-
-      const response = await fetch(`/api/users/${currentUser.id}`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-      const data = await response.json();
-
-      if (data.success) {
-        setUser(data.user);
-      } else {
-        // Stale session — clear and redirect to login
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        router.push("/login");
-      }
+      const data = await apiFetch<{ success: boolean; user: ProfileUser }>(
+        `/api/users/${authUser.id}`
+      );
+      setUser(data.user);
     } catch (error) {
       console.error("Error fetching profile:", error);
+      if (error instanceof ApiError && error.status === 401) {
+        await logout();
+        router.push("/login");
+      }
     }
     setLoading(false);
-  }
+  }, [authUser, logout, router]);
 
   useEffect(() => {
-    fetchProfile();
-  }, []);
+    if (authLoading) return;
+    if (!authUser) {
+      router.push("/login");
+      return;
+    }
+    setLoading(true);
+    void fetchProfile();
+  }, [authLoading, authUser, fetchProfile, router]);
 
-  function handleLogout() {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    void fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
+  async function handleLogout() {
+    await logout();
     router.push("/login");
   }
 
@@ -78,35 +75,30 @@ export default function ProfilePage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
       toast.error("A foto deve ter no máximo 5MB");
       return;
     }
 
-    // Validate file type
     if (!file.type.startsWith("image/")) {
       toast.error("Por favor, selecione uma imagem válida");
       return;
     }
 
-    setUploadingPhoto(true);
-
-    const token = localStorage.getItem("token");
-    if (!token) {
-      setUploadingPhoto(false);
+    if (!authUser) {
       router.push("/login");
       return;
     }
 
-    // Upload photo to storage
+    setUploadingPhoto(true);
+
     const formData = new FormData();
     formData.append("file", file);
     formData.append("bucket", "profile-photos");
 
     const uploadResponse = await fetch("/api/upload", {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
+      credentials: "same-origin",
       body: formData,
     }).catch(() => null);
 
@@ -118,37 +110,30 @@ export default function ProfilePage() {
 
     const uploadData = await uploadResponse.json().catch(() => null);
     if (!uploadData?.success) {
-      toast.error(uploadData?.error ?? "Erro ao fazer upload da foto. Tenta novamente.");
+      toast.error(
+        uploadData?.error ?? "Erro ao fazer upload da foto. Tenta novamente."
+      );
       setUploadingPhoto(false);
       return;
     }
 
-    // Update user profile with photo URL
-    const updateResponse = await fetch(`/api/users/${user?.id}`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ profile_photo_url: uploadData.url }),
-    }).catch(() => null);
-
-    if (!updateResponse) {
-      toast.error("Erro de rede. Tenta novamente.");
-      setUploadingPhoto(false);
-      return;
-    }
-
-    const updateData = await updateResponse.json().catch(() => null);
-    if (updateData?.success) {
+    try {
+      await apiFetch(`/api/users/${user?.id ?? authUser.id}`, {
+        method: "PATCH",
+        body: { profile_photo_url: uploadData.url },
+      });
       await fetchProfile();
-    } else {
-      toast.error(updateData?.error ?? "Erro ao atualizar perfil. Tenta novamente.");
+    } catch (err) {
+      toast.error(
+        err instanceof ApiError
+          ? err.message
+          : "Erro ao atualizar perfil. Tenta novamente."
+      );
     }
     setUploadingPhoto(false);
   }
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
         <div className="text-center">

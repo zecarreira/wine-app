@@ -9,6 +9,7 @@ import { PaymentsSection } from "@/components/PaymentsSection";
 import { shuffleArray } from "@/lib/domain";
 import { apiFetch } from "@/lib/api-client";
 import { useToast } from "@/components/ToastProvider";
+import { useAuth } from "@/components/AuthProvider";
 
 interface Bottle {
   id: string;
@@ -55,31 +56,19 @@ export default function DinnerDetailPage({
   const { id } = use(params);
   const router = useRouter();
   const { success, error: toastError } = useToast();
+  const { user: authUser } = useAuth();
   const [bottles, setBottles] = useState<Bottle[]>([]);
   const [dinner, setDinner] = useState<Dinner | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [isHost, setIsHost] = useState(false);
-  const [isAdmin] = useState(() => {
-    if (typeof window === "undefined") return false;
-    const userStr = localStorage.getItem("user");
-    if (userStr) {
-      const user = JSON.parse(userStr);
-      return user.role === "admin";
-    }
-    return false;
-  });
+  const isAdmin = authUser?.role === "admin";
   const [participants, setParticipants] = useState<
     Array<{ id: string; name: string }>
   >([]);
 
   function checkIfHost() {
-    const userStr = localStorage.getItem("user");
-    if (userStr) {
-      const user = JSON.parse(userStr);
-      return user.id;
-    }
-    return null;
+    return authUser?.id ?? null;
   }
 
   async function fetchDinnerAndBottles() {
@@ -138,9 +127,8 @@ export default function DinnerDetailPage({
 
   useEffect(() => {
     fetchDinnerAndBottles();
-    checkIfHost();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+  }, [id, authUser?.id]);
 
   async function handleStartDinner() {
     if (

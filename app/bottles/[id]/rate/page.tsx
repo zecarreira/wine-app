@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { use } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/components/AuthProvider";
+import { apiFetch, ApiError } from "@/lib/api-client";
 
 interface Bottle {
   id: string;
@@ -24,7 +26,7 @@ interface Bottle {
 interface ExistingRating {
   id: string;
   score: number;
-  tasting_notes: string;
+  tasting_notes?: string;
 }
 
 export default function RateBottlePage({
@@ -34,6 +36,7 @@ export default function RateBottlePage({
 }) {
   const { id } = use(params);
   const router = useRouter();
+  const { user: authUser } = useAuth();
   const [bottle, setBottle] = useState<Bottle | null>(null);
   const [score, setScore] = useState(5);
   const [tastingNotes, setTastingNotes] = useState("");
@@ -44,45 +47,36 @@ export default function RateBottlePage({
     null
   );
 
-  useEffect(() => {
-    fetchBottleAndRating();
-  }, [id]);
-
   async function fetchBottleAndRating() {
     try {
-      const token = localStorage.getItem("token");
-      const authHeaders: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {};
-      const bottleResponse = await fetch(`/api/bottles/${id}`, { headers: authHeaders });
-      const bottleData = await bottleResponse.json();
+      const bottleData = await apiFetch<{ success: boolean; bottle: Bottle }>(
+        `/api/bottles/${id}`
+      );
+      setBottle(bottleData.bottle);
 
-      if (bottleData.success) {
-        setBottle(bottleData.bottle);
-      }
+      try {
+        const ratingsData = await apiFetch<{
+          success: boolean;
+          ratings: Array<{
+            user_id: string;
+            score: number;
+            tasting_notes?: string;
+            id: string;
+          }>;
+        }>(`/api/bottles/${id}/ratings`);
 
-      if (token) {
-        const ratingsResponse = await fetch(`/api/bottles/${id}/ratings`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        const ratingsData = await ratingsResponse.json();
-
-        if (ratingsData.success && ratingsData.ratings) {
-          const userStr = localStorage.getItem("user");
-          if (userStr) {
-            const user = JSON.parse(userStr);
-            const myRating = ratingsData.ratings.find(
-              (r: { user_id: string; score: number; tasting_notes?: string }) =>
-                r.user_id === user.id
-            );
-
-            if (myRating) {
-              setExistingRating(myRating);
-              setScore(myRating.score);
-              setTastingNotes(myRating.tasting_notes || "");
-            }
+        if (ratingsData.ratings && authUser) {
+          const myRating = ratingsData.ratings.find(
+            (r) => r.user_id === authUser.id
+          );
+          if (myRating) {
+            setExistingRating(myRating);
+            setScore(myRating.score);
+            setTastingNotes(myRating.tasting_notes || "");
           }
         }
+      } catch {
+        /* ratings optional if unauthenticated */
       }
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -91,14 +85,17 @@ export default function RateBottlePage({
     }
   }
 
+  useEffect(() => {
+    fetchBottleAndRating();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, authUser?.id]);
+
   async function submitRating() {
     setSubmitting(true);
     setError("");
 
     try {
-      const token = localStorage.getItem("token");
-
-      if (!token) {
+      if (!authUser) {
         setError("Por favor faz login primeiro");
         setTimeout(() => {
           router.push("/login");
@@ -106,27 +103,20 @@ export default function RateBottlePage({
         return;
       }
 
-      const response = await fetch(`/api/bottles/${id}/ratings`, {
+      await apiFetch(`/api/bottles/${id}/ratings`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
+        body: {
           score,
           tasting_notes: tastingNotes || null,
-        }),
+        },
       });
-
-      const data = await response.json();
-
-      if (data.success) {
-        router.push(`/dinners/${bottle?.dinner.id}`);
-      } else {
-        setError(data.error || "Erro ao submeter classificação");
-      }
-    } catch (error) {
-      setError("Erro de conexão. Tenta novamente.");
+      router.push(`/dinners/${bottle?.dinner.id}`);
+    } catch (err) {
+      setError(
+        err instanceof ApiError
+          ? err.message
+          : "Erro de conexão. Tenta novamente."
+      );
     } finally {
       setSubmitting(false);
     }
