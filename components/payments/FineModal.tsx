@@ -71,14 +71,14 @@ export function FineModal({
         </div>
 
         <div className="flex gap-3">
-          <button
+          <button type="button"
             onClick={onClose}
             disabled={loading}
             className="flex-1 bg-white/10 border border-white/20 text-white px-4 md:px-6 py-2 md:py-3 rounded-xl text-sm md:text-base font-bold hover:bg-white/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
           >
             Cancelar
           </button>
-          <button
+          <button type="button"
             onClick={onSave}
             disabled={loading}
             className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 md:px-6 py-2 md:py-3 rounded-xl text-sm md:text-base font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/70"

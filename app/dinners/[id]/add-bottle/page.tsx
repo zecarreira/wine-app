@@ -55,6 +55,10 @@ export default function AddBottlePage({
         body: formData,
       });
 
+      if (!response.ok) {
+        throw new Error(`Erro ao fazer upload da foto (${response.status})`);
+      }
+
       const data = await response.json();
 
       if (data.success) {
@@ -120,7 +124,7 @@ export default function AddBottlePage({
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       <header className="bg-black/20 backdrop-blur-lg border-b border-white/10 sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <button
+          <button type="button"
             onClick={() => router.back()}
             aria-label="Voltar"
             className="text-white/80 hover:text-white text-2xl"
@@ -146,7 +150,7 @@ export default function AddBottlePage({
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Photo Upload */}
             <div>
-              <label className="block text-white font-semibold mb-2">
+              <label htmlFor="bottle-photo" className="block text-white font-semibold mb-2">
                 Foto da Garrafa (Opcional)
               </label>
 
@@ -178,6 +182,7 @@ export default function AddBottlePage({
                     JPG, PNG até 5MB
                   </div>
                   <input
+                    id="bottle-photo"
                     type="file"
                     accept="image/*"
                     onChange={handlePhotoChange}
@@ -189,10 +194,11 @@ export default function AddBottlePage({
 
             {/* Wine Name */}
             <div>
-              <label className="block text-white font-semibold mb-2">
+              <label htmlFor="bottle-name" className="block text-white font-semibold mb-2">
                 Nome do Vinho *
               </label>
               <input
+                id="bottle-name"
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -205,10 +211,11 @@ export default function AddBottlePage({
 
             {/* Producer */}
             <div>
-              <label className="block text-white font-semibold mb-2">
+              <label htmlFor="bottle-producer" className="block text-white font-semibold mb-2">
                 Produtor (Opcional)
               </label>
               <input
+                id="bottle-producer"
                 type="text"
                 value={producer}
                 onChange={(e) => setProducer(e.target.value)}
@@ -221,10 +228,11 @@ export default function AddBottlePage({
             {/* Vintage & Type */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-white font-semibold mb-2">
+                <label htmlFor="bottle-vintage" className="block text-white font-semibold mb-2">
                   Ano
                 </label>
                 <input
+                  id="bottle-vintage"
                   type="number"
                   value={vintage}
                   onChange={(e) => setVintage(e.target.value)}
@@ -237,10 +245,11 @@ export default function AddBottlePage({
               </div>
 
               <div>
-                <label className="block text-white font-semibold mb-2">
+                <label htmlFor="bottle-wine-type" className="block text-white font-semibold mb-2">
                   Tipo
                 </label>
                 <select
+                  id="bottle-wine-type"
                   value={wineType}
                   onChange={(e) => setWineType(e.target.value)}
                   className="w-full bg-white/10 border-2 border-white/20 rounded-2xl px-4 py-4 text-white focus:outline-none focus:border-purple-400 text-lg appearance-none cursor-pointer"
@@ -269,10 +278,11 @@ export default function AddBottlePage({
 
             {/* Description */}
             <div>
-              <label className="block text-white font-semibold mb-2">
+              <label htmlFor="bottle-description" className="block text-white font-semibold mb-2">
                 Descrição (Opcional)
               </label>
               <textarea
+                id="bottle-description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Full-bodied do Alentejo..."

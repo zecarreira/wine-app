@@ -114,46 +114,46 @@ export default function ProfilePage() {
     }
 
     setUploadingPhoto(true);
-
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("bucket", "profile-photos");
-
-    const uploadResponse = await fetch("/api/upload", {
-      method: "POST",
-      credentials: "same-origin",
-      body: formData,
-    }).catch(() => null);
-
-    if (!uploadResponse) {
-      toast.error("Erro de rede. Tenta novamente.");
-      setUploadingPhoto(false);
-      return;
-    }
-
-    const uploadData = await uploadResponse.json().catch(() => null);
-    if (!uploadData?.success) {
-      toast.error(
-        uploadData?.error ?? "Erro ao fazer upload da foto. Tenta novamente."
-      );
-      setUploadingPhoto(false);
-      return;
-    }
-
     try {
-      await apiFetch(`/api/users/${user?.id ?? authUser.id}`, {
-        method: "PATCH",
-        body: { profile_photo_url: uploadData.url },
-      });
-      await refetch();
-    } catch (err) {
-      toast.error(
-        err instanceof ApiError
-          ? err.message
-          : "Erro ao atualizar perfil. Tenta novamente."
-      );
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("bucket", "profile-photos");
+
+      const uploadResponse = await fetch("/api/upload", {
+        method: "POST",
+        credentials: "same-origin",
+        body: formData,
+      }).catch(() => null);
+
+      if (!uploadResponse) {
+        toast.error("Erro de rede. Tenta novamente.");
+        return;
+      }
+
+      const uploadData = await uploadResponse.json().catch(() => null);
+      if (!uploadData?.success) {
+        toast.error(
+          uploadData?.error ?? "Erro ao fazer upload da foto. Tenta novamente."
+        );
+        return;
+      }
+
+      try {
+        await apiFetch(`/api/users/${user?.id ?? authUser.id}`, {
+          method: "PATCH",
+          body: { profile_photo_url: uploadData.url },
+        });
+        await refetch();
+      } catch (err) {
+        toast.error(
+          err instanceof ApiError
+            ? err.message
+            : "Erro ao atualizar perfil. Tenta novamente."
+        );
+      }
+    } finally {
+      setUploadingPhoto(false);
     }
-    setUploadingPhoto(false);
   }
 
   if (authLoading || (authUser && profileLoading)) {
@@ -183,7 +183,7 @@ export default function ProfilePage() {
       {/* Header */}
       <header className="bg-black/20 backdrop-blur-lg border-b border-white/10 sticky top-0 z-10">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-          <button
+          <button type="button"
             onClick={() => router.back()}
             aria-label="Voltar"
             className="text-white/80 hover:text-white text-2xl rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
@@ -339,7 +339,7 @@ export default function ProfilePage() {
             )}
           </div>
           <div className="flex justify-center mt-4">
-            <button
+            <button type="button"
               onClick={handleLogout}
               className="bg-red-500/20 hover:bg-red-500/30 text-red-200 px-4 py-2 rounded-xl text-xs md:text-sm font-semibold transition-colors"
             >

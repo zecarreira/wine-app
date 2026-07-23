@@ -99,7 +99,7 @@ export default function AdminPanelPage() {
       {/* Header */}
       <header className="bg-black/20 backdrop-blur-lg border-b border-white/10 sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <button
+          <button type="button"
             onClick={() => router.back()}
             aria-label="Voltar"
             className="text-white/80 hover:text-white text-2xl rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
@@ -194,7 +194,7 @@ export default function AdminPanelPage() {
                   {user.role !== "admin" && (
                     <div className="flex gap-3 flex-shrink-0">
                       {user.role === "guest" && (
-                        <button
+                        <button type="button"
                           onClick={() => updateUserRole(user.id, "founder")}
                           disabled={
                             updating === user.id || founderCount >= maxFounders
@@ -215,7 +215,7 @@ export default function AdminPanelPage() {
                         </button>
                       )}
                       {user.role === "founder" && (
-                        <button
+                        <button type="button"
                           onClick={() => updateUserRole(user.id, "guest")}
                           disabled={updating === user.id}
                           className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 disabled:from-gray-600 disabled:to-gray-700 text-white px-6 py-3 rounded-xl font-bold transition-[colors,transform,box-shadow] text-sm shadow-lg hover:shadow-blue-500/50 transform hover:scale-105 active:scale-95 flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/70"

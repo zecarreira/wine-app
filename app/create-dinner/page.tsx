@@ -93,7 +93,7 @@ export default function CreateDinnerPage() {
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       <header className="bg-black/20 backdrop-blur-lg border-b border-white/10">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-          <button
+          <button type="button"
             onClick={() => router.back()}
             className="text-white/80 hover:text-white text-2xl"
             aria-label="Voltar"
@@ -121,10 +121,11 @@ export default function CreateDinnerPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Dinner Name */}
             <div>
-              <label className="block text-white font-semibold mb-2 text-sm">
+              <label htmlFor="dinner-name" className="block text-white font-semibold mb-2 text-sm">
                 Nome do Jantar *
               </label>
               <input
+                id="dinner-name"
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -137,10 +138,11 @@ export default function CreateDinnerPage() {
 
             {/* Event Date */}
             <div>
-              <label className="block text-white font-semibold mb-2 text-sm">
+              <label htmlFor="dinner-date" className="block text-white font-semibold mb-2 text-sm">
                 Data do Evento *
               </label>
               <input
+                id="dinner-date"
                 type="date"
                 value={eventDate}
                 onChange={(e) => setEventDate(e.target.value)}
@@ -153,10 +155,11 @@ export default function CreateDinnerPage() {
 
             {/* Location */}
             <div>
-              <label className="block text-white font-semibold mb-2 text-sm">
+              <label htmlFor="dinner-location" className="block text-white font-semibold mb-2 text-sm">
                 Localização (Opcional)
               </label>
               <input
+                id="dinner-location"
                 type="text"
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
@@ -178,10 +181,11 @@ export default function CreateDinnerPage() {
                 </div>
               ) : (
                 <>
-                  <label className="block text-white font-semibold mb-2 text-sm">
+                  <label htmlFor="dinner-organizer" className="block text-white font-semibold mb-2 text-sm">
                     Organizador *
                   </label>
                   <select
+                    id="dinner-organizer"
                     value={organizerId}
                     onChange={(e) => setOrganizerId(e.target.value)}
                     required
@@ -220,6 +224,7 @@ export default function CreateDinnerPage() {
                   </div>
                 </div>
                 <input
+                  id="dinner-blind"
                   type="checkbox"
                   checked={isBlind}
                   onChange={(e) => setIsBlind(e.target.checked)}

@@ -5,6 +5,16 @@ import Header from "@/components/Header";
 import { BottleCard, type CatalogBottle } from "@/components/BottleCard";
 import { useBottlesCatalog } from "@/lib/hooks/useApi";
 
+const WINE_TYPES = [
+  { value: "all", label: "Todos os Tipos", icon: "🍷" },
+  { value: "red", label: "Tinto", icon: "🍷" },
+  { value: "white", label: "Branco", icon: "🥂" },
+  { value: "rosé", label: "Rosé", icon: "🌸" },
+  { value: "sparkling", label: "Espumante", icon: "🍾" },
+  { value: "dessert", label: "Sobremesa", icon: "🍯" },
+  { value: "other", label: "Outro", icon: "🍇" },
+] as const;
+
 export default function BottlesCatalogPage() {
   const [sortBy, setSortBy] = useState("name");
   const [order, setOrder] = useState("asc");
@@ -22,16 +32,6 @@ export default function BottlesCatalogPage() {
 
   const bottles = data?.bottles || [];
   const producers = data?.producers || [];
-
-  const wineTypes = [
-    { value: "all", label: "Todos os Tipos", icon: "🍷" },
-    { value: "red", label: "Tinto", icon: "🍷" },
-    { value: "white", label: "Branco", icon: "🥂" },
-    { value: "rosé", label: "Rosé", icon: "🌸" },
-    { value: "sparkling", label: "Espumante", icon: "🍾" },
-    { value: "dessert", label: "Sobremesa", icon: "🍯" },
-    { value: "other", label: "Outro", icon: "🍇" },
-  ];
 
   return (
     <div className="min-h-screen bg-linear-to-br from-slate-900 via-purple-900 to-slate-900">
@@ -57,7 +57,7 @@ export default function BottlesCatalogPage() {
                 Ordenar por
               </p>
               <div className="grid grid-cols-4 gap-1.5">
-                <button
+                <button type="button"
                   onClick={() => setSortBy("name")}
                   aria-pressed={sortBy === "name"}
                   className={`px-2 py-2 rounded-lg text-xs font-semibold transition-colors ${
@@ -68,7 +68,7 @@ export default function BottlesCatalogPage() {
                 >
                   Nome
                 </button>
-                <button
+                <button type="button"
                   onClick={() => setSortBy("producer")}
                   aria-pressed={sortBy === "producer"}
                   className={`px-2 py-2 rounded-lg text-xs font-semibold transition-colors ${
@@ -79,7 +79,7 @@ export default function BottlesCatalogPage() {
                 >
                   Produtor
                 </button>
-                <button
+                <button type="button"
                   onClick={() => setSortBy("rating")}
                   aria-pressed={sortBy === "rating"}
                   className={`px-2 py-2 rounded-lg text-xs font-semibold transition-colors ${
@@ -90,7 +90,7 @@ export default function BottlesCatalogPage() {
                 >
                   Rating
                 </button>
-                <button
+                <button type="button"
                   onClick={() => setSortBy("vintage")}
                   aria-pressed={sortBy === "vintage"}
                   className={`px-2 py-2 rounded-lg text-xs font-semibold transition-colors ${
@@ -110,7 +110,7 @@ export default function BottlesCatalogPage() {
                 Ordem
               </p>
               <div className="grid grid-cols-2 gap-1.5">
-                <button
+                <button type="button"
                   onClick={() => setOrder("asc")}
                   aria-pressed={order === "asc"}
                   className={`px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${
@@ -121,7 +121,7 @@ export default function BottlesCatalogPage() {
                 >
                   ⬆️ Crescente
                 </button>
-                <button
+                <button type="button"
                   onClick={() => setOrder("desc")}
                   aria-pressed={order === "desc"}
                   className={`px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${
@@ -141,7 +141,7 @@ export default function BottlesCatalogPage() {
                 Produtor
               </p>
               <div className="flex flex-wrap gap-1.5">
-                <button
+                <button type="button"
                   onClick={() => setSelectedProducer("")}
                   aria-pressed={selectedProducer === ""}
                   className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
@@ -153,7 +153,7 @@ export default function BottlesCatalogPage() {
                   Todos
                 </button>
                 {producers.slice(0, 4).map((producer: string) => (
-                  <button
+                  <button type="button"
                     key={producer}
                     onClick={() => setSelectedProducer(producer)}
                     aria-pressed={selectedProducer === producer}
@@ -174,7 +174,7 @@ export default function BottlesCatalogPage() {
                   </summary>
                   <div className="flex flex-wrap gap-1.5 mt-2">
                     {producers.slice(4).map((producer: string) => (
-                      <button
+                      <button type="button"
                         key={producer}
                         onClick={() => setSelectedProducer(producer)}
                         aria-pressed={selectedProducer === producer}
@@ -198,8 +198,8 @@ export default function BottlesCatalogPage() {
                 Tipo de Vinho
               </p>
               <div className="flex flex-wrap gap-1.5">
-                {wineTypes.map((type) => (
-                  <button
+                {WINE_TYPES.map((type) => (
+                  <button type="button"
                     key={type.value}
                     onClick={() => setSelectedWineType(type.value)}
                     aria-pressed={selectedWineType === type.value}
@@ -224,7 +224,7 @@ export default function BottlesCatalogPage() {
             </div>
 
             <div className="flex gap-2">
-              <button
+              <button type="button"
                 onClick={() => setViewMode("grid")}
                 aria-label="Vista em grelha"
                 aria-pressed={viewMode === "grid"}
@@ -236,7 +236,7 @@ export default function BottlesCatalogPage() {
               >
                 🔲 Grelha
               </button>
-              <button
+              <button type="button"
                 onClick={() => setViewMode("list")}
                 aria-label="Vista em lista"
                 aria-pressed={viewMode === "list"}

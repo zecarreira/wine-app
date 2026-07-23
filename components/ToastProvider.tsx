@@ -5,6 +5,7 @@ import {
   use,
   useState,
   useCallback,
+  useMemo,
   ReactNode,
 } from "react";
 
@@ -25,6 +26,36 @@ interface ToastContextType {
 }
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
+
+function getToastStyles(type: ToastType) {
+  switch (type) {
+    case "success":
+      return "bg-green-500/90 border-green-400";
+    case "error":
+      return "bg-red-500/90 border-red-400";
+    case "warning":
+      return "bg-amber-500/90 border-amber-400";
+    case "info":
+      return "bg-blue-500/90 border-blue-400";
+    default:
+      return "bg-purple-500/90 border-purple-400";
+  }
+}
+
+function getToastIcon(type: ToastType) {
+  switch (type) {
+    case "success":
+      return "✅";
+    case "error":
+      return "❌";
+    case "warning":
+      return "⚠️";
+    case "info":
+      return "ℹ️";
+    default:
+      return "🔔";
+  }
+}
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
@@ -58,38 +89,13 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     [showToast]
   );
 
-  const getToastStyles = (type: ToastType) => {
-    switch (type) {
-      case "success":
-        return "bg-green-500/90 border-green-400";
-      case "error":
-        return "bg-red-500/90 border-red-400";
-      case "warning":
-        return "bg-amber-500/90 border-amber-400";
-      case "info":
-        return "bg-blue-500/90 border-blue-400";
-      default:
-        return "bg-purple-500/90 border-purple-400";
-    }
-  };
-
-  const getToastIcon = (type: ToastType) => {
-    switch (type) {
-      case "success":
-        return "✅";
-      case "error":
-        return "❌";
-      case "warning":
-        return "⚠️";
-      case "info":
-        return "ℹ️";
-      default:
-        return "🔔";
-    }
-  };
+  const value = useMemo(
+    () => ({ showToast, success, error, info, warning }),
+    [showToast, success, error, info, warning]
+  );
 
   return (
-    <ToastContext.Provider value={{ showToast, success, error, info, warning }}>
+    <ToastContext.Provider value={value}>
       {children}
 
       {/* Toast Container */}
@@ -105,7 +111,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           >
             <span className="text-2xl" aria-hidden="true">{getToastIcon(toast.type)}</span>
             <span className="flex-1">{toast.message}</span>
-            <button
+            <button type="button"
               onClick={() =>
                 setToasts((prev) => prev.filter((t) => t.id !== toast.id))
               }

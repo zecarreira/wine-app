@@ -92,7 +92,7 @@ export default function AllStatsPage() {
         {/* Header */}
         <header className="bg-black/20 backdrop-blur-lg border-b border-white/10 sticky top-0 z-10 px-3 md:px-8 py-4 mb-4 md:mb-6">
           <div className="container mx-auto flex items-center justify-between">
-            <button
+            <button type="button"
               onClick={() => router.back()}
               className="text-white/80 hover:text-white text-2xl"
               aria-label="Voltar"

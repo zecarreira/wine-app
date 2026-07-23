@@ -88,7 +88,7 @@ export function PaymentCard({
                 </div>
                 {isAdmin && (
                   <div className="flex gap-1">
-                    <button
+                    <button type="button"
                       onClick={() => onEditFine(payment.id, fine)}
                       disabled={actionLoading}
                       aria-label="Editar multa"
@@ -96,7 +96,7 @@ export function PaymentCard({
                     >
                       ✏️
                     </button>
-                    <button
+                    <button type="button"
                       onClick={() =>
                         onDeleteFine(payment.id, fine.id, fine.amount)
                       }
@@ -122,7 +122,7 @@ export function PaymentCard({
 
       {isAdmin && (
         <div className="grid grid-cols-2 gap-2 pt-3 border-t border-white/10">
-          <button
+          <button type="button"
             onClick={() => onMarkAsPaid(payment.id, payment.status)}
             disabled={actionLoading}
             className={`px-3 py-2 rounded-lg text-xs font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 ${
@@ -135,7 +135,7 @@ export function PaymentCard({
               ? "⏳ Marcar Pendente"
               : "✅ Marcar Pago"}
           </button>
-          <button
+          <button type="button"
             onClick={() => onAddFine(payment.id)}
             disabled={actionLoading}
             className="bg-red-500/30 text-red-300 border border-red-400/50 hover:bg-red-500/40 px-3 py-2 rounded-lg text-xs font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50"

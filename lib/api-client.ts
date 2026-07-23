@@ -36,14 +36,7 @@ export async function apiFetch<T = unknown>(
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
 
-  let data: unknown = null;
-  try {
-    data = await res.json();
-  } catch {
-    /* empty or non-JSON body */
-  }
-
-  const errorMessage = (fallback: string): string => {
+  const errorMessage = (data: unknown, fallback: string): string => {
     if (
       data &&
       typeof data === "object" &&
@@ -55,20 +48,36 @@ export async function apiFetch<T = unknown>(
     return fallback;
   };
 
+  // Check status before treating body as success payload.
+  // Still parse JSON on errors for structured messages.
   if (!res.ok) {
+    let data: unknown = null;
+    try {
+      data = await res.json();
+    } catch {
+      /* empty or non-JSON body */
+    }
     throw new ApiError(
-      errorMessage(`Request failed (${res.status})`),
+      errorMessage(data, `Request failed (${res.status})`),
       res.status,
       data
     );
   }
+
+  let data: unknown = null;
+  try {
+    data = await res.json();
+  } catch {
+    /* empty or non-JSON body */
+  }
+
   if (
     data &&
     typeof data === "object" &&
     "success" in data &&
     (data as { success: unknown }).success === false
   ) {
-    throw new ApiError(errorMessage("Request failed"), res.status, data);
+    throw new ApiError(errorMessage(data, "Request failed"), res.status, data);
   }
   return data as T;
 }

@@ -79,65 +79,63 @@ export default function DinnerPhotosPage({
   async function uploadPhotos() {
     if (selectedFiles.length === 0) return;
 
-    setUploading(true);
-
     if (!authUser) {
       toastError("Por favor faz login primeiro");
       router.push("/login");
-      setUploading(false);
       return;
     }
 
-    // Upload each file
-    for (const file of selectedFiles) {
-      // 1. Upload to storage (FormData — cookie session)
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("bucket", "dinner-photos");
+    setUploading(true);
+    try {
+      // Upload each file
+      for (const file of selectedFiles) {
+        // 1. Upload to storage (FormData — cookie session)
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("bucket", "dinner-photos");
 
-      const uploadResponse = await fetch("/api/upload", {
-        method: "POST",
-        credentials: "same-origin",
-        body: formData,
-      }).catch(() => null);
-
-      if (!uploadResponse) {
-        toastError("Erro de rede. Tenta novamente.");
-        setUploading(false);
-        return;
-      }
-
-      const uploadData = await uploadResponse.json().catch(() => null);
-      if (!uploadData?.success) {
-        toastError(
-          "Erro ao fazer upload das fotos: " +
-            (uploadData?.error ?? "Erro desconhecido"),
-        );
-        setUploading(false);
-        return;
-      }
-
-      // 2. Save photo record to database
-      try {
-        await apiFetch(`/api/dinners/${id}/photos`, {
+        const uploadResponse = await fetch("/api/upload", {
           method: "POST",
-          body: { photo_url: uploadData.url },
-        });
-      } catch (error) {
-        toastError(
-          "Erro ao guardar foto: " +
-            (error instanceof Error ? error.message : "Erro desconhecido"),
-        );
-        setUploading(false);
-        return;
-      }
-    }
+          credentials: "same-origin",
+          body: formData,
+        }).catch(() => null);
 
-    // Refresh photos
-    await refetch();
-    setSelectedFiles([]);
-    setUploading(false);
-    success("Fotos carregadas com sucesso!");
+        if (!uploadResponse) {
+          toastError("Erro de rede. Tenta novamente.");
+          return;
+        }
+
+        const uploadData = await uploadResponse.json().catch(() => null);
+        if (!uploadData?.success) {
+          toastError(
+            "Erro ao fazer upload das fotos: " +
+              (uploadData?.error ?? "Erro desconhecido"),
+          );
+          return;
+        }
+
+        // 2. Save photo record to database
+        try {
+          await apiFetch(`/api/dinners/${id}/photos`, {
+            method: "POST",
+            body: { photo_url: uploadData.url },
+          });
+        } catch (error) {
+          toastError(
+            "Erro ao guardar foto: " +
+              (error instanceof Error ? error.message : "Erro desconhecido"),
+          );
+          return;
+        }
+      }
+
+      // Refresh photos
+      await refetch();
+      setSelectedFiles([]);
+      success("Fotos carregadas com sucesso!");
+    } finally {
+      setUploading(false);
+    }
   }
 
   if (isLoading) {
@@ -156,7 +154,7 @@ export default function DinnerPhotosPage({
       {/* Header */}
       <header className="bg-black/20 backdrop-blur-lg border-b border-white/10 sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <button
+          <button type="button"
             onClick={() => router.back()}
             aria-label="Voltar"
             className="text-white/80 hover:text-white text-2xl"
@@ -213,7 +211,7 @@ export default function DinnerPhotosPage({
             </label>
 
             {selectedFiles.length > 0 && (
-              <button
+              <button type="button"
                 onClick={uploadPhotos}
                 disabled={uploading}
                 className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-4 rounded-2xl font-bold text-lg shadow-lg hover:shadow-green-500/50 transform hover:scale-[1.02] transition-[colors,transform,box-shadow] duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-400/70"
@@ -276,7 +274,7 @@ export default function DinnerPhotosPage({
             onClick={() => setLightboxIndex(null)}
             role="presentation"
           >
-            <button
+            <button type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 setLightboxIndex(null);
@@ -288,7 +286,7 @@ export default function DinnerPhotosPage({
             </button>
 
             {lightboxIndex > 0 && (
-              <button
+              <button type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   setLightboxIndex((prev) => (prev ?? 0) - 1);
@@ -311,7 +309,7 @@ export default function DinnerPhotosPage({
             </div>
 
             {lightboxIndex < photos.length - 1 && (
-              <button
+              <button type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   setLightboxIndex((prev) => (prev ?? 0) + 1);

@@ -7,6 +7,20 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
 import { apiFetch, ApiError } from "@/lib/api-client";
 
+const SCORE_LABELS = [
+  "Não é vinho 💀",
+  "É assim tão mau?",
+  "Pobre",
+  "Ninguém dá 3",
+  "Zurrapa do Mi",
+  "Zurrapa do Zé",
+  "Assim Assim",
+  "Já se bebe",
+  "Oláá.. é qualquer coisa",
+  "Pomada",
+  "Casava-me com este vinho",
+] as const;
+
 interface Bottle {
   id: string;
   name: string;
@@ -146,25 +160,12 @@ export default function RateBottlePage({
 
   const isBlindMode = bottle.dinner.status === "active";
 
-  const scoreLabels = [
-    "Não é vinho 💀",
-    "É assim tão mau?",
-    "Pobre",
-    "Ninguém dá 3",
-    "Zurrapa do Mi",
-    "Zurrapa do Zé",
-    "Assim Assim",
-    "Já se bebe",
-    "Oláá.. é qualquer coisa",
-    "Pomada",
-    "Casava-me com este vinho",
-  ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       <header className="bg-black/20 backdrop-blur-lg border-b border-white/10 sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <button
+          <button type="button"
             onClick={() => router.back()}
             aria-label="Voltar"
             className="text-white/80 hover:text-white text-2xl rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
@@ -258,7 +259,7 @@ export default function RateBottlePage({
               {score}
             </div>
             <div className="text-2xl font-semibold text-amber-400">
-              {scoreLabels[Math.round(score)]}
+              {SCORE_LABELS[Math.round(score)]}
             </div>
           </div>
 
@@ -300,10 +301,11 @@ export default function RateBottlePage({
           </div>
 
           <div className="mb-8">
-            <label className="block text-white font-semibold mb-3">
+            <label htmlFor="tasting-notes" className="block text-white font-semibold mb-3">
               Notas (Opcional)
             </label>
             <textarea
+              id="tasting-notes"
               value={tastingNotes}
               onChange={(e) => setTastingNotes(e.target.value)}
               placeholder="Que sabores sentes? Como é o final? Características marcantes?"
@@ -318,7 +320,7 @@ export default function RateBottlePage({
             </div>
           )}
 
-          <button
+          <button type="button"
             onClick={submitRating}
             disabled={submitting}
             className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white text-center px-6 py-5 rounded-2xl font-bold text-xl shadow-lg hover:shadow-purple-500/50 transform hover:scale-[1.02] transition-[colors,transform,box-shadow] duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400/70"

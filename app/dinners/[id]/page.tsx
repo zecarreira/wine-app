@@ -141,8 +141,9 @@ export default function DinnerDetailPage({
       }
     } catch (error) {
       console.error("Error fetching dinner data:", error);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   useEffect(() => {
@@ -165,8 +166,9 @@ export default function DinnerDetailPage({
       fetchDinnerAndBottles();
     } catch (error) {
       toastError(error instanceof Error ? error.message : "Erro ao iniciar jantar");
+    } finally {
+      setActionLoading(false);
     }
-    setActionLoading(false);
   }
 
   async function handleEndDinner() {
@@ -184,8 +186,9 @@ export default function DinnerDetailPage({
       fetchDinnerAndBottles();
     } catch (error) {
       toastError(error instanceof Error ? error.message : "Erro ao terminar jantar");
+    } finally {
+      setActionLoading(false);
     }
-    setActionLoading(false);
   }
 
   async function handleDeleteBottle(bottleId: string) {
@@ -249,7 +252,7 @@ export default function DinnerDetailPage({
       {/* Header */}
       <header className="bg-black/20 backdrop-blur-lg border-b border-white/10 sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <button
+          <button type="button"
             onClick={() => router.back()}
             aria-label="Voltar"
             className="text-white/80 hover:text-white text-2xl"
@@ -372,7 +375,7 @@ export default function DinnerDetailPage({
         {/* HOST CONTROL PANEL - Jantar extra: só botão de concluir */}
         {isHost && dinner.is_extra_dinner && dinner.status === "setup" && (
           <div className="bg-gradient-to-br from-amber-500/20 to-orange-500/10 backdrop-blur-lg rounded-3xl p-6 mb-6 border-2 border-amber-400/30 shadow-2xl">
-            <button
+            <button type="button"
               onClick={async () => {
                 if (!confirm("Marcar este jantar extra como concluído?")) return;
                 setActionLoading(true);
@@ -385,8 +388,9 @@ export default function DinnerDetailPage({
                       ? error.message
                       : "Erro ao concluir jantar"
                   );
+                } finally {
+                  setActionLoading(false);
                 }
-                setActionLoading(false);
               }}
               disabled={actionLoading}
               className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-4 rounded-2xl font-bold text-lg shadow-lg hover:shadow-green-500/50 transform hover:scale-[1.02] transition-[colors,transform,box-shadow] duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current/50"
@@ -410,7 +414,7 @@ export default function DinnerDetailPage({
             {/* Buttons based on status */}
             <div className="space-y-3">
               {dinner.status === "setup" && (
-                <button
+                <button type="button"
                   onClick={handleStartDinner}
                   disabled={actionLoading || bottles.length === 0}
                   className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-4 rounded-2xl font-bold text-lg shadow-lg hover:shadow-green-500/50 transform hover:scale-[1.02] transition-[colors,transform,box-shadow] duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current/50"
@@ -424,7 +428,7 @@ export default function DinnerDetailPage({
               )}
 
               {dinner.status === "active" && (
-                <button
+                <button type="button"
                   onClick={handleEndDinner}
                   disabled={actionLoading}
                   className="w-full bg-gradient-to-r from-orange-600 to-red-600 text-white px-6 py-4 rounded-2xl font-bold text-lg shadow-lg hover:shadow-orange-500/50 transform hover:scale-[1.02] transition-[colors,transform,box-shadow] duration-200 active:scale-[0.98] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current/50"
@@ -521,7 +525,7 @@ export default function DinnerDetailPage({
                     {dinner.status === "setup" &&
                       bottle.brought_by === checkIfHost() && (
                         <div className="absolute top-2 right-2 md:top-4 md:right-4 z-10">
-                          <button
+                          <button type="button"
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
@@ -539,7 +543,16 @@ export default function DinnerDetailPage({
                     {bottle.id ? (
                       <div
                         className="block"
+                        role={!isBlindActive ? "button" : undefined}
+                        tabIndex={!isBlindActive ? 0 : undefined}
                         onClick={() => { if (!isBlindActive) router.push(`/bottles/${bottle.id}`); }}
+                        onKeyDown={(e) => {
+                          if (!isBlindActive && (e.key === "Enter" || e.key === " ")) {
+                            e.preventDefault();
+                            router.push(`/bottles/${bottle.id}`);
+                          }
+                        }}
+                        aria-label={!isBlindActive ? `Ver garrafa ${bottle.displayLabel}` : undefined}
                       >
                         <div className={`bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-lg rounded-3xl p-6 border border-white/20 shadow-xl transition-colors ${!isBlindActive ? "hover:border-purple-400/50 hover:shadow-purple-500/20 cursor-pointer" : ""}`}>
                           {/* Position Badge + Rating */}

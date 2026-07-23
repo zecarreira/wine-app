@@ -140,7 +140,7 @@ export default function RevealCeremonyPage({
           <div className="text-white text-xl mb-4">
             O jantar deve ser terminado antes de revelar
           </div>
-          <button
+          <button type="button"
             onClick={() => router.back()}
             className="text-purple-300 hover:text-white underline"
           >
@@ -156,7 +156,7 @@ export default function RevealCeremonyPage({
       {/* Header */}
       <header className="bg-black/20 backdrop-blur-lg border-b border-white/10 sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <button
+          <button type="button"
             onClick={() => router.back()}
             aria-label="Voltar"
             className="text-white/80 hover:text-white text-2xl"
@@ -284,8 +284,11 @@ export default function RevealCeremonyPage({
                     </div>
                     {[...lastRevealed.bottle.ratings]
                       .sort((a, b) => b.score - a.score)
-                      .map((rating, index: number) => (
-                        <div key={index} className="bg-white/5 rounded-xl p-3">
+                      .map((rating) => (
+                        <div
+                          key={`${rating.user.name}-${rating.score}-${rating.tasting_notes ?? ""}`}
+                          className="bg-white/5 rounded-xl p-3"
+                        >
                           <div className="flex justify-between items-center mb-1">
                             <span className="text-white font-semibold">
                               {rating.user.name}
@@ -318,7 +321,7 @@ export default function RevealCeremonyPage({
             </Link>
           </div>
         ) : (
-          <button
+          <button type="button"
             onClick={handleRevealNext}
             disabled={revealing}
             className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white px-8 py-6 rounded-3xl font-bold text-2xl shadow-2xl hover:shadow-purple-500/50 transform hover:scale-[1.02] transition-[colors,transform,box-shadow] duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400/70"

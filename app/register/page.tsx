@@ -61,10 +61,11 @@ export default function RegisterPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Name */}
             <div>
-              <label className="block text-white font-semibold mb-2 text-xs md:text-sm">
+              <label htmlFor="register-name" className="block text-white font-semibold mb-2 text-xs md:text-sm">
                 Nome
               </label>
               <input
+                id="register-name"
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -77,10 +78,11 @@ export default function RegisterPage() {
 
             {/* Email */}
             <div>
-              <label className="block text-white font-semibold mb-2 text-xs md:text-sm">
+              <label htmlFor="register-email" className="block text-white font-semibold mb-2 text-xs md:text-sm">
                 Email
               </label>
               <input
+                id="register-email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -93,10 +95,11 @@ export default function RegisterPage() {
 
             {/* Password */}
             <div>
-              <label className="block text-white font-semibold mb-2 text-xs md:text-sm">
+              <label htmlFor="register-password" className="block text-white font-semibold mb-2 text-xs md:text-sm">
                 Palavra-passe
               </label>
               <input
+                id="register-password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}

@@ -39,8 +39,9 @@ export default function LoginPage() {
       } else {
         setError("Erro de conexão. Tenta novamente.");
       }
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   return (

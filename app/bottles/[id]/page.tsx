@@ -149,6 +149,11 @@ export default function BottleDetailPage({
           body: formData,
         });
 
+        if (!response.ok) {
+          toastError("Erro ao fazer upload da foto");
+          return;
+        }
+
         const data = await response.json();
 
         if (data.success && data.url) {
@@ -248,7 +253,7 @@ export default function BottleDetailPage({
           <p className="text-purple-200 mb-6">
             Este vinho faz parte de uma prova cega ativa. A informação será revelada após a conclusão do jantar.
           </p>
-          <button
+          <button type="button"
             onClick={() => router.back()}
             className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-2xl font-semibold transition-colors"
           >
@@ -266,7 +271,7 @@ export default function BottleDetailPage({
       {/* Header */}
       <header className="bg-black/20 backdrop-blur-lg border-b border-white/10 sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <button
+          <button type="button"
             onClick={() => router.back()}
             aria-label="Voltar"
             className="text-white/80 hover:text-white text-2xl rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
@@ -288,6 +293,19 @@ export default function BottleDetailPage({
               {bottle.photo_url ? (
                 <div
                   onClick={handlePhotoClick}
+                  role={isEditing ? "button" : undefined}
+                  tabIndex={isEditing ? 0 : undefined}
+                  onKeyDown={
+                    isEditing
+                      ? (e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            handlePhotoClick();
+                          }
+                        }
+                      : undefined
+                  }
+                  aria-label={isEditing ? "Mudar foto da garrafa" : undefined}
                   className={`relative w-full aspect-[3/4] rounded-2xl overflow-hidden bg-black/20 ${
                     isEditing
                       ? "cursor-pointer hover:ring-4 hover:ring-purple-400 transition-[box-shadow,outline]"
@@ -325,6 +343,19 @@ export default function BottleDetailPage({
               ) : (
                 <div
                   onClick={handlePhotoClick}
+                  role={isEditing ? "button" : undefined}
+                  tabIndex={isEditing ? 0 : undefined}
+                  onKeyDown={
+                    isEditing
+                      ? (e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            handlePhotoClick();
+                          }
+                        }
+                      : undefined
+                  }
+                  aria-label={isEditing ? "Adicionar foto da garrafa" : undefined}
                   className={`w-full aspect-[3/4] rounded-2xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center border-2 border-white/10 ${
                     isEditing
                       ? "cursor-pointer hover:ring-4 hover:ring-purple-400 transition-[box-shadow,outline]"
@@ -355,12 +386,14 @@ export default function BottleDetailPage({
                 <div className="mb-4">
                   {isEditing ? (
                     <input
+                      id="edit-bottle-name"
                       type="text"
                       value={editForm.name}
                       onChange={(e) =>
                         setEditForm({ ...editForm, name: e.target.value })
                       }
                       autoComplete="off"
+                      aria-label="Nome da garrafa"
                       className="w-full bg-white/10 border-2 border-white/20 rounded-xl px-3 md:px-4 py-2 text-white text-xl md:text-2xl font-bold focus:border-purple-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400/50"
                       placeholder="Nome da garrafa *"
                     />
@@ -377,13 +410,13 @@ export default function BottleDetailPage({
                     <div className="flex flex-wrap gap-2 mb-4">
                       {isEditing ? (
                         <>
-                          <button
+                          <button type="button"
                             onClick={handleSaveEdit}
                             className="flex-1 min-w-[120px] bg-green-600 hover:bg-green-700 text-white px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-semibold transition-colors"
                           >
                             ✅ Guardar
                           </button>
-                          <button
+                          <button type="button"
                             onClick={handleCancelEdit}
                             className="flex-1 min-w-[120px] bg-gray-600 hover:bg-gray-700 text-white px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-semibold transition-colors"
                           >
@@ -392,13 +425,13 @@ export default function BottleDetailPage({
                         </>
                       ) : (
                         <>
-                          <button
+                          <button type="button"
                             onClick={handleEdit}
                             className="flex-1 min-w-[100px] bg-blue-600 hover:bg-blue-700 text-white px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-semibold transition-colors"
                           >
                             ✏️ Editar
                           </button>
-                          <button
+                          <button type="button"
                             onClick={handleDeleteBottle}
                             className="flex-1 min-w-[100px] bg-red-600 hover:bg-red-700 text-white px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-semibold transition-colors"
                           >
@@ -412,10 +445,11 @@ export default function BottleDetailPage({
                 {isEditing ? (
                   <div className="space-y-3 mb-6">
                     <div>
-                      <label className="block text-white/60 text-xs mb-1">
+                      <label htmlFor="edit-bottle-producer" className="block text-white/60 text-xs mb-1">
                         🏛️ Produtor
                       </label>
                       <input
+                        id="edit-bottle-producer"
                         type="text"
                         value={editForm.producer}
                         onChange={(e) =>
@@ -429,10 +463,11 @@ export default function BottleDetailPage({
 
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-white/60 text-xs mb-1">
+                        <label htmlFor="edit-bottle-vintage" className="block text-white/60 text-xs mb-1">
                           📅 Ano
                         </label>
                         <input
+                          id="edit-bottle-vintage"
                           type="number"
                           value={editForm.vintage}
                           onChange={(e) =>
@@ -448,10 +483,11 @@ export default function BottleDetailPage({
                       </div>
 
                       <div>
-                        <label className="block text-white/60 text-xs mb-1">
+                        <label htmlFor="edit-bottle-type" className="block text-white/60 text-xs mb-1">
                           🍷 Tipo
                         </label>
                         <input
+                          id="edit-bottle-type"
                           type="text"
                           value={editForm.wine_type}
                           onChange={(e) =>
@@ -468,10 +504,11 @@ export default function BottleDetailPage({
                     </div>
 
                     <div>
-                      <label className="block text-white/60 text-xs mb-1">
+                      <label htmlFor="edit-bottle-description" className="block text-white/60 text-xs mb-1">
                         📝 Descrição
                       </label>
                       <textarea
+                        id="edit-bottle-description"
                         value={editForm.description}
                         onChange={(e) =>
                           setEditForm({
