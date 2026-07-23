@@ -1,24 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { users } from "@/lib/schema";
-import { eq, desc } from "drizzle-orm";
-import { requireAuth } from "@/lib/middleware";
+import { desc } from "drizzle-orm";
+import { requireAdmin } from "@/lib/middleware";
 
 // GET - List all users (admin only)
 export async function GET(request: NextRequest) {
   try {
-    const auth = await requireAuth(request);
+    const auth = await requireAdmin(request);
     if (auth instanceof NextResponse) return auth;
-
-    const [currentUser] = await db
-      .select({ role: users.role })
-      .from(users)
-      .where(eq(users.id, auth.userId))
-      .limit(1);
-
-    if (!currentUser || currentUser.role !== "admin") {
-      return NextResponse.json({ success: false, error: "Admin access required" }, { status: 403 });
-    }
 
     const allUsers = await db
       .select({ id: users.id, name: users.name, email: users.email, role: users.role, created_at: users.created_at })

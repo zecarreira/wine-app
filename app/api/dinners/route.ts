@@ -1,13 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { dinners, seasons, users } from "@/lib/schema";
-import { eq, desc, and, count } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
-import { requireFounder, authenticate } from "@/lib/middleware";
+import { requireFounder, requireAuth } from "@/lib/middleware";
+import {
+  isSeasonFull,
+  nextDinnerNumber,
+  isExtraDinner as computeIsExtraDinner,
+  organizerAlreadyUsed,
+} from "@/lib/domain";
+import { parseBody } from "@/lib/api/parse-body";
+import { createDinnerSchema } from "@/lib/validations";
 
 export async function GET(request: NextRequest) {
   try {
-    await authenticate(request);
+    const auth = await requireAuth(request);
+    if (auth instanceof NextResponse) return auth;
 
     const { searchParams } = new URL(request.url);
     const seasonId = searchParams.get("seasonId");
@@ -73,12 +82,9 @@ export async function POST(request: NextRequest) {
     const auth = await requireFounder(request);
     if (auth instanceof NextResponse) return auth;
 
-    const body = await request.json();
-    const { name, event_date, location, is_blind, is_extra, organizer_id } = body;
-
-    if (!name || !event_date) {
-      return NextResponse.json({ error: "Name and event date are required" }, { status: 400 });
-    }
+    const parsed = await parseBody(request, createDinnerSchema);
+    if ("error" in parsed) return parsed.error;
+    const { name, event_date, location, is_blind, is_extra, organizer_id } = parsed.data;
 
     if (isNaN(new Date(event_date).getTime())) {
       return NextResponse.json({ error: "Invalid date" }, { status: 400 });
@@ -97,23 +103,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const [{ value: dinnerCount }] = await db
-      .select({ value: count() })
+    const seasonDinners = await db
+      .select({ organizer_id: dinners.organizer_id })
       .from(dinners)
       .where(eq(dinners.season_id, activeSeason.id));
 
-    if (dinnerCount >= 8) {
+    if (isSeasonFull(seasonDinners.length)) {
       return NextResponse.json(
         { error: "Season is full (8 dinners maximum). Please close the current season and create a new one." },
         { status: 400 }
       );
     }
 
-    const dinnerNumber = dinnerCount + 1;
-    const isExtraDinner = is_extra === true || dinnerNumber === 8;
+    const dinnerNumber = nextDinnerNumber(seasonDinners.length);
+    const isExtra = computeIsExtraDinner(dinnerNumber, is_extra === true);
 
     // O jantar extra não requer organizador
-    if (!isExtraDinner) {
+    if (!isExtra) {
       if (!organizer_id) {
         return NextResponse.json({ error: "Organizer is required" }, { status: 400 });
       }
@@ -131,13 +137,11 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Organizer must be a founder or admin" }, { status: 400 });
       }
 
-      const [existingDinner] = await db
-        .select({ id: dinners.id })
-        .from(dinners)
-        .where(and(eq(dinners.season_id, activeSeason.id), eq(dinners.organizer_id, organizer_id)))
-        .limit(1);
+      const existingOrganizerIds = seasonDinners
+        .map((d) => d.organizer_id)
+        .filter((id): id is string => Boolean(id));
 
-      if (existingDinner) {
+      if (organizerAlreadyUsed(existingOrganizerIds, organizer_id)) {
         return NextResponse.json(
           { error: "Este founder já organizou um jantar nesta temporada. Por favor escolhe outro organizador." },
           { status: 400 }
@@ -151,12 +155,12 @@ export async function POST(request: NextRequest) {
         name,
         event_date,
         location: location || null,
-        is_blind: is_blind || false,
+        is_blind: is_blind ?? true,
         created_by: auth.userId,
-        organizer_id,
+        organizer_id: isExtra ? null : organizer_id,
         season_id: activeSeason.id,
         dinner_number_in_season: dinnerNumber,
-        is_extra_dinner: isExtraDinner,
+        is_extra_dinner: isExtra,
       })
       .returning();
 

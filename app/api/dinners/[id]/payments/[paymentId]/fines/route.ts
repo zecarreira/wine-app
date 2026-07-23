@@ -4,8 +4,10 @@ import { users, payments, fines, dinners } from "@/lib/schema";
 import { eq, asc } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { requireAuth } from "@/lib/middleware";
+import { parseBody } from "@/lib/api/parse-body";
+import { fineSchema } from "@/lib/validations";
 
-// POST /api/dinners/:dinnerId/payments/:paymentId/fines - Adicionar multa (Admin only)
+// POST /api/dinners/:dinnerId/payments/:paymentId/fines - Adicionar multa (host OR admin)
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; paymentId: string }> }
@@ -26,15 +28,10 @@ export async function POST(
     if (!isAdmin && !isDinnerHost) {
       return NextResponse.json({ error: "Only admins or the dinner host can add fines" }, { status: 403 });
     }
-    const body = await request.json();
-    const { amount, reason } = body;
 
-    if (!amount || amount <= 0) {
-      return NextResponse.json({ error: "Valid amount is required (must be > 0)" }, { status: 400 });
-    }
-    if (!reason || reason.trim() === "") {
-      return NextResponse.json({ error: "Reason is required" }, { status: 400 });
-    }
+    const parsed = await parseBody(request, fineSchema);
+    if ("error" in parsed) return parsed.error;
+    const { amount, reason } = parsed.data;
 
     const [payment] = await db
       .select({ id: payments.id, user_id: payments.user_id, dinner_id: payments.dinner_id })
@@ -99,6 +96,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string; paymentId: string }> }
 ) {
   try {
+    const auth = await requireAuth(request);
+    if (auth instanceof NextResponse) return auth;
+
     const { paymentId } = await params;
 
     const [payment] = await db.select({ id: payments.id }).from(payments).where(eq(payments.id, paymentId)).limit(1);

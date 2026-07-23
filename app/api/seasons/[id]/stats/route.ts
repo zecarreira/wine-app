@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { seasons, dinners, payments, fines, users } from "@/lib/schema";
 import { eq, inArray, asc } from "drizzle-orm";
+import { requireAuth } from "@/lib/middleware";
 
 // GET /api/seasons/:id/stats - Estatísticas de pagamentos de uma season
 export async function GET(
@@ -9,6 +10,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requireAuth(request);
+    if (auth instanceof NextResponse) return auth;
+
     const { id: seasonId } = await params;
 
     const [season] = await db

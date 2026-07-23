@@ -1,12 +1,13 @@
 # 🍷 Jantar do Vinho - Wine Rating App
 
-Uma aplicação sofisticada para jantares de prova de vinhos às cegas, construída com Next.js 16, React 19 e Supabase. Organiza jantares de vinho com amigos, classifica vinhos às cegas e descobre os vencedores numa cerimónia interativa de revelação.
+Uma aplicação sofisticada para jantares de prova de vinhos às cegas, construída com Next.js 16, React 19, Neon PostgreSQL e Drizzle ORM. Organiza jantares de vinho com amigos, classifica vinhos às cegas e descobre os vencedores numa cerimónia interativa de revelação.
 
-![Next.js](https://img.shields.io/badge/Next.js-16.0-black?style=flat-square&logo=next.js)
-![React](https://img.shields.io/badge/React-19.2-blue?style=flat-square&logo=react)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?style=flat-square&logo=typescript)
-![Tailwind CSS](https://img.shields.io/badge/Tailwind-4.0-38B2AC?style=flat-square&logo=tailwind-css)
-![Supabase](https://img.shields.io/badge/Supabase-Database-3ECF8E?style=flat-square&logo=supabase)
+![Next.js](https://img.shields.io/badge/Next.js-16-black?style=flat-square&logo=next.js)
+![React](https://img.shields.io/badge/React-19-blue?style=flat-square&logo=react)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=flat-square&logo=typescript)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind-4-38B2AC?style=flat-square&logo=tailwind-css)
+![Neon](https://img.shields.io/badge/Neon-PostgreSQL-00E699?style=flat-square)
+![Drizzle](https://img.shields.io/badge/Drizzle-ORM-C5F74F?style=flat-square)
 
 ## ✨ Funcionalidades Principais
 
@@ -32,7 +33,7 @@ Uma aplicação sofisticada para jantares de prova de vinhos às cegas, constru�
 
 ### 👥 **Sistema de Temporadas**
 
-- Organiza jantares em temporadas de 7 eventos
+- Organiza jantares em temporadas de 8 jantares (7 regulares + 1 extra)
 - Cada fundador organiza 1 jantar por temporada
 - Sistema de rotação automática
 - Jantares extra para celebrar o fim da temporada
@@ -75,7 +76,7 @@ Uma aplicação sofisticada para jantares de prova de vinhos às cegas, constru�
 - Lightbox interativo
 - Partilha de memórias com os participantes
 
-### � **Design Mobile-First**
+### 📱 **Design Mobile-First**
 
 - 100% otimizado para dispositivos móveis
 - Layout responsivo em todas as páginas
@@ -95,7 +96,8 @@ Uma aplicação sofisticada para jantares de prova de vinhos às cegas, constru�
 
 - Node.js 20+
 - npm ou pnpm
-- Conta Supabase
+- Conta [Neon](https://neon.tech) (PostgreSQL)
+- Bucket Cloudflare R2 (imagens)
 
 ### Instalação
 
@@ -121,10 +123,13 @@ cp .env.example .env.local
 Edita `.env.local` e adiciona as tuas credenciais:
 
 ```env
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
-JWT_SECRET=your_jwt_secret_min_32_characters
+DATABASE_URL=
+JWT_SECRET=
+R2_ENDPOINT=
+R2_ACCESS_KEY_ID=
+R2_SECRET_ACCESS_KEY=
+R2_BUCKET_NAME=
+R2_PUBLIC_URL=
 ```
 
 Gera um JWT secret seguro:
@@ -133,27 +138,18 @@ Gera um JWT secret seguro:
 openssl rand -base64 32
 ```
 
-4. **Configura a base de dados Supabase**
+4. **Base de dados (Drizzle + Neon)**
 
-Executa os scripts SQL na pasta `migrations/` pela ordem:
+O schema está em `lib/schema.ts`. Para gerar migrações e inspecionar a BD:
 
-- `create_payments_system.sql` - Sistema de pagamentos e multas
-- `create_profile_photos_bucket.sql` - Bucket para fotos de perfil
-- `add_organizer_to_dinners.sql` - Sistema de organizadores
-- `add_profile_photo_url.sql` - URLs de fotos de perfil
-- `add_fines_update_delete_policies.sql` - Políticas de multas
+```bash
+npm run db:generate   # drizzle-kit generate
+npm run db:studio     # drizzle-kit studio
+```
 
-Ou executa todos de uma vez no SQL Editor do Supabase.
+Aplica migrações no teu ambiente de desenvolvimento conforme o teu fluxo (não corras geradores contra produção sem cuidado).
 
-5. **Configura o Storage no Supabase**
-
-Cria os seguintes buckets públicos:
-
-- `bottle-photos` - Para fotos de garrafas
-- `dinner-photos` - Para fotos de jantares
-- `profile-photos` - Para fotos de perfil
-
-6. **Executa o servidor de desenvolvimento**
+5. **Executa o servidor de desenvolvimento**
 
 ```bash
 npm run dev
@@ -198,7 +194,7 @@ wine-rating-app/
 │   │   │       └── stats/        # Estatísticas da temporada
 │   │   ├── stats/
 │   │   │   └── all-seasons/      # Estatísticas globais
-│   │   └── upload/               # Upload de imagens
+│   │   └── upload/               # Upload de imagens (R2)
 │   │
 │   ├── login/                    # Página de login
 │   ├── register/                 # Página de registo
@@ -215,7 +211,7 @@ wine-rating-app/
 │   │       ├── rankings/         # Rankings das garrafas
 │   │       └── reveal/           # Cerimónia de revelação
 │   │
-│   ├── bottles/                  # Gestão de garrafas
+│   ├── bottles/                  # Catálogo e detalhes de garrafas
 │   │   └── [id]/
 │   │       ├── page.tsx          # Detalhes da garrafa
 │   │       └── rate/             # Classificar garrafa
@@ -229,39 +225,31 @@ wine-rating-app/
 │   └── mandamentos/              # Mandamentos do Vinho
 │
 ├── components/                   # Componentes React reutilizáveis
-│   ├── Header.tsx                # Cabeçalho com navegação
-│   ├── Button.tsx                # Componente de botão
-│   ├── Input.tsx                 # Componente de input
-│   ├── Card.tsx                  # Componente de card
-│   ├── Badge.tsx                 # Componente de badge
-│   ├── LoadingSpinner.tsx        # Spinner de loading
-│   ├── Skeletons.tsx             # Skeleton loaders
-│   ├── Textarea.tsx              # Componente de textarea
-│   ├── PaymentsSection.tsx       # Secção de pagamentos
-│   ├── ToastProvider.tsx         # Provider de notificações
-│   └── ReactQueryProvider.tsx    # Provider do React Query
+│   ├── Header.tsx
+│   ├── BottleCard.tsx
+│   ├── PaymentsSection.tsx
+│   ├── payments/                 # Subcomponentes de pagamentos
+│   │   ├── FineModal.tsx
+│   │   ├── PaymentCard.tsx
+│   │   ├── PaymentStatsStrip.tsx
+│   │   └── types.ts
+│   └── ...
 │
 ├── lib/                          # Utilitários e configuração
-│   ├── db.ts                     # Cliente Supabase
+│   ├── db.ts                     # Cliente Drizzle + Neon
+│   ├── schema.ts                 # Schema da base de dados
 │   ├── auth.ts                   # Lógica de autenticação JWT
-│   ├── auth-client.ts            # Auth client-side
-│   ├── middleware.ts             # Middleware de autenticação
+│   ├── auth-client.ts            # Auth client-side (localStorage Bearer)
+│   ├── middleware.ts             # Middleware de autenticação API
 │   ├── validations.ts            # Schemas de validação Zod
 │   ├── env.ts                    # Variáveis de ambiente
+│   ├── domain/                   # Regras de domínio + testes
 │   └── hooks/
-│       └── useApi.ts             # Custom hook para chamadas API
+│       ├── useApi.ts             # React Query hooks
+│       └── usePayments.ts        # Hook de pagamentos
 │
 ├── types/                        # Definições TypeScript
-│   └── season.ts                 # Tipos do sistema de temporadas
-│
-├── migrations/                   # Scripts SQL do Supabase
-│   ├── create_payments_system.sql
-│   ├── create_profile_photos_bucket.sql
-│   ├── add_organizer_to_dinners.sql
-│   ├── add_profile_photo_url.sql
-│   ├── add_fines_update_delete_policies.sql
-│   └── MIGRATION_GUIDE.md
-│
+├── drizzle.config.ts             # Config Drizzle Kit
 └── public/                       # Assets estáticos
 ```
 
@@ -279,24 +267,22 @@ wine-rating-app/
 
 - Visita `/login`
 - Usa email e password
+- O token JWT é guardado em `localStorage` e enviado como `Bearer` nas APIs
 - O token JWT é válido por 7 dias
 
 ### 2. Sistema de Temporadas
 
-As temporadas organizam os jantares em períodos (ex: "Temporada 2024"):
+As temporadas organizam os jantares em períodos (máx. 8 jantares: 7 regulares + 1 extra):
 
 **Criar Temporada** (Admin/Founder)
 
-- Acede a `/seasons`
-- Define nome, datas de início e fim
-- Define valor da quota
-- Adiciona membros à temporada
+- Acede a partir da home quando não há temporada ativa
+- Jantares criados são associados à temporada ativa
 
 **Gerir Temporada Ativa**
 
 - Apenas uma temporada pode estar ativa de cada vez
-- Jantares criados são automaticamente associados à temporada ativa
-- Controla o máximo de jantares que cada membro pode organizar
+- Controla quantos jantares cada membro pode organizar
 
 ### 3. Gerir Jantares
 
@@ -332,7 +318,7 @@ As temporadas organizam os jantares em períodos (ex: "Temporada 2024"):
 **Modo Prova Cega**
 
 - As informações das garrafas são ocultadas
-- Apenas vês o número da posição
+- Apenas vês a etiqueta (A, B, C...)
 - Classifica baseado apenas na prova
 
 ### 5. Cerimónia de Revelação
@@ -347,80 +333,53 @@ As temporadas organizam os jantares em períodos (ex: "Temporada 2024"):
 **Ver Rankings**
 
 - Acede a `/dinners/[id]/rankings`
-- Vê classificações médias
-- Vê distribuição de notas
+- Vê classificações médias e critérios de desempate
 - Identifica os vinhos mais bem classificados
 
 ### 6. Fotos do Jantar
 
-**Adicionar Fotos**
-
 - Acede a `/dinners/[id]/photos`
-- Faz upload de fotos do jantar
+- Faz upload de fotos (Cloudflare R2)
 - Partilha memórias com o grupo
 
 ### 7. Sistema de Pagamentos e Multas
 
 **Gerir Pagamentos** (Admin)
 
-- Acede a `/seasons/[id]/payments`
+- Secção de pagamentos no detalhe do jantar
 - Marca quotas como pagas
-- Adiciona multas a membros
-- Vê estatísticas de pagamentos da temporada
-
-**Tipos de Multas**
-
-- Valor fixo ou percentagem da quota
-- Descrição obrigatória
-- Sistema de aprovação por admins
+- Adiciona / edita / remove multas
+- Vê estatísticas de pagamentos
 
 ### 8. Mandamentos do Vinho
-
-**Consultar Regras**
 
 - Acede a `/mandamentos` a partir da página inicial
 - 13 mandamentos fundamentais
 - 4 penalizações por violações
-- Mantém o espírito do grupo!
 
 ### 9. Estatísticas
 
-**Painel de Stats**
-
 - Acede a `/stats`
 - Vê estatísticas de todas as temporadas
-- Consulta médias pessoais
-- Compara com outros membros
-- Identifica vinhos top-rated
+- Consulta totais de pagamentos e multas
 
-### 10. Perfil
+### 10. Perfil e Admin
 
-**Gerir Perfil**
-
-- Acede a `/profile`
-- Atualiza foto de perfil
-- Vê histórico de classificações
-- Acompanha estatísticas pessoais
-
-### 11. Painel Admin
-
-**Funcionalidades Admin**
-
-- Acede a `/admin` (apenas admins)
-- Gere utilizadores
-- Define roles (guest, founder, admin)
-- Monitora atividade da plataforma
+- `/profile` — foto, histórico e dados pessoais
+- `/admin` — gestão de utilizadores e roles (apenas admins)
 
 ## 🛠️ Stack Tecnológica
 
 - **Framework**: Next.js 16 (App Router)
 - **Frontend**: React 19, TypeScript 5
 - **Styling**: Tailwind CSS 4
-- **Base de Dados**: Supabase (PostgreSQL)
-- **Autenticação**: JWT com bcrypt
+- **Base de Dados**: Neon PostgreSQL + Drizzle ORM
+- **Storage**: Cloudflare R2 (S3-compatible)
+- **Autenticação**: JWT (Bearer em localStorage) + bcrypt
 - **Data Fetching**: TanStack React Query
 - **Validação**: Zod
 - **Formulários**: React Hook Form
+- **Testes**: Vitest
 - **Deploy**: Vercel
 
 ## 📦 Dependências Principais
@@ -428,14 +387,16 @@ As temporadas organizam os jantares em períodos (ex: "Temporada 2024"):
 ```json
 {
   "dependencies": {
-    "@supabase/supabase-js": "^2.78.0",
-    "@tanstack/react-query": "latest",
+    "@neondatabase/serverless": "^1.0.2",
+    "drizzle-orm": "^0.45.1",
+    "@aws-sdk/client-s3": "^3.990.0",
+    "@tanstack/react-query": "^5.90.6",
     "bcryptjs": "^3.0.2",
     "jsonwebtoken": "^9.0.2",
-    "next": "16.0.1",
+    "next": "^16.2.6",
     "react": "19.2.0",
-    "react-hook-form": "latest",
-    "zod": "latest"
+    "react-hook-form": "^7.66.0",
+    "zod": "^4.1.12"
   }
 }
 ```
@@ -446,9 +407,9 @@ As temporadas organizam os jantares em períodos (ex: "Temporada 2024"):
 - ✅ Hashing de passwords com Bcrypt
 - ✅ Controlo de acesso baseado em roles (RBAC)
 - ✅ Validação de variáveis de ambiente
-- ✅ Rotas API protegidas
-- ✅ Prevenção de SQL injection via Supabase
-- ✅ CORS configurado para acesso em rede local
+- ✅ Rotas API protegidas com `requireAuth`
+- ✅ Queries parametrizadas via Drizzle ORM
+- ✅ Constraints únicas em ratings e payments
 
 ## 🎨 Destaques UI/UX
 
@@ -466,20 +427,27 @@ As temporadas organizam os jantares em períodos (ex: "Temporada 2024"):
 ### Scripts Disponíveis
 
 ```bash
-npm run dev      # Iniciar servidor de desenvolvimento
-npm run build    # Build para produção
-npm run start    # Iniciar servidor de produção
-npm run lint     # Executar ESLint
+npm run dev          # Servidor de desenvolvimento
+npm run build        # Build para produção
+npm run start        # Servidor de produção
+npm run lint         # ESLint
+npm test             # Vitest (testes unitários de domínio)
+npm run test:watch   # Vitest em modo watch
+npm run db:generate  # Gerar migrações Drizzle
+npm run db:studio    # Abrir Drizzle Studio
 ```
 
 ### Variáveis de Ambiente
 
-| Variável                        | Descrição                              | Obrigatória |
-| ------------------------------- | -------------------------------------- | ----------- |
-| `NEXT_PUBLIC_SUPABASE_URL`      | URL do teu projeto Supabase            | Sim         |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Chave anónima do Supabase              | Sim         |
-| `SUPABASE_SERVICE_ROLE_KEY`     | Chave de service role do Supabase      | Sim         |
-| `JWT_SECRET`                    | Secret para tokens JWT (mín. 32 chars) | Sim         |
+| Variável                | Descrição                                      | Obrigatória |
+| ----------------------- | ---------------------------------------------- | ----------- |
+| `DATABASE_URL`          | Connection string Neon PostgreSQL              | Sim         |
+| `JWT_SECRET`            | Secret para tokens JWT (mín. 32 chars)         | Sim         |
+| `R2_ENDPOINT`           | Endpoint Cloudflare R2                         | Sim         |
+| `R2_ACCESS_KEY_ID`      | Access key R2                                  | Sim         |
+| `R2_SECRET_ACCESS_KEY`  | Secret key R2                                  | Sim         |
+| `R2_BUCKET_NAME`        | Nome do bucket R2                              | Sim         |
+| `R2_PUBLIC_URL`         | URL pública do bucket (imagens)                | Sim         |
 
 ## 📝 Principais API Endpoints
 
@@ -536,7 +504,7 @@ npm run lint     # Executar ESLint
 
 ### 📸 Upload
 
-- `POST /api/upload` - Upload de imagens (garrafas, jantares, perfis)
+- `POST /api/upload` - Upload de imagens para Cloudflare R2
 
 ---
 
@@ -545,7 +513,8 @@ npm run lint     # Executar ESLint
 ### Pré-requisitos
 
 - Conta na [Vercel](https://vercel.com)
-- Projeto Supabase configurado
+- Base de dados Neon configurada
+- Bucket Cloudflare R2 configurado
 - Repositório Git (GitHub, GitLab ou Bitbucket)
 
 ### Passos para Deploy
@@ -570,56 +539,23 @@ npm run lint     # Executar ESLint
    Na secção "Environment Variables", adiciona:
 
    ```env
-   NEXT_PUBLIC_SUPABASE_URL=https://seuprojetoid.supabase.co
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-   SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+   DATABASE_URL=postgresql://...
    JWT_SECRET=seu_secret_com_pelo_menos_32_caracteres
+   R2_ENDPOINT=https://<account-id>.r2.cloudflarestorage.com
+   R2_ACCESS_KEY_ID=...
+   R2_SECRET_ACCESS_KEY=...
+   R2_BUCKET_NAME=...
+   R2_PUBLIC_URL=https://...
    ```
 
 4. **Deploy!**
    - Clica em "Deploy"
-   - Aguarda alguns minutos enquanto a Vercel faz o build
-   - Recebe o URL do teu site: `https://wine-app.vercel.app`
-
-### Configuração Pós-Deploy
-
-1. **Atualiza os CORS no Supabase**
-
-   - Acede ao Dashboard do Supabase
-   - Settings → API → CORS
-   - Adiciona o domínio Vercel: `https://wine-app.vercel.app`
-
-2. **Testa o Site**
-
-   - Acede ao URL do Vercel
-   - Faz login/registo
-   - Verifica que tudo funciona
-
-3. **Domínio Personalizado (Opcional)**
-   - Na Vercel, vai a Settings → Domains
-   - Adiciona o teu domínio personalizado
-   - Segue as instruções para configurar DNS
+   - Aguarda o build
+   - Recebe o URL do teu site
 
 ### Deploy Automático
 
-A Vercel faz deploy automático quando fazes push para o branch principal:
-
-```bash
-git add .
-git commit -m "Nova funcionalidade"
-git push origin main
-```
-
-O site é automaticamente atualizado em produção! 🎉
-
-### Variáveis de Ambiente para Produção
-
-⚠️ **Importante**: Certifica-te que todas as 4 variáveis estão configuradas:
-
-- ✅ `NEXT_PUBLIC_SUPABASE_URL`
-- ✅ `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- ✅ `SUPABASE_SERVICE_ROLE_KEY`
-- ✅ `JWT_SECRET`
+A Vercel faz deploy automático quando fazes push para o branch principal.
 
 ---
 

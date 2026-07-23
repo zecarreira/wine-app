@@ -5,6 +5,7 @@ import { use } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import { useToast } from "@/components/ToastProvider";
 
 export default function AddBottlePage({
   params,
@@ -13,6 +14,7 @@ export default function AddBottlePage({
 }) {
   const { id } = use(params);
   const router = useRouter();
+  const { error: toastError } = useToast();
   const [name, setName] = useState("");
   const [producer, setProducer] = useState("");
   const [vintage, setVintage] = useState("");
@@ -81,7 +83,7 @@ export default function AddBottlePage({
       const token = localStorage.getItem("token");
 
       if (!token) {
-        alert("Por favor faz login primeiro");
+        toastError("Por favor faz login primeiro");
         router.push("/login");
         return;
       }

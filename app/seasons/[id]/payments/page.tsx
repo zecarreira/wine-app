@@ -57,7 +57,10 @@ export default function SeasonPaymentStatsPage({
   async function fetchSeasonStats() {
     try {
       setLoading(true);
-      const response = await fetch(`/api/seasons/${id}/stats`);
+      const token = localStorage.getItem("token");
+      const response = await fetch(`/api/seasons/${id}/stats`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
       const data = await response.json();
 
       if (data.success) {

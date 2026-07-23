@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { users } from "@/lib/schema";
 import { eq, inArray } from "drizzle-orm";
-import { requireAuth } from "@/lib/middleware";
+import { requireAdmin } from "@/lib/middleware";
+import { parseBody } from "@/lib/api/parse-body";
+import { adminRoleSchema } from "@/lib/validations";
 
 // PATCH - Update user role (admin only)
 export async function PATCH(
@@ -12,25 +14,12 @@ export async function PATCH(
   try {
     const { id: targetUserId } = await params;
 
-    const auth = await requireAuth(request);
+    const auth = await requireAdmin(request);
     if (auth instanceof NextResponse) return auth;
 
-    const [currentUser] = await db
-      .select({ role: users.role })
-      .from(users)
-      .where(eq(users.id, auth.userId))
-      .limit(1);
-
-    if (!currentUser || currentUser.role !== "admin") {
-      return NextResponse.json({ success: false, error: "Admin access required" }, { status: 403 });
-    }
-
-    const body = await request.json();
-    const { role } = body;
-
-    if (!role || !["guest", "founder"].includes(role)) {
-      return NextResponse.json({ success: false, error: "Invalid role" }, { status: 400 });
-    }
+    const parsed = await parseBody(request, adminRoleSchema);
+    if ("error" in parsed) return parsed.error;
+    const { role } = parsed.data;
 
     // If promoting to founder, check limit
     if (role === "founder") {

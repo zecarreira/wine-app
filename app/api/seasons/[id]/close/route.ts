@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { seasons, dinners, users } from "@/lib/schema";
+import { seasons, dinners } from "@/lib/schema";
 import { eq, count } from "drizzle-orm";
-import { authenticate } from "@/lib/middleware";
+import { requireFounder } from "@/lib/middleware";
+import { canCloseSeason, closeSeasonError } from "@/lib/domain";
 
 // POST /api/seasons/[id]/close - Close a season (founder/admin only)
 export async function POST(
@@ -10,25 +11,10 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const auth = await authenticate(request);
-
+    const auth = await requireFounder(request);
     if (auth instanceof NextResponse) return auth;
-    if (!auth) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const { id } = await params;
-
-    const [user] = await db
-      .select({ role: users.role })
-      .from(users)
-      .where(eq(users.id, auth.userId))
-      .limit(1);
-
-    if (!user || (user.role !== "founder" && user.role !== "admin")) {
-      return NextResponse.json(
-        { error: "Only founders and admins can close seasons" },
-        { status: 403 }
-      );
-    }
 
     const [season] = await db
       .select()
@@ -52,11 +38,9 @@ export async function POST(
       .from(dinners)
       .where(eq(dinners.season_id, id));
 
-    if (dinnerCount !== 8) {
+    if (!canCloseSeason(dinnerCount)) {
       return NextResponse.json(
-        {
-          error: `Cannot close season. Season must have exactly 8 dinners (currently has ${dinnerCount})`,
-        },
+        { error: closeSeasonError(dinnerCount) },
         { status: 400 }
       );
     }

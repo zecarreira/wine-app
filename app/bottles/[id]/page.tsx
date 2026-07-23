@@ -5,6 +5,7 @@ import { use } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/components/ToastProvider";
 
 interface Rating {
   id: string;
@@ -58,6 +59,7 @@ export default function BottleDetailPage({
 }) {
   const { id } = use(params);
   const router = useRouter();
+  const { success, error: toastError } = useToast();
   const [bottle, setBottle] = useState<BottleWithDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -87,7 +89,10 @@ export default function BottleDetailPage({
 
   async function fetchBottle() {
     try {
-      const response = await fetch(`/api/bottles/${id}`);
+      const token = localStorage.getItem("token");
+      const response = await fetch(`/api/bottles/${id}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
       const data = await response.json();
 
       if (data.success) {
@@ -142,7 +147,7 @@ export default function BottleDetailPage({
 
       // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
-        alert("Foto muito grande! Máximo 5MB");
+        toastError("Foto muito grande! Máximo 5MB");
         return;
       }
 
@@ -181,16 +186,16 @@ export default function BottleDetailPage({
 
           const updateData = await updateResponse.json();
           if (updateData.success) {
-            alert("✅ Foto atualizada com sucesso!");
+            success("Foto atualizada com sucesso!");
             fetchBottle(); // Refresh to show new photo
           } else {
-            alert(updateData.error || "Erro ao atualizar foto");
+            toastError(updateData.error || "Erro ao atualizar foto");
           }
         } else {
-          alert(data.error || "Erro ao fazer upload da foto");
+          toastError(data.error || "Erro ao fazer upload da foto");
         }
       } catch (_error) {
-        alert("Erro ao fazer upload da foto");
+        toastError("Erro ao fazer upload da foto");
       } finally {
         setUploadingPhoto(false);
       }
@@ -201,7 +206,7 @@ export default function BottleDetailPage({
 
   async function handleSaveEdit() {
     if (!editForm.name.trim()) {
-      alert("Nome da garrafa é obrigatório");
+      toastError("Nome da garrafa é obrigatório");
       return;
     }
 
@@ -224,14 +229,14 @@ export default function BottleDetailPage({
 
       const data = await response.json();
       if (data.success) {
-        alert("✅ Garrafa atualizada com sucesso!");
+        success("Garrafa atualizada com sucesso!");
         setIsEditing(false);
         fetchBottle(); // Refresh data
       } else {
-        alert(data.error || "Erro ao atualizar garrafa");
+        toastError(data.error || "Erro ao atualizar garrafa");
       }
     } catch (error) {
-      alert("Erro ao atualizar garrafa");
+      toastError("Erro ao atualizar garrafa");
     }
   }
 
@@ -249,13 +254,13 @@ export default function BottleDetailPage({
 
       const data = await response.json();
       if (data.success) {
-        alert("✅ Garrafa apagada com sucesso!");
+        success("Garrafa apagada com sucesso!");
         router.push(`/dinners/${bottle?.dinner.id}`);
       } else {
-        alert(data.error || "Erro ao apagar garrafa");
+        toastError(data.error || "Erro ao apagar garrafa");
       }
     } catch (error) {
-      alert("Erro ao apagar garrafa");
+      toastError("Erro ao apagar garrafa");
     }
   }
 

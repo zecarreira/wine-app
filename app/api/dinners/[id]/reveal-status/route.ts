@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { dinners, bottles } from "@/lib/schema";
 import { eq, count } from "drizzle-orm";
+import { requireAuth } from "@/lib/middleware";
 
 // GET /api/dinners/:id/reveal-status - Get current reveal state
 export async function GET(
@@ -9,6 +10,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requireAuth(request);
+    if (auth instanceof NextResponse) return auth;
+
     const { id: dinnerId } = await params;
 
     const [dinner] = await db.select().from(dinners).where(eq(dinners.id, dinnerId)).limit(1);

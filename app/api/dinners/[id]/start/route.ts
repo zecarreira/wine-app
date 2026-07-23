@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { dinners, bottles } from "@/lib/schema";
 import { eq, count } from "drizzle-orm";
 import { requireAuth } from "@/lib/middleware";
+import { canStartDinner, isDinnerHost } from "@/lib/domain";
 
 // POST /api/dinners/:id/start - Start blind tasting
 export async function POST(
@@ -21,12 +22,8 @@ export async function POST(
       return NextResponse.json({ error: "Dinner not found" }, { status: 404 });
     }
 
-    if (dinner.host_id !== auth.userId && dinner.created_by !== auth.userId) {
+    if (!isDinnerHost(auth.userId, { host_id: dinner.host_id, created_by: dinner.created_by }, auth.userRole === "admin")) {
       return NextResponse.json({ error: "Only the host can start this dinner" }, { status: 403 });
-    }
-
-    if (dinner.status !== "setup") {
-      return NextResponse.json({ error: `Dinner is already ${dinner.status}` }, { status: 400 });
     }
 
     const [{ value: bottleCount }] = await db
@@ -34,8 +31,9 @@ export async function POST(
       .from(bottles)
       .where(eq(bottles.dinner_id, dinnerId));
 
-    if (bottleCount === 0) {
-      return NextResponse.json({ error: "Cannot start dinner without bottles" }, { status: 400 });
+    const startCheck = canStartDinner(dinner.status, bottleCount);
+    if (!startCheck.ok) {
+      return NextResponse.json({ error: startCheck.error }, { status: 400 });
     }
 
     const [updatedDinner] = await db

@@ -12,6 +12,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requireAuth(request);
+    if (auth instanceof NextResponse) return auth;
+
     const { id: bottleId } = await params;
 
     if (!UUID_REGEX.test(bottleId)) {

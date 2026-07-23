@@ -4,6 +4,8 @@ import { bottles, ratings, users } from "@/lib/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { requireAuth } from "@/lib/middleware";
+import { parseBody } from "@/lib/api/parse-body";
+import { ratingSchema } from "@/lib/validations";
 
 // GET /api/bottles/:id/ratings - Get all ratings for a bottle
 export async function GET(
@@ -61,15 +63,9 @@ export async function POST(
     if (auth instanceof NextResponse) return auth;
 
     const { id: bottleId } = await params;
-    const body = await request.json();
-    const { score, tasting_notes } = body;
-
-    if (score === undefined || score === null) {
-      return NextResponse.json({ error: "Score is required" }, { status: 400 });
-    }
-    if (score < 0 || score > 10) {
-      return NextResponse.json({ error: "Score must be between 0 and 10" }, { status: 400 });
-    }
+    const parsed = await parseBody(request, ratingSchema);
+    if ("error" in parsed) return parsed.error;
+    const { score, tasting_notes } = parsed.data;
 
     const [bottle] = await db.select({ id: bottles.id }).from(bottles).where(eq(bottles.id, bottleId)).limit(1);
     if (!bottle) {

@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { LoadingSpinner } from "@/components";
+import { apiFetch } from "@/lib/api-client";
 
 interface SeasonStats {
   id: string;
@@ -32,6 +34,7 @@ interface StatsData {
 }
 
 export default function AllStatsPage() {
+  const router = useRouter();
   const [stats, setStats] = useState<StatsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -44,25 +47,7 @@ export default function AllStatsPage() {
     try {
       setLoading(true);
       setError("");
-
-      const token = localStorage.getItem("token");
-      if (!token) {
-        setError("Não autorizado");
-        setLoading(false);
-        return;
-      }
-
-      const response = await fetch("/api/stats/all-seasons", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Erro ao carregar estatísticas");
-      }
-
-      const data = await response.json();
+      const data = await apiFetch<StatsData>("/api/stats/all-seasons");
       setStats(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro desconhecido");
@@ -108,7 +93,7 @@ export default function AllStatsPage() {
         <header className="bg-black/20 backdrop-blur-lg border-b border-white/10 sticky top-0 z-10 px-3 md:px-8 py-4 mb-4 md:mb-6">
           <div className="container mx-auto flex items-center justify-between">
             <button
-              onClick={() => window.history.back()}
+              onClick={() => router.back()}
               className="text-white/80 hover:text-white text-2xl"
               aria-label="Voltar"
             >

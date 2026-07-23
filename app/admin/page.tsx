@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/components/ToastProvider";
 
 interface User {
   id: string;
@@ -14,6 +15,7 @@ interface User {
 
 export default function AdminPanelPage() {
   const router = useRouter();
+  const { success, error: toastError } = useToast();
   const [users, setUsers] = useState<User[]>([]);
   const [founderCount, setFounderCount] = useState(0);
   const [maxFounders] = useState(7);
@@ -31,7 +33,7 @@ export default function AdminPanelPage() {
       const currentUser = JSON.parse(userStr);
 
       if (currentUser.role !== "admin") {
-        alert("Acesso de admin necessário");
+        toastError("Acesso de admin necessário");
         router.push("/dinners");
         return;
       }
@@ -49,7 +51,7 @@ export default function AdminPanelPage() {
         setUsers(data.users);
         setFounderCount(data.founderCount);
       } else {
-        alert("Erro ao carregar utilizadores");
+        toastError("Erro ao carregar utilizadores");
       }
     } catch {
       console.error("Error loading users");
@@ -82,12 +84,12 @@ export default function AdminPanelPage() {
 
       if (data.success) {
         await checkAdminAndFetchUsers();
-        alert(`✅ Utilizador promovido a ${roleText}!`);
+        success(`Utilizador promovido a ${roleText}!`);
       } else {
-        alert(data.error || "Erro ao atualizar role");
+        toastError(data.error || "Erro ao atualizar role");
       }
     } catch {
-      alert("Erro ao atualizar role");
+      toastError("Erro ao atualizar role");
     } finally {
       setUpdating(null);
     }

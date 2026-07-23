@@ -43,3 +43,6 @@ next-env.d.ts
 
 # git worktrees
 .worktrees
+*.patch
+*.tmp
+page_hist_id.tsx.tmp

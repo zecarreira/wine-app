@@ -1,6 +1,6 @@
 # Project Context — Wine Rating App
 
-Last updated: 2026-02-16
+Last updated: 2026-07-23
 
 ---
 
@@ -104,6 +104,12 @@ Untracked:
 
 ---
 
+
+### Schema (F3)
+- Unique on ratings: `(bottle_id, user_id)` → `ratings_bottle_user_unique`
+- Unique on payments: `(dinner_id, user_id)` → `payments_dinner_user_unique`
+- Scripts: `db:generate`, `db:studio` (do not run generate against production casually)
+
 ## Pending Work — Audit Findings
 
 Full audit: `docs/audit-2026-02-16.md`
@@ -111,9 +117,9 @@ Full audit: `docs/audit-2026-02-16.md`
 ### Phase 1 — Quick wins (< 1h each)
 - [ ] #17 Fix `globals.css` body font override (remove `font-family` or use `var(--font-geist-sans)`)
 - [ ] #27 Remove `suppressHydrationWarning` from `<body>` in `app/layout.tsx:30`
-- [ ] #37 Replace `window.history.back()` → `router.back()` in `rankings/page.tsx:78` and `dinners/[id]/page.tsx:296`
-- [ ] #38 Translate "Tiebreaker rules:" → "Critérios de desempate:" in `rankings/page.tsx:193`
-- [ ] #32 Fix placeholder email in `app/login/page.tsx:71` (`josecarreira@gmail.com` → `nome@exemplo.com`)
+- [x] #37 Partial: `router.back()` in `app/stats/page.tsx` (check rankings/dinner pages if still needed)
+- [x] #38 "Critérios de desempate:" already in rankings UI
+- [x] #32 Login placeholder is `nome@exemplo.com`
 - [ ] #6  Add `aria-label` + `p-2` padding to nav buttons in `components/Header.tsx` and `rankings/page.tsx:77–86`
 - [ ] #4  Add `id`/`htmlFor` to `Input` component (`components/Input.tsx:14–27`)
 
@@ -130,10 +136,10 @@ Full audit: `docs/audit-2026-02-16.md`
 - [ ] #3  Replace barrel imports with direct imports in `app/bottles/page.tsx:6`, `app/dinners/[id]/page.tsx:6`
 
 ### Phase 3 — Architectural refactors
-- [ ] #8/#9 Split `PaymentsSection` and `Header` into explicit variants (remove boolean props)
+- [x] #8 PaymentsSection split into hook + subcomponents (Header still pending)
 - [ ] #19  Extract `ProfileProvider` + subcomponents from `ProfilePage` (470-line monolith)
-- [ ] #20  Extract `<BottleCard variant="grid|list">` (deduplicate grid/list JSX in `bottles/page.tsx`)
-- [ ] #21  Extract `usePayments()` hook + `<FineModal>` from `PaymentsSection`
+- [x] #20 Extract `<BottleCard variant="grid|list">`
+- [x] #21 Extract `usePayments()` + FineModal / PaymentCard / PaymentStatsStrip
 - [ ] #10  Add `GET /api/dinners/[id]` endpoint; fix `useDinner` hook (currently fetches all dinners and filters client-side)
 - [ ] #14  Use `queryClient.invalidateQueries` instead of manual `fetchData()` after mutations
 

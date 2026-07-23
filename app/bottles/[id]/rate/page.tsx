@@ -50,14 +50,15 @@ export default function RateBottlePage({
 
   async function fetchBottleAndRating() {
     try {
-      const bottleResponse = await fetch(`/api/bottles/${id}`);
+      const token = localStorage.getItem("token");
+      const authHeaders: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {};
+      const bottleResponse = await fetch(`/api/bottles/${id}`, { headers: authHeaders });
       const bottleData = await bottleResponse.json();
 
       if (bottleData.success) {
         setBottle(bottleData.bottle);
       }
 
-      const token = localStorage.getItem("token");
       if (token) {
         const ratingsResponse = await fetch(`/api/bottles/${id}/ratings`, {
           headers: {
@@ -259,7 +260,7 @@ export default function RateBottlePage({
               : "A Tua Classificação"}
           </h2>
           <p className="text-purple-200 text-center mb-8">
-            Desliza para classificar este vinho (0–10)
+            Desliza para classificar este vinho (1–10)
           </p>
 
           <div className="text-center mb-8">
@@ -267,7 +268,7 @@ export default function RateBottlePage({
               {score}
             </div>
             <div className="text-2xl font-semibold text-amber-400">
-              {scoreLabels[score]}
+              {scoreLabels[Math.round(score)]}
             </div>
           </div>
 
@@ -275,7 +276,7 @@ export default function RateBottlePage({
           <div className="mb-8">
             <input
               type="range"
-              min="0"
+              min="1"
               max="10"
               step="0.5"
               value={score}
@@ -302,7 +303,7 @@ export default function RateBottlePage({
                 [&::-moz-range-thumb]:cursor-pointer"
             />
             <div className="flex justify-between mt-2">
-              <span className="text-white/60 text-xs">0</span>
+              <span className="text-white/60 text-xs">1</span>
               <span className="text-white/60 text-xs">5</span>
               <span className="text-white/60 text-xs">10</span>
             </div>

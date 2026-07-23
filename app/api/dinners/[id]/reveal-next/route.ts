@@ -4,6 +4,14 @@ import { dinners, bottles, ratings, users } from "@/lib/schema";
 import { eq, inArray, asc } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { requireAuth } from "@/lib/middleware";
+import {
+  computeBottleStats,
+  isDinnerHost,
+  pickNextReveal,
+  revealMedal,
+  sortWorstToBestByAverage,
+  statusAfterReveal,
+} from "@/lib/domain";
 
 // POST /api/dinners/:id/reveal-next - Reveal next bottle (special logic for final 2)
 export async function POST(
@@ -22,7 +30,7 @@ export async function POST(
       return NextResponse.json({ error: "Dinner not found" }, { status: 404 });
     }
 
-    if (dinner.host_id !== auth.userId && dinner.created_by !== auth.userId) {
+    if (!isDinnerHost(auth.userId, { host_id: dinner.host_id, created_by: dinner.created_by }, auth.userRole === "admin")) {
       return NextResponse.json({ error: "Only the host can reveal bottles" }, { status: 403 });
     }
 
@@ -75,49 +83,29 @@ export async function POST(
 
     const bottlesWithStats = dinnerBottles.map((bottle) => {
       const bottleRatings = allRatings.filter((r) => r.bottle_id === bottle.id);
-      const totalPoints = bottleRatings.reduce((sum, r) => sum + Number(r.score), 0);
-      const averageScore = bottleRatings.length > 0 ? totalPoints / bottleRatings.length : 0;
-
+      const scores = bottleRatings.map((r) => Number(r.score));
       return {
         ...bottle,
         ratings: bottleRatings,
-        stats: {
-          total_ratings: bottleRatings.length,
-          average_score: Math.round(averageScore * 10) / 10,
-          total_points: Math.round(totalPoints * 10) / 10,
-        },
+        stats: computeBottleStats(scores),
       };
     });
 
-    const sortedWorstToBest = [...bottlesWithStats].sort(
-      (a, b) => a.stats.average_score - b.stats.average_score
-    );
+    const sortedWorstToBest = sortWorstToBestByAverage(bottlesWithStats);
 
     const totalBottles = sortedWorstToBest.length;
     const revealedSoFar = dinner.reveal_index || 0;
-    const remainingToReveal = totalBottles - revealedSoFar;
+    const pick = pickNextReveal(totalBottles, revealedSoFar);
 
-    if (remainingToReveal === 0) {
+    if (!pick) {
       return NextResponse.json({ error: "All bottles already revealed" }, { status: 400 });
     }
 
-    let bottleToReveal;
-    let actualPosition;
-    let isWinner = false;
-    let isRunnerUp = false;
-
-    if (remainingToReveal === 2) {
-      bottleToReveal = sortedWorstToBest[totalBottles - 1];
-      actualPosition = 1;
-      isWinner = true;
-    } else if (remainingToReveal === 1) {
-      bottleToReveal = sortedWorstToBest[totalBottles - 2];
-      actualPosition = 2;
-      isRunnerUp = true;
-    } else {
-      bottleToReveal = sortedWorstToBest[revealedSoFar];
-      actualPosition = totalBottles - revealedSoFar;
-    }
+    const bottleToReveal = sortedWorstToBest[pick.index];
+    const actualPosition = pick.position;
+    const isWinner = pick.isWinner;
+    const isRunnerUp = pick.isRunnerUp;
+    const remainingToReveal = totalBottles - revealedSoFar;
 
     const newRevealIndex = revealedSoFar + 1;
     const isComplete = newRevealIndex >= totalBottles;
@@ -126,19 +114,13 @@ export async function POST(
       .update(dinners)
       .set({
         reveal_index: newRevealIndex,
-        status: isComplete ? "completed" : "revealing",
+        status: statusAfterReveal(isComplete),
         revealed_at: isComplete ? new Date() : dinner.revealed_at,
         updated_at: new Date(),
       })
       .where(eq(dinners.id, dinnerId));
 
-    let message = "";
-    let medal = "";
-
-    if (isWinner) { message = "🏆 E O VENCEDOR É..."; medal = "🏆"; }
-    else if (isRunnerUp) { message = "🥈 O Segundo Classificado É..."; medal = "🥈"; }
-    else if (actualPosition === 3) { message = "🥉 O Terceiro Lugar vai para..."; medal = "🥉"; }
-    else { message = `Posição ${actualPosition}...`; medal = `#${actualPosition}`; }
+    const { message, medal } = revealMedal(actualPosition, isWinner, isRunnerUp);
 
     return NextResponse.json({
       success: true,

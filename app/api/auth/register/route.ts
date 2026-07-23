@@ -3,33 +3,15 @@ import { db } from "@/lib/db";
 import { users } from "@/lib/schema";
 import { eq } from "drizzle-orm";
 import { hashPassword, createToken } from "@/lib/auth";
+import { parseBody } from "@/lib/api/parse-body";
+import { registerApiSchema } from "@/lib/validations";
+import { AUTH_COOKIE, authCookieOptions } from "@/lib/auth-cookie";
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { name, email, password, role } = body;
-
-    if (!name || !email || !password) {
-      return NextResponse.json(
-        { error: "Name, email, and password are required" },
-        { status: 400 }
-      );
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return NextResponse.json(
-        { error: "Invalid email format" },
-        { status: 400 }
-      );
-    }
-
-    if (password.length < 12) {
-      return NextResponse.json(
-        { error: "Password must be at least 12 characters" },
-        { status: 400 }
-      );
-    }
+    const parsed = await parseBody(request, registerApiSchema);
+    if ("error" in parsed) return parsed.error;
+    const { name, email, password } = parsed.data;
 
     const [existingUser] = await db
       .select({ id: users.id })
@@ -46,9 +28,6 @@ export async function POST(request: NextRequest) {
 
     const passwordHash = await hashPassword(password);
 
-    // role param is accepted but ignored — only admins can promote via admin routes
-    void role;
-
     const [newUser] = await db
       .insert(users)
       .values({
@@ -61,7 +40,7 @@ export async function POST(request: NextRequest) {
 
     const token = createToken(newUser.id, newUser.role);
 
-    return NextResponse.json(
+    const res = NextResponse.json(
       {
         success: true,
         message: "User registered successfully",
@@ -75,6 +54,8 @@ export async function POST(request: NextRequest) {
       },
       { status: 201 }
     );
+    res.cookies.set(AUTH_COOKIE, token, authCookieOptions());
+    return res;
   } catch (error) {
     console.error("Registration error:", error);
     return NextResponse.json(

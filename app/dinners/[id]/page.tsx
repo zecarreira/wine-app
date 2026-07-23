@@ -6,6 +6,9 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { PaymentsSection } from "@/components/PaymentsSection";
+import { shuffleArray } from "@/lib/domain";
+import { apiFetch } from "@/lib/api-client";
+import { useToast } from "@/components/ToastProvider";
 
 interface Bottle {
   id: string;
@@ -44,28 +47,6 @@ interface Dinner {
   };
 }
 
-// Deterministic shuffle function - same seed = same order for all users
-function shuffleArray<T>(array: T[], seed: string): T[] {
-  const arr = [...array];
-  let hash = 0;
-
-  // Generate hash from seed
-  for (let i = 0; i < seed.length; i++) {
-    hash = (hash << 5) - hash + seed.charCodeAt(i);
-    hash = hash & hash;
-  }
-
-  // Fisher-Yates shuffle with deterministic randomness
-  for (let i = arr.length - 1; i > 0; i--) {
-    hash = (hash * 9301 + 49297) % 233280;
-    // Ensure j is always positive by using Math.abs
-    const j = Math.abs(hash) % (i + 1);
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-
-  return arr;
-}
-
 export default function DinnerDetailPage({
   params,
 }: {
@@ -73,6 +54,7 @@ export default function DinnerDetailPage({
 }) {
   const { id } = use(params);
   const router = useRouter();
+  const { success, error: toastError } = useToast();
   const [bottles, setBottles] = useState<Bottle[]>([]);
   const [dinner, setDinner] = useState<Dinner | null>(null);
   const [loading, setLoading] = useState(true);
@@ -101,60 +83,55 @@ export default function DinnerDetailPage({
   }
 
   async function fetchDinnerAndBottles() {
-    const [dinnerResponse, bottlesResponse, ratingsResponse] = await Promise.all([
-      fetch("/api/dinners").catch(() => null),
-      fetch(`/api/dinners/${id}/bottles`).catch(() => null),
-      fetch(`/api/dinners/${id}/ratings`).catch(() => null),
-    ]);
+    try {
+      const [dinnerData, bottlesData, ratingsData] = await Promise.all([
+        apiFetch<any>(`/api/dinners/${id}`),
+        apiFetch<any>(`/api/dinners/${id}/bottles`),
+        apiFetch<any>(`/api/dinners/${id}/ratings`),
+      ]);
 
-    if (!dinnerResponse || !bottlesResponse || !ratingsResponse) {
-      setLoading(false);
-      return;
-    }
+      const currentDinner =
+        dinnerData.dinner ?? dinnerData.dinners?.find((d: Dinner) => d.id === id);
+      setDinner(currentDinner);
 
-    const [dinnerData, bottlesData, ratingsData] = await Promise.all([
-      dinnerResponse.json().catch(() => null),
-      bottlesResponse.json().catch(() => null),
-      ratingsResponse.json().catch(() => null),
-    ]);
-
-    if (!dinnerData || !bottlesData || !ratingsData) {
-      setLoading(false);
-      return;
-    }
-
-    const currentDinner = dinnerData.dinners.find((d: Dinner) => d.id === id);
-    setDinner(currentDinner);
-
-    // Check if user is host
-    const userId = checkIfHost();
-    if (userId && currentDinner) {
-      if (userId === currentDinner.host_id || userId === currentDinner.created_by) {
-        setIsHost(true);
-      } else {
-        setIsHost(false);
-      }
-    }
-
-    if (bottlesData.success) {
-      setBottles(bottlesData.bottles);
-    }
-
-    if (ratingsData.success && ratingsData.bottles) {
-      const uniqueParticipants = new Map<string, { id: string; name: string }>();
-      ratingsData.bottles.forEach((bottle: any) => {
-        if (bottle.ratings) {
-          bottle.ratings.forEach((rating: any) => {
-            if (rating.user) {
-              uniqueParticipants.set(rating.user.id, {
-                id: rating.user.id,
-                name: rating.user.name,
-              });
-            }
-          });
+      // Check if user is host
+      const userId = checkIfHost();
+      if (userId && currentDinner) {
+        if (
+          userId === currentDinner.host_id ||
+          userId === currentDinner.created_by
+        ) {
+          setIsHost(true);
+        } else {
+          setIsHost(false);
         }
-      });
-      setParticipants(Array.from(uniqueParticipants.values()));
+      }
+
+      if (bottlesData.success) {
+        setBottles(bottlesData.bottles);
+      }
+
+      if (ratingsData.success && ratingsData.bottles) {
+        const uniqueParticipants = new Map<
+          string,
+          { id: string; name: string }
+        >();
+        ratingsData.bottles.forEach((bottle: any) => {
+          if (bottle.ratings) {
+            bottle.ratings.forEach((rating: any) => {
+              if (rating.user) {
+                uniqueParticipants.set(rating.user.id, {
+                  id: rating.user.id,
+                  name: rating.user.name,
+                });
+              }
+            });
+          }
+        });
+        setParticipants(Array.from(uniqueParticipants.values()));
+      }
+    } catch (error) {
+      console.error("Error fetching dinner data:", error);
     }
     setLoading(false);
   }
@@ -175,27 +152,11 @@ export default function DinnerDetailPage({
 
     setActionLoading(true);
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(`/api/dinners/${id}/start`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      const data = await response.json();
-      if (data.success) {
-        alert("🎭 Prova cega iniciada!");
-        fetchDinnerAndBottles();
-      } else {
-        if (data.error) {
-          alert(data.error);
-        } else {
-          alert("Erro ao iniciar jantar");
-        }
-      }
+      await apiFetch(`/api/dinners/${id}/start`, { method: "POST" });
+      success("Prova cega iniciada!");
+      fetchDinnerAndBottles();
     } catch (error) {
-      alert("Erro ao iniciar jantar");
+      toastError(error instanceof Error ? error.message : "Erro ao iniciar jantar");
     }
     setActionLoading(false);
   }
@@ -210,27 +171,11 @@ export default function DinnerDetailPage({
 
     setActionLoading(true);
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(`/api/dinners/${id}/end`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      const data = await response.json();
-      if (data.success) {
-        alert("✅ Jantar terminado! Pronto para revelar!");
-        fetchDinnerAndBottles();
-      } else {
-        if (data.error) {
-          alert(data.error);
-        } else {
-          alert("Erro ao terminar jantar");
-        }
-      }
+      await apiFetch(`/api/dinners/${id}/end`, { method: "POST" });
+      success("Jantar terminado! Pronto para revelar!");
+      fetchDinnerAndBottles();
     } catch (error) {
-      alert("Erro ao terminar jantar");
+      toastError(error instanceof Error ? error.message : "Erro ao terminar jantar");
     }
     setActionLoading(false);
   }
@@ -239,27 +184,11 @@ export default function DinnerDetailPage({
     if (!confirm("Tens a certeza que queres apagar esta garrafa?")) return;
 
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(`/api/bottles/${bottleId}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      const data = await response.json();
-      if (data.success) {
-        alert("✅ Garrafa apagada com sucesso!");
-        fetchDinnerAndBottles();
-      } else {
-        if (data.error) {
-          alert(data.error);
-        } else {
-          alert("Erro ao apagar garrafa");
-        }
-      }
+      await apiFetch(`/api/bottles/${bottleId}`, { method: "DELETE" });
+      success("Garrafa apagada com sucesso!");
+      fetchDinnerAndBottles();
     } catch (error) {
-      alert("Erro ao apagar garrafa");
+      toastError(error instanceof Error ? error.message : "Erro ao apagar garrafa");
     }
   }
 
@@ -440,19 +369,14 @@ export default function DinnerDetailPage({
                 if (!confirm("Marcar este jantar extra como concluído?")) return;
                 setActionLoading(true);
                 try {
-                  const token = localStorage.getItem("token");
-                  const response = await fetch(`/api/dinners/${id}/end`, {
-                    method: "POST",
-                    headers: { Authorization: `Bearer ${token}` },
-                  });
-                  const data = await response.json();
-                  if (data.success) {
-                    fetchDinnerAndBottles();
-                  } else {
-                    alert(data.error || "Erro ao concluir jantar");
-                  }
-                } catch {
-                  alert("Erro ao concluir jantar");
+                  await apiFetch(`/api/dinners/${id}/end`, { method: "POST" });
+                  fetchDinnerAndBottles();
+                } catch (error) {
+                  toastError(
+                    error instanceof Error
+                      ? error.message
+                      : "Erro ao concluir jantar"
+                  );
                 }
                 setActionLoading(false);
               }}

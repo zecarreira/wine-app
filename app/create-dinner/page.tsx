@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/components/ToastProvider";
 
 interface Founder {
   id: string;
@@ -12,6 +13,7 @@ interface Founder {
 
 export default function CreateDinnerPage() {
   const router = useRouter();
+  const { error: toastError } = useToast();
   const [name, setName] = useState("");
   const [eventDate, setEventDate] = useState("");
   const [location, setLocation] = useState("");
@@ -67,7 +69,7 @@ export default function CreateDinnerPage() {
       const token = localStorage.getItem("token");
 
       if (!token) {
-        alert("Por favor faz login primeiro");
+        toastError("Por favor faz login primeiro");
         router.push("/login");
         return;
       }

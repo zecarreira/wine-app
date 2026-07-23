@@ -2,21 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { seasons, dinners, payments, fines } from "@/lib/schema";
 import { eq, desc } from "drizzle-orm";
-import { verifyToken } from "@/lib/auth";
+import { requireAuth } from "@/lib/middleware";
 
 export async function GET(request: NextRequest) {
   try {
-    const authHeader = request.headers.get("authorization");
-    const token = authHeader?.replace("Bearer ", "");
-
-    if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const user = await verifyToken(token);
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const auth = await requireAuth(request);
+    if (auth instanceof NextResponse) return auth;
 
     const allSeasons = await db
       .select({ id: seasons.id, season_number: seasons.season_number, status: seasons.status, created_at: seasons.created_at })

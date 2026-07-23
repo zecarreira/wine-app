@@ -3,7 +3,9 @@ import { db } from "@/lib/db";
 import { users, dinners, payments, fines } from "@/lib/schema";
 import { eq, asc, inArray, and } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
-import { requireAuth } from "@/lib/middleware";
+import { requireAuth, requireAdmin } from "@/lib/middleware";
+import { parseBody } from "@/lib/api/parse-body";
+import { paymentCreateSchema } from "@/lib/validations";
 
 // GET /api/dinners/:id/payments - Listar todos os pagamentos de um jantar
 export async function GET(
@@ -116,21 +118,13 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const auth = await requireAuth(request);
+    const auth = await requireAdmin(request);
     if (auth instanceof NextResponse) return auth;
 
-    const [currentUser] = await db.select({ role: users.role }).from(users).where(eq(users.id, auth.userId)).limit(1);
-    if (!currentUser || currentUser.role !== "admin") {
-      return NextResponse.json({ error: "Only admins can create payments" }, { status: 403 });
-    }
-
     const { id: dinnerId } = await params;
-    const body = await request.json();
-    const { user_id, base_amount = 10 } = body;
-
-    if (!user_id) {
-      return NextResponse.json({ error: "user_id is required" }, { status: 400 });
-    }
+    const parsed = await parseBody(request, paymentCreateSchema);
+    if ("error" in parsed) return parsed.error;
+    const { user_id, base_amount = 10 } = parsed.data;
 
     const [dinner] = await db.select({ id: dinners.id }).from(dinners).where(eq(dinners.id, dinnerId)).limit(1);
     if (!dinner) {

@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { dinners } from "@/lib/schema";
 import { eq } from "drizzle-orm";
 import { requireAuth } from "@/lib/middleware";
+import { canEndDinner, isDinnerHost } from "@/lib/domain";
 
 // POST /api/dinners/:id/end - End dinner and prepare for reveal
 export async function POST(
@@ -21,19 +22,17 @@ export async function POST(
       return NextResponse.json({ error: "Dinner not found" }, { status: 404 });
     }
 
-    if (dinner.host_id !== auth.userId && dinner.created_by !== auth.userId) {
+    if (!isDinnerHost(auth.userId, { host_id: dinner.host_id, created_by: dinner.created_by }, auth.userRole === "admin")) {
       return NextResponse.json({ error: "Only the host can end this dinner" }, { status: 403 });
     }
 
-    // Jantar extra: passa diretamente de "setup" para "completed"
-    if (dinner.is_extra_dinner) {
-      if (dinner.status !== "setup" && dinner.status !== "active") {
-        return NextResponse.json(
-          { error: `Jantar já está ${dinner.status}` },
-          { status: 400 }
-        );
-      }
+    const endCheck = canEndDinner(dinner.status, !!dinner.is_extra_dinner);
+    if (!endCheck.ok) {
+      return NextResponse.json({ error: endCheck.error }, { status: 400 });
+    }
 
+    // Jantar extra: passa diretamente de "setup"/"active" para "completed"
+    if (dinner.is_extra_dinner) {
       const [updatedDinner] = await db
         .update(dinners)
         .set({ status: "completed", ended_at: new Date(), is_completed: true, updated_at: new Date() })
@@ -45,13 +44,6 @@ export async function POST(
         message: "Jantar extra concluído! 🎉",
         dinner: updatedDinner,
       });
-    }
-
-    if (dinner.status !== "active") {
-      return NextResponse.json(
-        { error: `Cannot end dinner in ${dinner.status} state` },
-        { status: 400 }
-      );
     }
 
     const [updatedDinner] = await db

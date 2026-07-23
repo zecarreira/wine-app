@@ -5,6 +5,8 @@ import { use } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { apiFetch } from "@/lib/api-client";
+import { useToast } from "@/components/ToastProvider";
 
 interface RevealedBottle {
   id: string;
@@ -55,6 +57,7 @@ export default function RevealCeremonyPage({
 }) {
   const { id } = use(params);
   const router = useRouter();
+  const { error: toastError } = useToast();
   const [revealedBottles, setRevealedBottles] = useState<RevealedBottle[]>([]);
   const [revealStatus, setRevealStatus] = useState<RevealStatus | null>(null);
   const [loading, setLoading] = useState(true);
@@ -65,12 +68,8 @@ export default function RevealCeremonyPage({
 
   const fetchRevealStatus = useCallback(async () => {
     try {
-      const response = await fetch(`/api/dinners/${id}/reveal-status`);
-      const data = await response.json();
-
-      if (data.success) {
-        setRevealStatus(data);
-      }
+      const data = await apiFetch<any>(`/api/dinners/${id}/reveal-status`);
+      setRevealStatus(data);
     } catch {
       console.error("Error fetching reveal status");
     } finally {
@@ -93,28 +92,15 @@ export default function RevealCeremonyPage({
   async function handleRevealNext() {
     setRevealing(true);
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(`/api/dinners/${id}/reveal-next`, {
+      const data = await apiFetch<any>(`/api/dinners/${id}/reveal-next`, {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
       });
-
-      const data = await response.json();
-
-      if (data.success) {
-        setLastRevealed(data);
-        setRevealedBottles([...revealedBottles, data.bottle]);
-
-        await fetchRevealStatus();
-
-        // isComplete: o botão "Fim Jantar" fica visível para o utilizador clicar manualmente
-      } else {
-        alert(data.error || "Erro ao revelar");
-      }
-    } catch {
-      alert("Erro ao revelar garrafa");
+      setLastRevealed(data);
+      setRevealedBottles([...revealedBottles, data.bottle]);
+      await fetchRevealStatus();
+      // isComplete: o botão "Fim Jantar" fica visível para o utilizador clicar manualmente
+    } catch (error) {
+      toastError(error instanceof Error ? error.message : "Erro ao revelar garrafa");
     } finally {
       setRevealing(false);
     }

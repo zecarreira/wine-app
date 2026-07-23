@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { users, payments } from "@/lib/schema";
+import { payments } from "@/lib/schema";
 import { eq } from "drizzle-orm";
-import { requireAuth } from "@/lib/middleware";
+import { requireAdmin } from "@/lib/middleware";
+import { parseBody } from "@/lib/api/parse-body";
+import { paymentStatusSchema } from "@/lib/validations";
 
 // PATCH /api/dinners/:dinnerId/payments/:paymentId - Marcar pagamento como pago (Admin only)
 export async function PATCH(
@@ -10,21 +12,13 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string; paymentId: string }> }
 ) {
   try {
-    const auth = await requireAuth(request);
+    const auth = await requireAdmin(request);
     if (auth instanceof NextResponse) return auth;
 
-    const [currentUser] = await db.select({ role: users.role }).from(users).where(eq(users.id, auth.userId)).limit(1);
-    if (!currentUser || currentUser.role !== "admin") {
-      return NextResponse.json({ error: "Only admins can update payment status" }, { status: 403 });
-    }
-
     const { paymentId } = await params;
-    const body = await request.json();
-    const { status } = body;
-
-    if (!status || (status !== "paid" && status !== "pending")) {
-      return NextResponse.json({ error: "Valid status is required (paid or pending)" }, { status: 400 });
-    }
+    const parsed = await parseBody(request, paymentStatusSchema);
+    if ("error" in parsed) return parsed.error;
+    const { status } = parsed.data;
 
     const [existingPayment] = await db
       .select({ id: payments.id })

@@ -1,17 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { requireAuth } from "@/lib/middleware";
-
-const r2 = new S3Client({
-  region: "auto",
-  endpoint: process.env.R2_ENDPOINT!,
-  credentials: {
-    accessKeyId: process.env.R2_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,
-  },
-});
-
-const VALID_BUCKETS = ["bottle-photos", "dinner-photos", "profile-photos"];
+import { uploadToR2, VALID_BUCKETS } from "@/lib/storage/r2";
 
 export async function POST(request: NextRequest) {
   try {
@@ -26,7 +15,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "No file provided" }, { status: 400 });
     }
 
-    if (!bucket || !VALID_BUCKETS.includes(bucket)) {
+    if (!bucket || !VALID_BUCKETS.includes(bucket as (typeof VALID_BUCKETS)[number])) {
       return NextResponse.json({ success: false, error: "Invalid bucket" }, { status: 400 });
     }
 
@@ -51,18 +40,13 @@ export async function POST(request: NextRequest) {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    await r2.send(
-      new PutObjectCommand({
-        Bucket: process.env.R2_BUCKET_NAME!,
-        Key: key,
-        Body: buffer,
-        ContentType: file.type,
-      })
-    );
+    const { publicUrl, path } = await uploadToR2({
+      key,
+      body: buffer,
+      contentType: file.type,
+    });
 
-    const publicUrl = `${process.env.R2_PUBLIC_URL}/${key}`;
-
-    return NextResponse.json({ success: true, url: publicUrl, path: key });
+    return NextResponse.json({ success: true, url: publicUrl, path });
   } catch (error) {
     console.error("Upload error:", error);
     return NextResponse.json({ success: false, error: "Failed to upload" }, { status: 500 });

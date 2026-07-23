@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import Header from "@/components/Header";
 import Button from "@/components/Button";
@@ -8,65 +7,20 @@ import Card from "@/components/Card";
 import { DinnerCardSkeleton } from "@/components/Skeletons";
 import { useToast } from "@/components/ToastProvider";
 import { getUser } from "@/lib/auth-client";
-
-interface Dinner {
-  id: string;
-  name: string;
-  event_date: string;
-  location: string;
-  is_blind: boolean;
-  is_completed?: boolean;
-  status?: string;
-  is_extra_dinner: boolean;
-  dinner_number_in_season: number;
-}
-
-interface ActiveSeason {
-  id: string;
-  season_number: number;
-  status: string;
-  start_date: string;
-  dinners: Dinner[];
-  stats: {
-    total_dinners: number;
-    regular_dinners: number;
-    extra_dinners: number;
-    is_full: boolean;
-    can_close: boolean;
-  };
-}
+import {
+  useActiveSeason,
+  useCloseSeason,
+  useCreateSeason,
+} from "@/lib/hooks/useApi";
+import { useState } from "react";
 
 export default function DinnersPage() {
-  const [activeSeason, setActiveSeason] = useState<ActiveSeason | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const { showToast } = useToast();
-
   const [userRole] = useState(() => getUser()?.role ?? null);
 
-  async function fetchActiveSeason() {
-    try {
-      const token = localStorage.getItem("token");
-      const response = await fetch("/api/seasons/active", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        setActiveSeason(data.season);
-      }
-    } catch (error) {
-      console.error("Error fetching active season:", error);
-      showToast("Erro ao carregar temporada", "error");
-    }
-    setIsLoading(false);
-  }
-
-  useEffect(() => {
-    fetchActiveSeason();
-  }, []);
+  const { data: activeSeason, isLoading, refetch } = useActiveSeason();
+  const closeSeason = useCloseSeason();
+  const createSeason = useCreateSeason();
 
   async function handleCloseSeason() {
     if (!activeSeason) return;
@@ -80,32 +34,18 @@ export default function DinnersPage() {
     }
 
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(`/api/seasons/${activeSeason.id}/close`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        showToast(
-          `Temporada ${activeSeason.season_number} fechada!`,
-          "success"
-        );
-        fetchActiveSeason();
-      } else {
-        if (data.error) {
-          showToast(data.error, "error");
-        } else {
-          showToast("Erro ao fechar temporada", "error");
-        }
-      }
+      await closeSeason.mutateAsync(activeSeason.id);
+      showToast(
+        `Temporada ${activeSeason.season_number} fechada!`,
+        "success"
+      );
+      refetch();
     } catch (error) {
       console.error("Error closing season:", error);
-      showToast("Erro ao fechar temporada", "error");
+      showToast(
+        error instanceof Error ? error.message : "Erro ao fechar temporada",
+        "error"
+      );
     }
   }
 
@@ -119,29 +59,15 @@ export default function DinnersPage() {
     }
 
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch("/api/seasons", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        showToast(`Temporada ${data.season.season_number} criada!`, "success");
-        fetchActiveSeason();
-      } else {
-        if (data.error) {
-          showToast(data.error, "error");
-        } else {
-          showToast("Erro ao criar temporada", "error");
-        }
-      }
+      const data = await createSeason.mutateAsync();
+      showToast(`Temporada ${data.season.season_number} criada!`, "success");
+      refetch();
     } catch (error) {
       console.error("Error creating season:", error);
-      showToast("Erro ao criar temporada", "error");
+      showToast(
+        error instanceof Error ? error.message : "Erro ao criar temporada",
+        "error"
+      );
     }
   }
 
@@ -173,7 +99,8 @@ export default function DinnersPage() {
 
   // Check if there are any scheduled (not completed) dinners
   const hasScheduledDinner = dinners.some(
-    (dinner) => dinner.status === "setup" || dinner.status === "active"
+    (dinner: { status?: string }) =>
+      dinner.status === "setup" || dinner.status === "active"
   );
 
   return (
@@ -317,7 +244,7 @@ export default function DinnersPage() {
           </Card>
         ) : (
           <div className="space-y-3">
-            {dinners.map((dinner) => (
+            {dinners.map((dinner: any) => (
               <Link
                 key={dinner.id}
                 href={`/dinners/${dinner.id}`}

@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { use } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { apiFetch } from "@/lib/api-client";
 
 interface Rating {
   score: number;
@@ -41,15 +42,11 @@ export default function RankingsPage({
 
   const fetchRankings = useCallback(async () => {
     try {
-      const response = await fetch(`/api/dinners/${id}/ratings`);
-      const data = await response.json();
-
-      if (data.success) {
-        if (data.rankings) {
-          setRankings(data.rankings);
-        } else {
-          setRankings([]);
-        }
+      const data = await apiFetch<any>(`/api/dinners/${id}/ratings`);
+      if (data.rankings) {
+        setRankings(data.rankings);
+      } else {
+        setRankings([]);
       }
     } catch {
       console.error("Error fetching rankings");

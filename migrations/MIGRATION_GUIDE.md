@@ -83,3 +83,36 @@ Após executar a migration, a UI de pagamentos já está pronta!
 - Fase de **automação** (criar ao adicionar garrafa) será implementada depois
 - Base amount é sempre **10 pipas**
 - Fines são adicionais e podem ser múltiplas
+
+
+---
+
+## Neon: unique indexes for ratings & payments
+
+Schema (`lib/schema.ts`) defines unique constraints on:
+
+- `ratings (bottle_id, user_id)` → `ratings_bottle_user_unique`
+- `payments (dinner_id, user_id)` → `payments_dinner_user_unique`
+
+Hand SQL: `migrations/add_ratings_payments_uniques.sql`
+
+### Before applying on Neon / production
+
+1. **Check for duplicates** (must be empty before CREATE UNIQUE INDEX):
+
+```sql
+SELECT bottle_id, user_id, COUNT(*) AS n
+FROM ratings
+GROUP BY bottle_id, user_id
+HAVING COUNT(*) > 1;
+
+SELECT dinner_id, user_id, COUNT(*) AS n
+FROM payments
+GROUP BY dinner_id, user_id
+HAVING COUNT(*) > 1;
+```
+
+2. Resolve any duplicate rows (keep one, delete extras).
+3. Run the SQL from `add_ratings_payments_uniques.sql` in the Neon SQL editor.
+4. Do **not** apply migrations to remote DBs from local tooling without explicit approval.
+

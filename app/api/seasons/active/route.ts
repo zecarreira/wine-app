@@ -3,12 +3,13 @@ import { db } from "@/lib/db";
 import { seasons, dinners, users } from "@/lib/schema";
 import { eq, asc } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
-import { authenticate } from "@/lib/middleware";
+import { requireAuth } from "@/lib/middleware";
 
 // GET /api/seasons/active - Get active season with dinners
 export async function GET(request: NextRequest) {
   try {
-    await authenticate(request);
+    const auth = await requireAuth(request);
+    if (auth instanceof NextResponse) return auth;
 
     const [activeSeason] = await db
       .select()

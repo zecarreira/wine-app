@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiFetch } from "@/lib/api-client";
 
 // Types
 interface Dinner {
@@ -22,15 +23,27 @@ interface Bottle {
   position: number;
 }
 
+export function useActiveSeason() {
+  return useQuery({
+    queryKey: ["seasons", "active"],
+    queryFn: async () => {
+      const data = await apiFetch<{ success: boolean; season: any }>(
+        "/api/seasons/active"
+      );
+      return data.season ?? null;
+    },
+  });
+}
+
 // Fetch dinners
 export function useDinners() {
   return useQuery({
     queryKey: ["dinners"],
     queryFn: async () => {
-      const response = await fetch("/api/dinners");
-      const data = await response.json();
-      if (!data.success) throw new Error(data.error);
-      return data.dinners as Dinner[];
+      const data = await apiFetch<{ success: boolean; dinners: Dinner[] }>(
+        "/api/dinners"
+      );
+      return data.dinners;
     },
   });
 }
@@ -40,13 +53,10 @@ export function useDinner(id: string) {
   return useQuery({
     queryKey: ["dinners", id],
     queryFn: async () => {
-      const token = localStorage.getItem("token");
-      const response = await fetch(`/api/dinners/${id}`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-      const data = await response.json();
-      if (!data.success) throw new Error(data.error);
-      return data.dinner as Dinner;
+      const data = await apiFetch<{ success: boolean; dinner: Dinner }>(
+        `/api/dinners/${id}`
+      );
+      return data.dinner;
     },
     enabled: !!id,
   });
@@ -57,10 +67,21 @@ export function useDinnerBottles(dinnerId: string) {
   return useQuery({
     queryKey: ["dinners", dinnerId, "bottles"],
     queryFn: async () => {
-      const response = await fetch(`/api/dinners/${dinnerId}/bottles`);
-      const data = await response.json();
-      if (!data.success) throw new Error(data.error);
-      return data.bottles as Bottle[];
+      const data = await apiFetch<{ success: boolean; bottles: Bottle[] }>(
+        `/api/dinners/${dinnerId}/bottles`
+      );
+      return data.bottles;
+    },
+    enabled: !!dinnerId,
+  });
+}
+
+// Fetch ratings/rankings for a dinner
+export function useDinnerRatings(dinnerId: string) {
+  return useQuery({
+    queryKey: ["dinners", dinnerId, "ratings"],
+    queryFn: async () => {
+      return apiFetch<any>(`/api/dinners/${dinnerId}/ratings`);
     },
     enabled: !!dinnerId,
   });
@@ -74,24 +95,20 @@ export function useCreateDinner() {
     mutationFn: async (dinnerData: {
       name: string;
       event_date: string;
-      location?: string;
+      location?: string | null;
       is_blind: boolean;
+      is_extra?: boolean;
+      organizer_id?: string | null;
     }) => {
-      const token = localStorage.getItem("token");
-      const response = await fetch("/api/dinners", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(dinnerData),
-      });
-      const data = await response.json();
-      if (!data.success) throw new Error(data.error);
+      const data = await apiFetch<{ success: boolean; dinner: Dinner }>(
+        "/api/dinners",
+        { method: "POST", body: dinnerData }
+      );
       return data.dinner;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["dinners"] });
+      queryClient.invalidateQueries({ queryKey: ["seasons", "active"] });
     },
   });
 }
@@ -105,17 +122,10 @@ export function useSubmitRating(bottleId: string) {
       score: number;
       tasting_notes?: string;
     }) => {
-      const token = localStorage.getItem("token");
-      const response = await fetch(`/api/bottles/${bottleId}/ratings`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(ratingData),
-      });
-      const data = await response.json();
-      if (!data.success) throw new Error(data.error);
+      const data = await apiFetch<{ success: boolean; rating: unknown }>(
+        `/api/bottles/${bottleId}/ratings`,
+        { method: "POST", body: ratingData }
+      );
       return data.rating;
     },
     onSuccess: () => {
@@ -142,13 +152,41 @@ export function useBottlesCatalog(params?: {
   return useQuery({
     queryKey: ["bottles", "catalog", params],
     queryFn: async () => {
-      const token = localStorage.getItem("token");
-      const response = await fetch(`/api/bottles?${searchParams}`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-      const data = await response.json();
-      if (!data.success) throw new Error(data.error);
-      return data;
+      return apiFetch<any>(`/api/bottles?${searchParams}`);
+    },
+  });
+}
+
+export function useCloseSeason() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (seasonId: string) => {
+      return apiFetch<{ success: boolean; message?: string }>(
+        `/api/seasons/${seasonId}/close`,
+        { method: "POST" }
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["seasons", "active"] });
+      queryClient.invalidateQueries({ queryKey: ["dinners"] });
+    },
+  });
+}
+
+export function useCreateSeason() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      return apiFetch<{ success: boolean; season: { season_number: number } }>(
+        "/api/seasons",
+        { method: "POST" }
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["seasons", "active"] });
+      queryClient.invalidateQueries({ queryKey: ["dinners"] });
     },
   });
 }

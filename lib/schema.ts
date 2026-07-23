@@ -6,6 +6,7 @@ import {
   boolean,
   timestamp,
   numeric,
+  unique,
 } from "drizzle-orm/pg-core";
 
 export const users = pgTable("users", {
@@ -66,15 +67,19 @@ export const bottles = pgTable("bottles", {
   updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 });
 
-export const ratings = pgTable("ratings", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  bottle_id: uuid("bottle_id").references(() => bottles.id, { onDelete: "cascade" }),
-  user_id: uuid("user_id").references(() => users.id, { onDelete: "cascade" }),
-  score: numeric("score", { precision: 3, scale: 1 }).notNull(), // 1.0 to 10.0 in 0.5 steps
-  tasting_notes: text("tasting_notes"),
-  created_at: timestamp("created_at", { withTimezone: true }).defaultNow(),
-  updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow(),
-});
+export const ratings = pgTable(
+  "ratings",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    bottle_id: uuid("bottle_id").references(() => bottles.id, { onDelete: "cascade" }),
+    user_id: uuid("user_id").references(() => users.id, { onDelete: "cascade" }),
+    score: numeric("score", { precision: 3, scale: 1 }).notNull(), // 1.0 to 10.0 in 0.5 steps
+    tasting_notes: text("tasting_notes"),
+    created_at: timestamp("created_at", { withTimezone: true }).defaultNow(),
+    updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+  },
+  (t) => [unique("ratings_bottle_user_unique").on(t.bottle_id, t.user_id)]
+);
 
 export const dinner_photos = pgTable("dinner_photos", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -84,16 +89,20 @@ export const dinner_photos = pgTable("dinner_photos", {
   created_at: timestamp("created_at", { withTimezone: true }).defaultNow(),
 });
 
-export const payments = pgTable("payments", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  dinner_id: uuid("dinner_id").references(() => dinners.id, { onDelete: "cascade" }),
-  user_id: uuid("user_id").references(() => users.id, { onDelete: "cascade" }),
-  base_amount: integer("base_amount").notNull().default(10),
-  status: text("status").notNull().default("pending"), // pending | paid
-  paid_at: timestamp("paid_at", { withTimezone: true }),
-  created_at: timestamp("created_at", { withTimezone: true }).defaultNow(),
-  updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow(),
-});
+export const payments = pgTable(
+  "payments",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    dinner_id: uuid("dinner_id").references(() => dinners.id, { onDelete: "cascade" }),
+    user_id: uuid("user_id").references(() => users.id, { onDelete: "cascade" }),
+    base_amount: integer("base_amount").notNull().default(10),
+    status: text("status").notNull().default("pending"), // pending | paid
+    paid_at: timestamp("paid_at", { withTimezone: true }),
+    created_at: timestamp("created_at", { withTimezone: true }).defaultNow(),
+    updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+  },
+  (t) => [unique("payments_dinner_user_unique").on(t.dinner_id, t.user_id)]
+);
 
 export const fines = pgTable("fines", {
   id: uuid("id").primaryKey().defaultRandom(),

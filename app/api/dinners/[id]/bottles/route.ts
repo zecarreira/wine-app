@@ -3,6 +3,9 @@ import { db } from "@/lib/db";
 import { bottles, dinners, payments } from "@/lib/schema";
 import { eq, and, desc, count } from "drizzle-orm";
 import { requireAuth } from "@/lib/middleware";
+import { BASE_PIPAS, canAddBottle, nextBottlePosition } from "@/lib/domain";
+import { parseBody } from "@/lib/api/parse-body";
+import { addBottleSchema } from "@/lib/validations";
 
 // GET /api/dinners/:id/bottles - List all bottles for a dinner
 export async function GET(
@@ -10,6 +13,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requireAuth(request);
+    if (auth instanceof NextResponse) return auth;
+
     const { id: dinnerId } = await params;
 
     const result = await db
@@ -47,12 +53,9 @@ export async function POST(
     if (auth instanceof NextResponse) return auth;
 
     const { id: dinnerId } = await params;
-    const body = await request.json();
-    const { name, description, vintage, producer, wine_type, photo_url, position } = body;
-
-    if (!name) {
-      return NextResponse.json({ error: "Bottle name is required" }, { status: 400 });
-    }
+    const parsed = await parseBody(request, addBottleSchema);
+    if ("error" in parsed) return parsed.error;
+    const { name, description, vintage, producer, wine_type, photo_url, position } = parsed.data;
 
     const [dinner] = await db
       .select({ id: dinners.id, organizer_id: dinners.organizer_id })
@@ -70,17 +73,9 @@ export async function POST(
       .where(and(eq(bottles.dinner_id, dinnerId), eq(bottles.brought_by, auth.userId)));
 
     const isOrganizer = dinner.organizer_id === auth.userId;
-    const maxBottles = isOrganizer ? 2 : 1;
-
-    if (bottlesCount >= maxBottles) {
-      return NextResponse.json(
-        {
-          error: isOrganizer
-            ? "Organizador já adicionou o máximo de 2 garrafas para este jantar"
-            : "Já adicionaste 1 garrafa para este jantar. Apenas o organizador pode adicionar 2 garrafas.",
-        },
-        { status: 400 }
-      );
+    const addCheck = canAddBottle(bottlesCount, isOrganizer);
+    if (!addCheck.ok) {
+      return NextResponse.json({ error: addCheck.error }, { status: 400 });
     }
 
     const [lastBottle] = await db
@@ -90,19 +85,19 @@ export async function POST(
       .orderBy(desc(bottles.position))
       .limit(1);
 
-    const nextPosition = lastBottle?.position != null ? lastBottle.position + 1 : 1;
+    const nextPosition = nextBottlePosition(lastBottle?.position);
 
     const [newBottle] = await db
       .insert(bottles)
       .values({
         dinner_id: dinnerId,
         name,
-        description: description || null,
-        vintage: vintage || null,
-        producer: producer || null,
-        wine_type: wine_type || null,
-        photo_url: photo_url || null,
-        position: position || nextPosition,
+        description: description ?? null,
+        vintage: vintage ?? null,
+        producer: producer ?? null,
+        wine_type: wine_type ?? "red",
+        photo_url: photo_url ?? null,
+        position: position ?? nextPosition,
         brought_by: auth.userId,
       })
       .returning();
@@ -117,7 +112,7 @@ export async function POST(
     if (!existingPayment) {
       await db
         .insert(payments)
-        .values({ dinner_id: dinnerId, user_id: auth.userId, base_amount: 10, status: "pending" })
+        .values({ dinner_id: dinnerId, user_id: auth.userId, base_amount: BASE_PIPAS, status: "pending" })
         .returning();
     }
 

@@ -5,6 +5,9 @@ import { use } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { apiFetch } from "@/lib/api-client";
+import { getAuthToken } from "@/lib/auth-client";
+import { useToast } from "@/components/ToastProvider";
 
 interface Photo {
   id: string;
@@ -29,6 +32,7 @@ export default function DinnerPhotosPage({
 }) {
   const { id } = use(params);
   const router = useRouter();
+  const { success, error: toastError } = useToast();
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [dinner, setDinner] = useState<Dinner | null>(null);
   const [loading, setLoading] = useState(true);
@@ -38,26 +42,15 @@ export default function DinnerPhotosPage({
 
   async function fetchDinnerAndPhotos() {
     try {
-      const token = localStorage.getItem("token");
-      const authHeaders: Record<string, string> = token
-        ? { Authorization: `Bearer ${token}` }
-        : {};
-
-      // Fetch dinner info
-      const dinnerResponse = await fetch("/api/dinners", {
-        headers: authHeaders,
-      });
-      const dinnerData = await dinnerResponse.json();
-      const currentDinner = dinnerData.dinners.find((d: any) => d.id === id);
+      const [dinnerData, photosData] = await Promise.all([
+        apiFetch<any>(`/api/dinners/${id}`),
+        apiFetch<any>(`/api/dinners/${id}/photos`),
+      ]);
+      const currentDinner =
+        dinnerData.dinner ??
+        dinnerData.dinners?.find((d: any) => d.id === id);
       setDinner(currentDinner);
-
-      // Fetch photos
-      const photosResponse = await fetch(`/api/dinners/${id}/photos`, {
-        headers: authHeaders,
-      });
-      const photosData = await photosResponse.json();
-
-      if (photosData.success) {
+      if (photosData.photos) {
         setPhotos(photosData.photos);
       }
     } catch (error) {
@@ -80,9 +73,9 @@ export default function DinnerPhotosPage({
 
     setUploading(true);
 
-    const token = localStorage.getItem("token");
+    const token = getAuthToken();
     if (!token) {
-      alert("Por favor faz login primeiro");
+      toastError("Por favor faz login primeiro");
       router.push("/login");
       setUploading(false);
       return;
@@ -90,7 +83,7 @@ export default function DinnerPhotosPage({
 
     // Upload each file
     for (const file of selectedFiles) {
-      // 1. Upload to storage
+      // 1. Upload to storage (FormData — keep native fetch)
       const formData = new FormData();
       formData.append("file", file);
       formData.append("bucket", "dinner-photos");
@@ -102,14 +95,14 @@ export default function DinnerPhotosPage({
       }).catch(() => null);
 
       if (!uploadResponse) {
-        alert("Erro de rede. Tenta novamente.");
+        toastError("Erro de rede. Tenta novamente.");
         setUploading(false);
         return;
       }
 
       const uploadData = await uploadResponse.json().catch(() => null);
       if (!uploadData?.success) {
-        alert(
+        toastError(
           "Erro ao fazer upload das fotos: " +
             (uploadData?.error ?? "Erro desconhecido"),
         );
@@ -118,25 +111,15 @@ export default function DinnerPhotosPage({
       }
 
       // 2. Save photo record to database
-      const photoResponse = await fetch(`/api/dinners/${id}/photos`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ photo_url: uploadData.url }),
-      }).catch(() => null);
-
-      if (!photoResponse) {
-        alert("Erro de rede. Tenta novamente.");
-        setUploading(false);
-        return;
-      }
-
-      const photoData = await photoResponse.json().catch(() => null);
-      if (!photoData?.success) {
-        alert(
-          "Erro ao guardar foto: " + (photoData?.error ?? "Erro desconhecido"),
+      try {
+        await apiFetch(`/api/dinners/${id}/photos`, {
+          method: "POST",
+          body: { photo_url: uploadData.url },
+        });
+      } catch (error) {
+        toastError(
+          "Erro ao guardar foto: " +
+            (error instanceof Error ? error.message : "Erro desconhecido"),
         );
         setUploading(false);
         return;
@@ -147,6 +130,7 @@ export default function DinnerPhotosPage({
     await fetchDinnerAndPhotos();
     setSelectedFiles([]);
     setUploading(false);
+    success("Fotos carregadas com sucesso!");
   }
 
   if (loading) {

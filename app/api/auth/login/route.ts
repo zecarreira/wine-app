@@ -3,18 +3,15 @@ import { db } from "@/lib/db";
 import { users } from "@/lib/schema";
 import { eq } from "drizzle-orm";
 import { comparePassword, createToken } from "@/lib/auth";
+import { parseBody } from "@/lib/api/parse-body";
+import { loginApiSchema } from "@/lib/validations";
+import { AUTH_COOKIE, authCookieOptions } from "@/lib/auth-cookie";
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { email, password } = body;
-
-    if (!email || !password) {
-      return NextResponse.json(
-        { error: "Email and password are required" },
-        { status: 400 }
-      );
-    }
+    const parsed = await parseBody(request, loginApiSchema);
+    if ("error" in parsed) return parsed.error;
+    const { email, password } = parsed.data;
 
     const [user] = await db
       .select()
@@ -47,12 +44,14 @@ export async function POST(request: NextRequest) {
 
     const token = createToken(user.id, user.role);
 
-    return NextResponse.json({
+    const res = NextResponse.json({
       success: true,
       message: "Login successful",
       user: { id: user.id, name: user.name, email: user.email, role: user.role },
       token,
     });
+    res.cookies.set(AUTH_COOKIE, token, authCookieOptions());
+    return res;
   } catch (error) {
     console.error("Login error:", error);
     return NextResponse.json({ error: "Login failed" }, { status: 500 });

@@ -3,6 +3,8 @@ import { db } from "@/lib/db";
 import { bottles, ratings, users } from "@/lib/schema";
 import { eq, inArray, asc } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
+import { requireAuth } from "@/lib/middleware";
+import { computeBottleStats, sortRankingsBestFirst } from "@/lib/domain";
 
 // GET /api/dinners/:id/ratings - Get aggregated ratings for all bottles in a dinner
 export async function GET(
@@ -10,6 +12,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requireAuth(request);
+    if (auth instanceof NextResponse) return auth;
+
     const { id: dinnerId } = await params;
 
     const broughtByUser = alias(users, "brought_by_user");
@@ -54,27 +59,15 @@ export async function GET(
 
     const bottlesWithRatings = dinnerBottles.map((bottle) => {
       const bottleRatings = allRatings.filter((r) => r.bottle_id === bottle.id);
-      const totalPoints = bottleRatings.reduce((sum, r) => sum + Number(r.score), 0);
-      const averageScore = bottleRatings.length > 0 ? totalPoints / bottleRatings.length : 0;
-      const highestRating = bottleRatings.length > 0 ? Math.max(...bottleRatings.map((r) => Number(r.score))) : 0;
-
+      const scores = bottleRatings.map((r) => Number(r.score));
       return {
         ...bottle,
         ratings: bottleRatings,
-        stats: {
-          total_ratings: bottleRatings.length,
-          average_score: Math.round(averageScore * 10) / 10,
-          total_points: Math.round(totalPoints * 10) / 10,
-          highest_rating: highestRating,
-        },
+        stats: computeBottleStats(scores),
       };
     });
 
-    const sortedBottles = [...bottlesWithRatings].sort((a, b) => {
-      if (b.stats.average_score !== a.stats.average_score) return b.stats.average_score - a.stats.average_score;
-      if (b.stats.total_points !== a.stats.total_points) return b.stats.total_points - a.stats.total_points;
-      return b.stats.highest_rating - a.stats.highest_rating;
-    });
+    const sortedBottles = sortRankingsBestFirst(bottlesWithRatings);
 
     return NextResponse.json({
       success: true,

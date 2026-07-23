@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { seasons, dinners, users } from "@/lib/schema";
 import { eq, asc } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
-import { authenticate } from "@/lib/middleware";
+import { requireAuth } from "@/lib/middleware";
 
 // GET /api/seasons/[id] - Get season details with dinners
 export async function GET(
@@ -11,7 +11,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await authenticate(request);
+    const auth = await requireAuth(request);
+    if (auth instanceof NextResponse) return auth;
+
     const { id } = await params;
 
     const [season] = await db

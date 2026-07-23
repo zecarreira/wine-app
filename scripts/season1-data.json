@@ -7,37 +7,37 @@
   "users": [
     {
       "name": "Ivo Duarte",
-      "email": "EMAIL_IVO_DUARTE@xxx.com",
+      "email": "user2@example.com",
       "role": "founder"
     },
     {
       "name": "Ivo Rocha",
-      "email": "EMAIL_IVO_ROCHA@xxx.com",
+      "email": "user3@example.com",
       "role": "founder"
     },
     {
       "name": "João Diogo Carvalho",
-      "email": "Jdhcarvalho@hotmail.com",
+      "email": "user4@example.com",
       "role": "founder"
     },
     {
       "name": "José Carreira",
-      "email": "jlncarreira@gmail.com",
+      "email": "user6@example.com",
       "role": "founder"
     },
     {
       "name": "Manuel Alves",
-      "email": "Manueljnalves@hotmail.com",
+      "email": "user5@example.com",
       "role": "founder"
     },
     {
       "name": "Miguel Violante",
-      "email": "violante_miguel@hotmail.com",
+      "email": "user7@example.com",
       "role": "founder"
     },
     {
       "name": "Ricardo Ambrósio",
-      "email": "Ambrosio.ricardo@hotmail.com",
+      "email": "user1@example.com",
       "role": "founder"
     }
   ],

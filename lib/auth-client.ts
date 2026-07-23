@@ -22,6 +22,8 @@ export function removeAuthToken(): void {
   if (typeof window === "undefined") return;
   localStorage.removeItem("token");
   localStorage.removeItem("user");
+  // Dual session: clear httpOnly cookie without removing localStorage dual-mode yet
+  void fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
 }
 
 export function getUser(): User | null {

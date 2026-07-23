@@ -1,7 +1,7 @@
 # Jantar do Vinho — Especificação Completa da Aplicação
 
 > **Documento vivo.** Corrige iterativamente conforme necessário.
-> Última atualização: 2026-02-19
+> Última atualização: 2026-03-26
 
 ---
 
@@ -187,17 +187,17 @@ Authorization: Bearer <token>
 ### Temporadas
 | Método | Rota | Auth | Descrição |
 |--------|------|------|-----------|
-| GET | `/api/seasons` | optional | Listar todas as temporadas com stats |
+| GET | `/api/seasons` | ✅ requireAuth | Listar todas as temporadas com stats |
 | POST | `/api/seasons` | ✅ founder/admin | Criar nova temporada (só se não há ativa) |
-| GET | `/api/seasons/active` | optional | Temporada ativa + lista de jantares + stats |
+| GET | `/api/seasons/active` | ✅ requireAuth | Temporada ativa + lista de jantares + stats |
 | GET | `/api/seasons/active/available-organizers` | ✅ founder | Founders que ainda não organizaram nesta temporada |
-| GET | `/api/seasons/[id]/stats` | ❌ (sem auth) | Stats de pagamentos de uma temporada |
+| GET | `/api/seasons/[id]/stats` | ✅ requireAuth | Stats de pagamentos de uma temporada |
 | POST | `/api/seasons/[id]/close` | ✅ founder/admin | Fechar temporada (requer exatamente 8 jantares) |
 
 ### Jantares
 | Método | Rota | Auth | Descrição |
 |--------|------|------|-----------|
-| GET | `/api/dinners` | optional | Listar jantares (filtro: `seasonId`, `onlyActive`) |
+| GET | `/api/dinners` | ✅ requireAuth | Listar jantares (filtro: `seasonId`, `onlyActive`) |
 | POST | `/api/dinners` | ✅ founder/admin | Criar jantar na temporada ativa |
 | GET | `/api/dinners/[id]` | ✅ requireAuth | Detalhes de um jantar |
 
@@ -206,15 +206,15 @@ Authorization: Bearer <token>
 |--------|------|------|-----------|
 | POST | `/api/dinners/[id]/start` | ✅ host/creator | Iniciar prova cega (setup → active) |
 | POST | `/api/dinners/[id]/end` | ✅ host/creator | Terminar jantar (active → ended, is_completed=true) |
-| GET | `/api/dinners/[id]/reveal-status` | ❌ | Estado atual da revelação |
+| GET | `/api/dinners/[id]/reveal-status` | ✅ requireAuth | Estado atual da revelação |
 | POST | `/api/dinners/[id]/reveal-next` | ✅ host/creator | Revelar próxima garrafa (ended/revealing → completing) |
-| GET | `/api/dinners/[id]/ratings` | ❌ | Rankings finais do jantar |
+| GET | `/api/dinners/[id]/ratings` | ✅ requireAuth | Rankings finais do jantar |
 
 ### Garrafas
 | Método | Rota | Auth | Descrição |
 |--------|------|------|-----------|
 | GET | `/api/bottles` | ✅ requireAuth | Catálogo global de vinhos (sort, filter) |
-| GET | `/api/dinners/[id]/bottles` | ❌ | Garrafas de um jantar |
+| GET | `/api/dinners/[id]/bottles` | ✅ requireAuth | Garrafas de um jantar |
 | POST | `/api/dinners/[id]/bottles` | ✅ requireAuth | Adicionar garrafa (max 1 ou 2 se organizer) |
 | GET | `/api/bottles/[id]/ratings` | ✅ requireAuth | Ratings de uma garrafa |
 | POST | `/api/bottles/[id]/ratings` | ✅ requireAuth | Submeter/atualizar rating (upsert) |
@@ -225,7 +225,7 @@ Authorization: Bearer <token>
 | GET | `/api/dinners/[id]/payments` | ✅ requireAuth | Listar pagamentos + multas + stats do jantar |
 | POST | `/api/dinners/[id]/payments` | ✅ admin only | Criar pagamento manualmente |
 | PATCH | `/api/dinners/[id]/payments/[paymentId]` | ✅ admin only | Marcar como paid/pending |
-| GET | `/api/dinners/[id]/payments/[paymentId]/fines` | ❌ | Listar multas de um pagamento |
+| GET | `/api/dinners/[id]/payments/[paymentId]/fines` | ✅ requireAuth | Listar multas de um pagamento |
 | POST | `/api/dinners/[id]/payments/[paymentId]/fines` | ✅ admin ou host | Adicionar multa |
 | PATCH/DELETE | `/api/dinners/[id]/payments/[paymentId]/fines/[fineId]` | ✅ admin | Editar/apagar multa |
 
@@ -459,13 +459,13 @@ Authorization: Bearer <token>
 
 | Schema | Campos |
 |--------|--------|
-| `loginSchema` | email (valid), password (min 6 client ⚠️) |
-| `registerSchema` | name (min 2), email, password (min 6 client ⚠️), confirmPassword |
+| `loginSchema` | email (valid), password (min 6) |
+| `registerSchema` | name (min 2), email, password (min 12, alinhado com API), confirmPassword |
 | `createDinnerSchema` | name (min 3), event_date (YYYY-MM-DD), location?, is_blind (default true) |
-| `ratingSchema` | score (1-10), tasting_notes (max 500)? |
+| `ratingSchema` | score (1–10, passos de 0.5), tasting_notes (max 500)? |
 | `addBottleSchema` | name (min 2), producer?, vintage (1900-now+1)?, wine_type?, description (max 500)? |
 
-> ⚠️ **Discrepância:** O cliente valida password com min 6 chars, mas o servidor exige min **12** chars. Formulários de login e registo não usam os Zod schemas — fazem validação nativa HTML.
+> Nota: Login mantém min 6 no cliente (servidor valida credenciais). Registo exige min **12** no schema e na API. Score mínimo é **1** (não 0), em passos de 0.5.
 
 ### `lib/auth-client.ts`
 - `getUser()` — retorna user do localStorage (com try/catch)

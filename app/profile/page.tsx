@@ -70,6 +70,7 @@ export default function ProfilePage() {
   function handleLogout() {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+    void fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
     router.push("/login");
   }
 
