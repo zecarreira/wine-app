@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { use } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api-client";
 import { useToast } from "@/components/ToastProvider";
 import { useAuth } from "@/components/AuthProvider";
@@ -25,6 +26,17 @@ interface Dinner {
   event_date: string;
 }
 
+interface DinnerApiResponse {
+  success?: boolean;
+  dinner?: Dinner;
+  dinners?: Dinner[];
+}
+
+interface PhotosApiResponse {
+  success?: boolean;
+  photos?: Photo[];
+}
+
 export default function DinnerPhotosPage({
   params,
 }: {
@@ -34,35 +46,30 @@ export default function DinnerPhotosPage({
   const router = useRouter();
   const { success, error: toastError } = useToast();
   const { user: authUser } = useAuth();
-  const [photos, setPhotos] = useState<Photo[]>([]);
-  const [dinner, setDinner] = useState<Dinner | null>(null);
-  const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
-  async function fetchDinnerAndPhotos() {
-    try {
+  const { data, isLoading, refetch } = useQuery({
+    queryKey: ["dinners", id, "photos-page"],
+    queryFn: async () => {
       const [dinnerData, photosData] = await Promise.all([
-        apiFetch<any>(`/api/dinners/${id}`),
-        apiFetch<any>(`/api/dinners/${id}/photos`),
+        apiFetch<DinnerApiResponse>(`/api/dinners/${id}`),
+        apiFetch<PhotosApiResponse>(`/api/dinners/${id}/photos`),
       ]);
       const currentDinner =
         dinnerData.dinner ??
-        dinnerData.dinners?.find((d: any) => d.id === id);
-      setDinner(currentDinner);
-      if (photosData.photos) {
-        setPhotos(photosData.photos);
-      }
-    } catch (error) {
-      console.error("Error fetching data:", error);
-    }
-    setLoading(false);
-  }
+        dinnerData.dinners?.find((d) => d.id === id) ??
+        null;
+      return {
+        dinner: currentDinner,
+        photos: photosData.photos ?? [],
+      };
+    },
+  });
 
-  useEffect(() => {
-    fetchDinnerAndPhotos();
-  }, [id]);
+  const dinner = data?.dinner ?? null;
+  const photos = data?.photos ?? [];
 
   function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files || []);
@@ -127,13 +134,13 @@ export default function DinnerPhotosPage({
     }
 
     // Refresh photos
-    await fetchDinnerAndPhotos();
+    await refetch();
     setSelectedFiles([]);
     setUploading(false);
     success("Fotos carregadas com sucesso!");
   }
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
         <div className="text-center">

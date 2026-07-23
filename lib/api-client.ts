@@ -36,22 +36,39 @@ export async function apiFetch<T = unknown>(
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
 
-  let data: any = null;
+  let data: unknown = null;
   try {
     data = await res.json();
   } catch {
     /* empty or non-JSON body */
   }
 
+  const errorMessage = (fallback: string): string => {
+    if (
+      data &&
+      typeof data === "object" &&
+      "error" in data &&
+      typeof (data as { error: unknown }).error === "string"
+    ) {
+      return (data as { error: string }).error;
+    }
+    return fallback;
+  };
+
   if (!res.ok) {
     throw new ApiError(
-      data?.error ?? `Request failed (${res.status})`,
+      errorMessage(`Request failed (${res.status})`),
       res.status,
       data
     );
   }
-  if (data && data.success === false) {
-    throw new ApiError(data.error ?? "Request failed", res.status, data);
+  if (
+    data &&
+    typeof data === "object" &&
+    "success" in data &&
+    (data as { success: unknown }).success === false
+  ) {
+    throw new ApiError(errorMessage("Request failed"), res.status, data);
   }
   return data as T;
 }

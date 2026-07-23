@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { seasons, dinners, users } from "@/lib/schema";
-import { eq, inArray, isNotNull } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { requireFounder } from "@/lib/middleware";
 
 /**

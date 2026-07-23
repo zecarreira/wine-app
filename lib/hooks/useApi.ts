@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api-client";
+import type { CatalogBottle } from "@/components/BottleCard";
 
 // Types
 interface Dinner {
@@ -23,11 +24,81 @@ interface Bottle {
   position: number;
 }
 
+export interface ActiveSeasonDinner {
+  id: string;
+  name: string;
+  event_date: string;
+  location: string | null;
+  is_blind: boolean;
+  status?: string;
+  dinner_number_in_season?: number | null;
+  is_extra_dinner?: boolean;
+  is_completed?: boolean;
+}
+
+export interface ActiveSeason {
+  id: string;
+  season_number: number;
+  dinners: ActiveSeasonDinner[];
+  stats: {
+    total_dinners: number;
+    regular_dinners: number;
+    extra_dinners: number;
+    is_full: boolean;
+    can_close: boolean;
+  };
+}
+
+export interface DinnerRatingUser {
+  id: string;
+  name: string;
+}
+
+export interface DinnerRatingItem {
+  score: number;
+  tasting_notes?: string | null;
+  user?: DinnerRatingUser | null;
+}
+
+export interface DinnerRatingsBottle {
+  id: string;
+  name: string;
+  producer?: string | null;
+  vintage?: number | null;
+  wine_type?: string | null;
+  position?: number | null;
+  ratings?: DinnerRatingItem[];
+  stats?: {
+    total_ratings: number;
+    average_score: number;
+    total_points: number;
+    highest_rating: number;
+  };
+}
+
+export interface DinnerRatingsResponse {
+  success: boolean;
+  bottles: DinnerRatingsBottle[];
+  rankings: DinnerRatingsBottle[];
+  stats?: {
+    total_bottles: number;
+    total_ratings: number;
+  };
+  message?: string;
+}
+
+export interface BottlesCatalogResponse {
+  success: boolean;
+  bottles: CatalogBottle[];
+  producers: string[];
+  total: number;
+}
+
 export function useActiveSeason() {
   return useQuery({
     queryKey: ["seasons", "active"],
     queryFn: async () => {
-      const data = await apiFetch<{ success: boolean; season: any }>(
+      const data = await apiFetch<{ success: boolean; season: ActiveSeason | null }>(
         "/api/seasons/active"
       );
       return data.season ?? null;
@@ -81,7 +152,7 @@ export function useDinnerRatings(dinnerId: string) {
   return useQuery({
     queryKey: ["dinners", dinnerId, "ratings"],
     queryFn: async () => {
-      return apiFetch<any>(`/api/dinners/${dinnerId}/ratings`);
+      return apiFetch<DinnerRatingsResponse>(`/api/dinners/${dinnerId}/ratings`);
     },
     enabled: !!dinnerId,
   });
@@ -152,7 +223,7 @@ export function useBottlesCatalog(params?: {
   return useQuery({
     queryKey: ["bottles", "catalog", params],
     queryFn: async () => {
-      return apiFetch<any>(`/api/bottles?${searchParams}`);
+      return apiFetch<BottlesCatalogResponse>(`/api/bottles?${searchParams}`);
     },
   });
 }

@@ -76,9 +76,6 @@ export default function BottleDetailPage({
     description: "",
     photo_url: "",
   });
-  const [photoFile, setPhotoFile] = useState<File | null>(null);
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
-
   async function fetchBottle() {
     try {
       const data = await apiFetch<{ success: boolean; bottle: BottleWithDetails }>(
@@ -121,8 +118,6 @@ export default function BottleDetailPage({
         photo_url: bottle.photo_url || "",
       });
     }
-    setPhotoFile(null);
-    setPhotoPreview(null);
     setIsEditing(false);
   }
 
@@ -550,7 +545,7 @@ export default function BottleDetailPage({
                     {bottle.description && (
                       <div className="bg-white/5 rounded-2xl p-4 mb-6">
                         <p className="text-white/80 italic leading-relaxed">
-                          "{bottle.description}"
+                          &quot;{bottle.description}&quot;
                         </p>
                       </div>
                     )}
@@ -678,7 +673,7 @@ export default function BottleDetailPage({
                   {rating.tasting_notes && (
                     <div className="bg-white/5 rounded-xl p-3 mt-3">
                       <p className="text-white/80 text-sm italic">
-                        "{rating.tasting_notes}"
+                        &quot;{rating.tasting_notes}&quot;
                       </p>
                     </div>
                   )}

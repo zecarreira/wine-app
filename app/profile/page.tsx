@@ -1,12 +1,39 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/components/ToastProvider";
 import { useAuth } from "@/components/AuthProvider";
 import { apiFetch, ApiError } from "@/lib/api-client";
+import { useState } from "react";
+
+interface ProfileDinner {
+  id: string;
+  name: string;
+  event_date?: string | null;
+  status: string;
+  is_blind: boolean;
+}
+
+interface ProfileBottle {
+  id: string;
+  name: string;
+  producer?: string | null;
+  vintage?: number | null;
+  photo_url?: string | null;
+  dinner: ProfileDinner;
+}
+
+interface ProfileRating {
+  id: string;
+  score: number;
+  tasting_notes?: string | null;
+  created_at: string;
+  bottle: ProfileBottle;
+}
 
 interface ProfileUser {
   id: string;
@@ -22,49 +49,45 @@ interface ProfileUser {
     average_rating: string;
     total_spent: number;
   };
-  favorite_wine: any;
-  recent_ratings: any[];
-  bottles_brought: any[];
+  favorite_wine: ProfileRating | null;
+  recent_ratings: ProfileRating[];
+  bottles_brought: ProfileBottle[];
 }
 
 export default function ProfilePage() {
   const router = useRouter();
   const toast = useToast();
   const { user: authUser, loading: authLoading, logout } = useAuth();
-  const [user, setUser] = useState<ProfileUser | null>(null);
-  const [loading, setLoading] = useState(true);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
-  const fetchProfile = useCallback(async () => {
-    if (!authUser) {
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const data = await apiFetch<{ success: boolean; user: ProfileUser }>(
-        `/api/users/${authUser.id}`
-      );
-      setUser(data.user);
-    } catch (error) {
-      console.error("Error fetching profile:", error);
-      if (error instanceof ApiError && error.status === 401) {
-        await logout();
-        router.push("/login");
-      }
-    }
-    setLoading(false);
-  }, [authUser, logout, router]);
-
   useEffect(() => {
-    if (authLoading) return;
-    if (!authUser) {
+    if (!authLoading && !authUser) {
       router.push("/login");
-      return;
     }
-    setLoading(true);
-    void fetchProfile();
-  }, [authLoading, authUser, fetchProfile, router]);
+  }, [authLoading, authUser, router]);
+
+  const {
+    data: user,
+    isLoading: profileLoading,
+    refetch,
+  } = useQuery({
+    queryKey: ["users", authUser?.id],
+    queryFn: async () => {
+      try {
+        const data = await apiFetch<{ success: boolean; user: ProfileUser }>(
+          `/api/users/${authUser!.id}`
+        );
+        return data.user;
+      } catch (error) {
+        if (error instanceof ApiError && error.status === 401) {
+          await logout();
+          router.push("/login");
+        }
+        throw error;
+      }
+    },
+    enabled: !!authUser && !authLoading,
+  });
 
   async function handleLogout() {
     await logout();
@@ -122,7 +145,7 @@ export default function ProfilePage() {
         method: "PATCH",
         body: { profile_photo_url: uploadData.url },
       });
-      await fetchProfile();
+      await refetch();
     } catch (err) {
       toast.error(
         err instanceof ApiError
@@ -133,7 +156,7 @@ export default function ProfilePage() {
     setUploadingPhoto(false);
   }
 
-  if (authLoading || loading) {
+  if (authLoading || (authUser && profileLoading)) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
         <div className="text-center">

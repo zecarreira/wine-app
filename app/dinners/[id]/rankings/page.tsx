@@ -1,34 +1,9 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
 import { use } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { apiFetch } from "@/lib/api-client";
-
-interface Rating {
-  score: number;
-  tasting_notes: string;
-  user: {
-    name: string;
-  };
-}
-
-interface BottleWithRatings {
-  id: string;
-  name: string;
-  producer: string;
-  vintage: number;
-  wine_type: string;
-  position: number;
-  ratings: Rating[];
-  stats: {
-    total_ratings: number;
-    average_score: number;
-    total_points: number;
-    highest_rating: number;
-  };
-}
+import { useDinnerRatings } from "@/lib/hooks/useApi";
 
 export default function RankingsPage({
   params,
@@ -37,28 +12,20 @@ export default function RankingsPage({
 }) {
   const { id } = use(params);
   const router = useRouter();
-  const [rankings, setRankings] = useState<BottleWithRatings[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data, isLoading } = useDinnerRatings(id);
 
-  const fetchRankings = useCallback(async () => {
-    try {
-      const data = await apiFetch<any>(`/api/dinners/${id}/ratings`);
-      if (data.rankings) {
-        setRankings(data.rankings);
-      } else {
-        setRankings([]);
-      }
-    } catch {
-      console.error("Error fetching rankings");
-    }
-    setLoading(false);
-  }, [id]);
+  const rankings = (data?.rankings ?? []).filter(
+    (bottle): bottle is typeof bottle & {
+      stats: NonNullable<typeof bottle.stats>;
+      ratings: NonNullable<typeof bottle.ratings>;
+    } => Boolean(bottle.stats)
+  ).map((bottle) => ({
+    ...bottle,
+    ratings: bottle.ratings ?? [],
+    stats: bottle.stats!,
+  }));
 
-  useEffect(() => {
-    fetchRankings();
-  }, [fetchRankings]);
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
         <div className="text-center">
@@ -158,7 +125,7 @@ export default function RankingsPage({
                       <div key={rIndex} className="bg-white/5 rounded-xl p-3">
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-white font-semibold">
-                            {rating.user.name}
+                            {rating.user?.name ?? "—"}
                           </span>
                           <span className="text-amber-400 font-bold text-lg">
                             {rating.score}/10

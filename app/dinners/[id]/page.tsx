@@ -48,6 +48,26 @@ interface Dinner {
   };
 }
 
+interface DinnerApiResponse {
+  success?: boolean;
+  dinner?: Dinner;
+  dinners?: Dinner[];
+}
+
+interface BottlesApiResponse {
+  success: boolean;
+  bottles: Bottle[];
+}
+
+interface RatingsApiResponse {
+  success: boolean;
+  bottles?: Array<{
+    ratings?: Array<{
+      user?: { id: string; name: string } | null;
+    }>;
+  }>;
+}
+
 export default function DinnerDetailPage({
   params,
 }: {
@@ -74,14 +94,14 @@ export default function DinnerDetailPage({
   async function fetchDinnerAndBottles() {
     try {
       const [dinnerData, bottlesData, ratingsData] = await Promise.all([
-        apiFetch<any>(`/api/dinners/${id}`),
-        apiFetch<any>(`/api/dinners/${id}/bottles`),
-        apiFetch<any>(`/api/dinners/${id}/ratings`),
+        apiFetch<DinnerApiResponse>(`/api/dinners/${id}`),
+        apiFetch<BottlesApiResponse>(`/api/dinners/${id}/bottles`),
+        apiFetch<RatingsApiResponse>(`/api/dinners/${id}/ratings`),
       ]);
 
       const currentDinner =
-        dinnerData.dinner ?? dinnerData.dinners?.find((d: Dinner) => d.id === id);
-      setDinner(currentDinner);
+        dinnerData.dinner ?? dinnerData.dinners?.find((d) => d.id === id);
+      setDinner(currentDinner ?? null);
 
       // Check if user is host
       const userId = checkIfHost();
@@ -105,9 +125,9 @@ export default function DinnerDetailPage({
           string,
           { id: string; name: string }
         >();
-        ratingsData.bottles.forEach((bottle: any) => {
+        ratingsData.bottles.forEach((bottle) => {
           if (bottle.ratings) {
-            bottle.ratings.forEach((rating: any) => {
+            bottle.ratings.forEach((rating) => {
               if (rating.user) {
                 uniqueParticipants.set(rating.user.id, {
                   id: rating.user.id,

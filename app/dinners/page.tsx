@@ -244,7 +244,7 @@ export default function DinnersPage() {
           </Card>
         ) : (
           <div className="space-y-3">
-            {dinners.map((dinner: any) => (
+            {dinners.map((dinner) => (
               <Link
                 key={dinner.id}
                 href={`/dinners/${dinner.id}`}

@@ -25,7 +25,7 @@ export function getAuthToken(): string | null {
 }
 
 /** @deprecated Cookie session only — no-op. */
-export function setAuthToken(_token: string): void {
+export function setAuthToken(): void {
   // no-op
 }
 

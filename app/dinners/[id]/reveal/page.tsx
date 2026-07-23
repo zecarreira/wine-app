@@ -68,8 +68,16 @@ export default function RevealCeremonyPage({
 
   const fetchRevealStatus = useCallback(async () => {
     try {
-      const data = await apiFetch<any>(`/api/dinners/${id}/reveal-status`);
-      setRevealStatus(data);
+      const data = await apiFetch<RevealStatus & { success?: boolean }>(
+        `/api/dinners/${id}/reveal-status`
+      );
+      setRevealStatus({
+        status: data.status,
+        totalBottles: data.totalBottles,
+        revealedCount: data.revealedCount,
+        remainingCount: data.remainingCount,
+        canReveal: data.canReveal,
+      });
     } catch {
       console.error("Error fetching reveal status");
     } finally {
@@ -92,9 +100,10 @@ export default function RevealCeremonyPage({
   async function handleRevealNext() {
     setRevealing(true);
     try {
-      const data = await apiFetch<any>(`/api/dinners/${id}/reveal-next`, {
-        method: "POST",
-      });
+      const data = await apiFetch<LastRevealedData>(
+        `/api/dinners/${id}/reveal-next`,
+        { method: "POST" }
+      );
       setLastRevealed(data);
       setRevealedBottles([...revealedBottles, data.bottle]);
       await fetchRevealStatus();
