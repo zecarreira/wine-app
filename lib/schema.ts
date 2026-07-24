@@ -141,6 +141,8 @@ export const deadline_cycles = pgTable(
     fine_amount: integer("fine_amount").notNull(),
     deadline_at: date("deadline_at").notNull(),
     status: text("status").notNull().default("active"), // active | fulfilled | cancelled
+    /** Admin-assigned next organizer; null = use alphabetic suggestion */
+    responsible_organizer_id: uuid("responsible_organizer_id").references(() => users.id),
     created_at: timestamp("created_at", { withTimezone: true }).defaultNow(),
     updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow(),
   },

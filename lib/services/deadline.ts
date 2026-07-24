@@ -109,6 +109,10 @@ async function openCycleFromDinner(dinner: {
   const fineAmount = settings.deadline_fine_amount;
   const deadlineAt = computeDeadline(anchorDate, interval);
 
+  // Lazy default: alphabetic next organizer; admin can reassign on /calendar
+  const available = await getAvailableOrganizers();
+  const defaultOrg = available[0]?.id ?? null;
+
   const [created] = await db
     .insert(deadline_cycles)
     .values({
@@ -118,6 +122,7 @@ async function openCycleFromDinner(dinner: {
       fine_amount: fineAmount,
       deadline_at: deadlineAt,
       status: "active",
+      responsible_organizer_id: defaultOrg,
     })
     .returning();
   return created;
@@ -160,6 +165,77 @@ export async function getCurrentOrganizerSuggestion(): Promise<{
 } | null> {
   const available = await getAvailableOrganizers();
   return available[0] ?? null;
+}
+
+/** All founder+admin for admin picker. */
+export async function getAllOrganizerOptions(): Promise<
+  { id: string; name: string; email: string; role: string }[]
+> {
+  return db
+    .select({
+      id: users.id,
+      name: users.name,
+      email: users.email,
+      role: users.role,
+    })
+    .from(users)
+    .where(inArray(users.role, ["founder", "admin"]))
+    .orderBy(asc(users.name));
+}
+
+/** Assigned organizer or alphabetic suggestion. */
+export async function getResponsibleOrganizer(
+  cycle: DeadlineCycle
+): Promise<{
+  id: string;
+  name: string;
+  email?: string;
+  source: "assigned" | "suggestion";
+} | null> {
+  if (cycle.responsible_organizer_id) {
+    const [u] = await db
+      .select({ id: users.id, name: users.name, email: users.email })
+      .from(users)
+      .where(eq(users.id, cycle.responsible_organizer_id))
+      .limit(1);
+    if (u) return { ...u, source: "assigned" as const };
+  }
+  const suggestion = await getCurrentOrganizerSuggestion();
+  if (!suggestion) return null;
+  return {
+    id: suggestion.id,
+    name: suggestion.name,
+    email: suggestion.email,
+    source: "suggestion" as const,
+  };
+}
+
+export async function setResponsibleOrganizer(
+  organizerId: string | null
+): Promise<DeadlineCycle> {
+  const cycle = await getActiveCycle();
+  if (!cycle) throw new Error("Sem ciclo de prazo activo");
+
+  if (organizerId) {
+    const [u] = await db
+      .select({ id: users.id, role: users.role })
+      .from(users)
+      .where(eq(users.id, organizerId))
+      .limit(1);
+    if (!u || (u.role !== "founder" && u.role !== "admin")) {
+      throw new Error("Organizador inválido (tem de ser founder ou admin)");
+    }
+  }
+
+  const [updated] = await db
+    .update(deadline_cycles)
+    .set({
+      responsible_organizer_id: organizerId,
+      updated_at: new Date(),
+    })
+    .where(eq(deadline_cycles.id, cycle.id))
+    .returning();
+  return updated;
 }
 
 async function countRegularCompletedInActiveSeason(): Promise<number> {
@@ -238,9 +314,8 @@ export async function ensureDeadlineState(today: string = todayLisbon()): Promis
     return { cycle, pausePenalties: false, created: 0 };
   }
 
-  const organizer = await getCurrentOrganizerSuggestion();
-  // Fallback: if no available organizer, use any founder/admin alphabetically
-  let userId = organizer?.id ?? null;
+  const responsible = await getResponsibleOrganizer(cycle);
+  let userId = responsible?.id ?? null;
   if (!userId) {
     const [fallback] = await db
       .select({ id: users.id })
@@ -409,6 +484,8 @@ export type DeadlineStatusPayload = {
   interval_months: number | null;
   fine_amount: number | null;
   organizer: { id: string; name: string } | null;
+  organizer_source: "assigned" | "suggestion" | null;
+  organizer_options: { id: string; name: string; role: string }[];
   pending_penalties_count: number;
   pending_penalties_amount: number;
   today: string;
@@ -430,6 +507,12 @@ export async function getDeadlineStatus(
       interval_months: null,
       fine_amount: null,
       organizer: null,
+      organizer_source: null,
+      organizer_options: (await getAllOrganizerOptions()).map((o) => ({
+        id: o.id,
+        name: o.name,
+        role: o.role,
+      })),
       pending_penalties_count: 0,
       pending_penalties_amount: 0,
       today,
@@ -446,10 +529,9 @@ export async function getDeadlineStatus(
     warningDays: DEADLINE_WARNING_DAYS,
   });
 
-  const organizer = await getCurrentOrganizerSuggestion();
+  const responsible = await getResponsibleOrganizer(cycle);
+  const options = await getAllOrganizerOptions();
 
-  // All pending penalties (any cycle) for banner totals
-  // Use all pending for the user-facing banner (cycle + any orphan pending amounts).
   const allPending = await db
     .select({ amount: deadline_penalties.amount })
     .from(deadline_penalties)
@@ -467,9 +549,15 @@ export async function getDeadlineStatus(
     days_left: daysLeft,
     interval_months: cycle.interval_months,
     fine_amount: cycle.fine_amount,
-    organizer: organizer
-      ? { id: organizer.id, name: organizer.name }
+    organizer: responsible
+      ? { id: responsible.id, name: responsible.name }
       : null,
+    organizer_source: responsible?.source ?? null,
+    organizer_options: options.map((o) => ({
+      id: o.id,
+      name: o.name,
+      role: o.role,
+    })),
     pending_penalties_count: pendingCount,
     pending_penalties_amount: pendingAmount,
     today,

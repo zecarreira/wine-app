@@ -369,28 +369,32 @@ export async function chooseDate(input: {
 
   let organizerId: string | null = null;
   if (!isExtra) {
-    if (input.organizerId) {
-      const [org] = await db
-        .select({ id: users.id, role: users.role, name: users.name })
-        .from(users)
-        .where(eq(users.id, input.organizerId))
-        .limit(1);
-      if (!org || (org.role !== "founder" && org.role !== "admin")) {
-        throw new Error("Organizador inválido");
-      }
+    const available = await getAvailableOrganizers();
+    if (available.length === 0) {
+      throw new Error("Sem organizadores disponíveis");
+    }
+    const cycle = await getActiveCycle();
+    const candidateId =
+      input.organizerId ?? cycle?.responsible_organizer_id ?? available[0].id;
+
+    const [org] = await db
+      .select({ id: users.id, role: users.role, name: users.name })
+      .from(users)
+      .where(eq(users.id, candidateId))
+      .limit(1);
+    if (!org || (org.role !== "founder" && org.role !== "admin")) {
+      // Invalid candidate → fall back to first available
+      organizerId = available[0].id;
+    } else {
       const existingIds = seasonDinners
         .map((d) => d.organizer_id)
         .filter((id): id is string => Boolean(id));
-      if (organizerAlreadyUsed(existingIds, input.organizerId)) {
-        throw new Error("Este founder já organizou um jantar nesta temporada");
+      if (organizerAlreadyUsed(existingIds, candidateId)) {
+        // Already organized this season → fall back to first available
+        organizerId = available[0].id;
+      } else {
+        organizerId = candidateId;
       }
-      organizerId = input.organizerId;
-    } else {
-      const available = await getAvailableOrganizers();
-      if (available.length === 0) {
-        throw new Error("Sem organizadores disponíveis");
-      }
-      organizerId = available[0].id;
     }
   }
 

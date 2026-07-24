@@ -8,7 +8,6 @@ import Card from "@/components/Card";
 import { useAuth } from "@/components/AuthProvider";
 import { useToast } from "@/components/ToastProvider";
 import { apiFetch, ApiError } from "@/lib/api-client";
-import DeadlineBanner from "@/components/DeadlineBanner";
 import { MIN_AVAILABLE_FOR_SCHEDULED_DINNER } from "@/lib/domain/constants";
 
 type Poll = {
@@ -47,6 +46,8 @@ type DeadlineStatus = {
   deadline_at: string | null;
   days_left: number | null;
   organizer: { id: string; name: string } | null;
+  organizer_source: "assigned" | "suggestion" | null;
+  organizer_options: { id: string; name: string; role: string }[];
 };
 
 function eachDay(start: string, end: string): string[] {
@@ -95,6 +96,8 @@ export default function CalendarPage() {
   const [deadlineStatus, setDeadlineStatus] = useState<DeadlineStatus | null>(
     null
   );
+  const [organizerSelect, setOrganizerSelect] = useState<string>("");
+  const [savingOrganizer, setSavingOrganizer] = useState(false);
 
   const load = useCallback(async () => {
     if (!user || !isFounder) {
@@ -131,8 +134,10 @@ export default function CalendarPage() {
           status: DeadlineStatus;
         }>("/api/deadline/status");
         setDeadlineStatus(dl.status);
+        setOrganizerSelect(dl.status.organizer?.id ?? "");
       } catch {
         setDeadlineStatus(null);
+        setOrganizerSelect("");
       }
 
       if (isAdmin) {
@@ -338,6 +343,29 @@ export default function CalendarPage() {
     }
   }
 
+  async function handleSaveOrganizer() {
+    setSavingOrganizer(true);
+    try {
+      const data = await apiFetch<{
+        success: boolean;
+        status: DeadlineStatus;
+      }>("/api/deadline/organizer", {
+        method: "PATCH",
+        body: { organizer_id: organizerSelect || null },
+      });
+      setDeadlineStatus(data.status);
+      setOrganizerSelect(data.status.organizer?.id ?? "");
+      showToast("Organizador actualizado", "success");
+    } catch (err) {
+      showToast(
+        err instanceof ApiError ? err.message : "Erro ao guardar organizador",
+        "error"
+      );
+    } finally {
+      setSavingOrganizer(false);
+    }
+  }
+
   async function handleWaive(id: string) {
     if (!confirm("Dispensar esta multa de prazo?")) return;
     try {
@@ -391,15 +419,13 @@ export default function CalendarPage() {
           Poll de disponibilidade e limite de marcação do próximo jantar
         </p>
 
-        <DeadlineBanner />
-
         {/* Deadline limit card — always visible */}
         <Card className="p-4 mb-4">
           <h2 className="text-white font-semibold mb-2 flex items-center gap-2">
             <span>⏳</span> Limite de marcação do próximo jantar
           </h2>
           {deadlineStatus?.has_cycle && deadlineStatus.deadline_at ? (
-            <div className="text-sm space-y-1">
+            <div className="text-sm space-y-2">
               <p className="text-white/90">
                 Prazo:{" "}
                 <span className="font-semibold text-white">
@@ -417,7 +443,39 @@ export default function CalendarPage() {
                 {deadlineStatus.organizer?.name
                   ? ` · Organizador da vez: ${deadlineStatus.organizer.name}`
                   : ""}
+                {deadlineStatus.organizer_source === "suggestion"
+                  ? " (sugestão automática — podes alterar)"
+                  : ""}
               </p>
+              {isAdmin && (
+                <div className="pt-2 border-t border-white/10 space-y-2">
+                  <label className="text-xs text-white/50 block">
+                    Organizador responsável
+                    <select
+                      value={organizerSelect}
+                      onChange={(e) => setOrganizerSelect(e.target.value)}
+                      className="mt-1 w-full rounded-lg bg-white/10 border border-white/20 px-2 py-1.5 text-white text-sm"
+                    >
+                      <option value="">— sugestão automática —</option>
+                      {(deadlineStatus.organizer_options ?? []).map((o) => (
+                        <option key={o.id} value={o.id}>
+                          {o.name}
+                          {o.role === "admin" ? " (admin)" : ""}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={handleSaveOrganizer}
+                    disabled={savingOrganizer || submitting}
+                    fullWidth
+                  >
+                    {savingOrganizer ? "A guardar…" : "Guardar"}
+                  </Button>
+                </div>
+              )}
             </div>
           ) : (
             <p className="text-sm text-white/60">

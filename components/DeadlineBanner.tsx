@@ -14,6 +14,7 @@ type DeadlineStatus = {
   interval_months: number | null;
   fine_amount: number | null;
   organizer: { id: string; name: string } | null;
+  organizer_source?: "assigned" | "suggestion" | null;
   pending_penalties_count: number;
   pending_penalties_amount: number;
   today: string;
@@ -66,7 +67,11 @@ export default function DeadlineBanner() {
   const urgency = status.urgency;
   const box = styles[urgency] ?? styles.ok;
   const icon = icons[urgency] ?? "📅";
-  const org = status.organizer?.name ?? "—";
+  const orgBase = status.organizer?.name ?? "—";
+  const org =
+    status.organizer_source === "suggestion" && status.organizer
+      ? `${orgBase} (sugerido)`
+      : orgBase;
 
   let title = "";
   let detail = "";
