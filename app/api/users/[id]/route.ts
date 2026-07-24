@@ -11,7 +11,7 @@ type UserRatingRow = {
   id: string;
   score: number | string;
   tasting_notes: string | null;
-  created_at: Date | string;
+  created_at: Date | string | null;
   bottle_id: string | null;
   bottle_name: string | null;
   bottle_producer: string | null;
@@ -29,7 +29,7 @@ function formatRating(r: UserRatingRow) {
     id: r.id,
     score: r.score,
     tasting_notes: r.tasting_notes,
-    created_at: r.created_at,
+    created_at: r.created_at ?? null,
     bottle: r.bottle_id
       ? {
           id: r.bottle_id,

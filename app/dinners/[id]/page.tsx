@@ -511,7 +511,7 @@ export default function DinnerDetailPage({
                   >
                     {/* Edit/Delete Buttons - Only in setup mode and for bottle owner */}
                     {dinner.status === "setup" &&
-                      bottle.brought_by === checkIfHost() && (
+                      bottle.brought_by === authUser?.id && (
                         <div className="absolute top-2 right-2 md:top-4 md:right-4 z-10">
                           <button type="button"
                             onClick={(e) => {
