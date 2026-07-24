@@ -8,7 +8,9 @@ import {
   defaultPollWindow,
   periodDeadlineDate,
   periodsDue,
+  requireDateString,
   shouldPausePenalties,
+  toDateString,
 } from "@/lib/domain/deadline";
 import {
   DEFAULT_DEADLINE_FINE,
@@ -152,5 +154,41 @@ describe("computeUrgency", () => {
     expect(
       computeUrgency({ hasCycle: true, daysLeft: 60, pausePenalties: false })
     ).toBe("ok");
+  });
+});
+
+describe("toDateString / requireDateString", () => {
+  it("returns null for nullish", () => {
+    expect(toDateString(null)).toBeNull();
+    expect(toDateString(undefined)).toBeNull();
+  });
+
+  it("passes through YYYY-MM-DD strings", () => {
+    expect(toDateString("2024-07-15")).toBe("2024-07-15");
+  });
+
+  it("strips ISO datetime to date part", () => {
+    expect(toDateString("2024-07-15T12:34:56.000Z")).toBe("2024-07-15");
+  });
+
+  it("formats Date via UTC y/m/d", () => {
+    const d = new Date(Date.UTC(2024, 6, 15, 23, 0, 0)); // July 15 UTC
+    expect(toDateString(d)).toBe("2024-07-15");
+  });
+
+  it("returns null for invalid Date", () => {
+    expect(toDateString(new Date("not-a-date"))).toBeNull();
+  });
+
+  it("returns null for garbage strings", () => {
+    expect(toDateString("hello")).toBeNull();
+    expect(toDateString("15/07/2024")).toBeNull();
+  });
+
+  it("requireDateString returns string or throws", () => {
+    expect(requireDateString("2024-01-01")).toBe("2024-01-01");
+    expect(requireDateString(new Date(Date.UTC(2024, 0, 2)))).toBe("2024-01-02");
+    expect(() => requireDateString(null, "deadline_at")).toThrow(/deadline_at/);
+    expect(() => requireDateString("nope")).toThrow(/Invalid date/);
   });
 });

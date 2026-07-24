@@ -11,6 +11,29 @@ function assertDateStr(dateStr: string, label = "date"): void {
   }
 }
 
+/** Normalize DB/client date values to YYYY-MM-DD. */
+export function toDateString(value: string | Date | null | undefined): string | null {
+  if (value == null) return null;
+  if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) return null;
+    return formatYmd(value.getUTCFullYear(), value.getUTCMonth() + 1, value.getUTCDate());
+  }
+  const s = String(value);
+  if (DATE_RE.test(s)) return s;
+  // ISO datetime
+  const m = s.match(/^(\d{4}-\d{2}-\d{2})/);
+  return m ? m[1] : null;
+}
+
+export function requireDateString(
+  value: string | Date | null | undefined,
+  label = "date"
+): string {
+  const s = toDateString(value);
+  if (!s) throw new Error(`Invalid ${label}: ${value}`);
+  return s;
+}
+
 /** Parse YYYY-MM-DD into UTC year/month/day (month 1–12). */
 function parseYmd(dateStr: string): { y: number; m: number; d: number } {
   assertDateStr(dateStr);

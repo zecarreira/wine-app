@@ -14,6 +14,8 @@ import {
   isSeasonFull,
   nextDinnerNumber,
   organizerAlreadyUsed,
+  requireDateString,
+  toDateString,
   todayLisbon,
 } from "@/lib/domain";
 import {
@@ -72,8 +74,10 @@ export async function getActivePollPayload(viewerUserId: string) {
   const daysByResponse = new Map<string, string[]>();
   const dayCounts: Record<string, number> = {};
   for (const d of days) {
+    const dayStr = toDateString(d.day);
+    if (!dayStr) continue;
     const list = daysByResponse.get(d.response_id) ?? [];
-    list.push(d.day);
+    list.push(dayStr);
     daysByResponse.set(d.response_id, list);
     // Only count submitted responses for heatmap
   }
@@ -83,7 +87,9 @@ export async function getActivePollPayload(viewerUserId: string) {
   );
   for (const d of days) {
     if (!submittedResponseIds.has(d.response_id)) continue;
-    dayCounts[d.day] = (dayCounts[d.day] ?? 0) + 1;
+    const dayStr = toDateString(d.day);
+    if (!dayStr) continue;
+    dayCounts[dayStr] = (dayCounts[dayStr] ?? 0) + 1;
   }
 
   const responsesWithDays = responses.map((r) => ({
@@ -103,9 +109,17 @@ export async function getActivePollPayload(viewerUserId: string) {
     suggested = u ?? null;
   }
 
+  const windowStart = requireDateString(poll.window_start, "window_start");
+  const windowEnd = requireDateString(poll.window_end, "window_end");
+
   return {
     poll: {
       ...poll,
+      window_start: windowStart,
+      window_end: windowEnd,
+      chosen_date: poll.chosen_date
+        ? toDateString(poll.chosen_date)
+        : null,
       suggested_organizer: suggested,
     },
     responses: responsesWithDays,
@@ -134,7 +148,9 @@ export async function openPoll(input: {
   let windowEnd = input.window_end;
 
   if (!windowStart || !windowEnd) {
-    const deadlineAt = cycle?.deadline_at ?? today;
+    const deadlineAt = cycle
+      ? requireDateString(cycle.deadline_at, "deadline_at")
+      : today;
     const def = defaultPollWindow(today, deadlineAt);
     windowStart = windowStart ?? def.start;
     windowEnd = windowEnd ?? def.end;
@@ -180,8 +196,8 @@ export async function patchPoll(
   if (!poll) return null;
 
   const updates: Record<string, unknown> = {};
-  const start = input.window_start ?? poll.window_start;
-  const end = input.window_end ?? poll.window_end;
+  const start = input.window_start ?? requireDateString(poll.window_start, "window_start");
+  const end = input.window_end ?? requireDateString(poll.window_end, "window_end");
   if (end < start) {
     throw new Error("window_end deve ser >= window_start");
   }
@@ -215,8 +231,10 @@ export async function respondToPoll(input: {
     throw new Error("Poll não está aberto");
   }
 
+  const windowStart = requireDateString(poll.window_start, "window_start");
+  const windowEnd = requireDateString(poll.window_end, "window_end");
   const validDays = input.days.filter(
-    (d) => d >= poll.window_start && d <= poll.window_end
+    (d) => d >= windowStart && d <= windowEnd
   );
   // dedupe
   const uniqueDays = [...new Set(validDays)].sort();
@@ -285,7 +303,9 @@ export async function chooseDate(input: {
     throw new Error("Poll não está aberto");
   }
 
-  if (input.date < poll.window_start || input.date > poll.window_end) {
+  const windowStart = requireDateString(poll.window_start, "window_start");
+  const windowEnd = requireDateString(poll.window_end, "window_end");
+  if (input.date < windowStart || input.date > windowEnd) {
     throw new Error("Data fora da janela do poll");
   }
 

@@ -19,6 +19,7 @@ import {
   DEADLINE_WARNING_DAYS,
   periodDeadlineDate,
   periodsDue,
+  requireDateString,
   shouldPausePenalties,
   todayLisbon,
   type DeadlineUrgency,
@@ -155,7 +156,8 @@ export async function ensureDeadlineState(today: string = todayLisbon()): Promis
     return { cycle, pausePenalties: true, created: 0 };
   }
 
-  const due = periodsDue(cycle.deadline_at, cycle.interval_months, today);
+  const deadlineAt = requireDateString(cycle.deadline_at, "deadline_at");
+  const due = periodsDue(deadlineAt, cycle.interval_months, today);
   if (due.length === 0) {
     return { cycle, pausePenalties: false, created: 0 };
   }
@@ -191,7 +193,7 @@ export async function ensureDeadlineState(today: string = todayLisbon()): Promis
   let created = 0;
   for (const periodIndex of missing) {
     const periodDeadline = periodDeadlineDate(
-      cycle.deadline_at,
+      deadlineAt,
       cycle.interval_months,
       periodIndex
     );
@@ -242,7 +244,7 @@ export async function onDinnerRealized(dinner: DinnerLike): Promise<void> {
   }
 
   const settings = await getOrCreateSettings();
-  const anchorDate = dinner.event_date;
+  const anchorDate = requireDateString(dinner.event_date, "event_date");
   const interval = settings.dinner_interval_months;
   const fineAmount = settings.deadline_fine_amount;
   const deadlineAt = computeDeadline(anchorDate, interval);
@@ -382,7 +384,9 @@ export async function getDeadlineStatus(
     };
   }
 
-  const daysLeft = daysBetween(today, cycle.deadline_at);
+  const deadlineAt = requireDateString(cycle.deadline_at, "deadline_at");
+  const anchorDate = requireDateString(cycle.anchor_date, "anchor_date");
+  const daysLeft = daysBetween(today, deadlineAt);
   const urgency = computeUrgency({
     hasCycle: true,
     daysLeft,
@@ -406,8 +410,8 @@ export async function getDeadlineStatus(
     has_cycle: true,
     urgency,
     pause_penalties: pausePenalties,
-    anchor_date: cycle.anchor_date,
-    deadline_at: cycle.deadline_at,
+    anchor_date: anchorDate,
+    deadline_at: deadlineAt,
     days_left: daysLeft,
     interval_months: cycle.interval_months,
     fine_amount: cycle.fine_amount,

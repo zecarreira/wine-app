@@ -157,8 +157,11 @@ export default function CalendarPage() {
   }, [authLoading, user, isFounder, load, router, showToast]);
 
   const days = useMemo(() => {
-    if (!poll) return [];
-    return eachDay(poll.window_start, poll.window_end);
+    if (!poll?.window_start || !poll?.window_end) return [];
+    return eachDay(
+      String(poll.window_start).slice(0, 10),
+      String(poll.window_end).slice(0, 10)
+    );
   }, [poll]);
 
   function toggleDay(day: string) {
@@ -417,7 +420,7 @@ export default function CalendarPage() {
               </p>
 
               <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5 max-h-64 overflow-y-auto">
-                {days.map((day) => {
+                {(days ?? []).map((day) => {
                   const selected = myDays.has(day);
                   const count = dayCounts[day] ?? 0;
                   return (
@@ -523,7 +526,7 @@ export default function CalendarPage() {
                 <div className="pt-2 border-t border-white/10">
                   <p className="text-xs text-white/50 mb-1">Respostas</p>
                   <ul className="space-y-1">
-                    {responses.map((r) => (
+                    {(responses ?? []).map((r) => (
                       <li key={r.id} className="text-xs text-white/70 flex justify-between">
                         <span>{r.user_name ?? r.user_id.slice(0, 8)}</span>
                         <span>
@@ -595,7 +598,7 @@ export default function CalendarPage() {
                 <p className="text-sm text-white/50">Sem multas de prazo.</p>
               ) : (
                 <ul className="space-y-2">
-                  {penalties.map((p) => (
+                  {(penalties ?? []).map((p) => (
                     <li
                       key={p.id}
                       className="rounded-xl bg-white/5 border border-white/10 p-2 text-sm"
