@@ -73,6 +73,56 @@ export async function getActiveCycle(): Promise<DeadlineCycle | null> {
   return cycle ?? null;
 }
 
+/**
+ * Last realized dinner: is_completed = true, ordered by event_date then ended_at.
+ * Used as anchor for deadline cycles (including backfill for dinners completed
+ * before this feature existed).
+ */
+export async function getLastRealizedDinner(): Promise<{
+  id: string;
+  event_date: string;
+  is_completed: boolean | null;
+  name: string;
+} | null> {
+  const [row] = await db
+    .select({
+      id: dinners.id,
+      event_date: dinners.event_date,
+      is_completed: dinners.is_completed,
+      name: dinners.name,
+    })
+    .from(dinners)
+    .where(eq(dinners.is_completed, true))
+    .orderBy(desc(dinners.event_date), desc(dinners.ended_at))
+    .limit(1);
+  return row ?? null;
+}
+
+/** Open active cycle from a realized dinner (snapshot settings). */
+async function openCycleFromDinner(dinner: {
+  id: string;
+  event_date: string;
+}): Promise<DeadlineCycle> {
+  const settings = await getOrCreateSettings();
+  const anchorDate = requireDateString(dinner.event_date, "event_date");
+  const interval = settings.dinner_interval_months;
+  const fineAmount = settings.deadline_fine_amount;
+  const deadlineAt = computeDeadline(anchorDate, interval);
+
+  const [created] = await db
+    .insert(deadline_cycles)
+    .values({
+      anchor_dinner_id: dinner.id,
+      anchor_date: anchorDate,
+      interval_months: interval,
+      fine_amount: fineAmount,
+      deadline_at: deadlineAt,
+      status: "active",
+    })
+    .returning();
+  return created;
+}
+
 /** Founders/admins not yet organizers in active season, name ASC. */
 export async function getAvailableOrganizers(): Promise<
   { id: string; name: string; email: string }[]
@@ -144,7 +194,22 @@ export async function ensureDeadlineState(today: string = todayLisbon()): Promis
   pausePenalties: boolean;
   created: number;
 }> {
-  const cycle = await getActiveCycle();
+  let cycle = await getActiveCycle();
+
+  // Backfill: dinners realized before this feature never opened a cycle.
+  if (!cycle) {
+    const last = await getLastRealizedDinner();
+    if (last) {
+      try {
+        cycle = await openCycleFromDinner(last);
+      } catch (err) {
+        // race: another request created the active cycle
+        console.warn("ensureDeadlineState backfill race:", err);
+        cycle = await getActiveCycle();
+      }
+    }
+  }
+
   if (!cycle) {
     return { cycle: null, pausePenalties: false, created: 0 };
   }
@@ -243,20 +308,7 @@ export async function onDinnerRealized(dinner: DinnerLike): Promise<void> {
       .where(eq(deadline_cycles.id, active.id));
   }
 
-  const settings = await getOrCreateSettings();
-  const anchorDate = requireDateString(dinner.event_date, "event_date");
-  const interval = settings.dinner_interval_months;
-  const fineAmount = settings.deadline_fine_amount;
-  const deadlineAt = computeDeadline(anchorDate, interval);
-
-  await db.insert(deadline_cycles).values({
-    anchor_dinner_id: dinner.id,
-    anchor_date: anchorDate,
-    interval_months: interval,
-    fine_amount: fineAmount,
-    deadline_at: deadlineAt,
-    status: "active",
-  });
+  await openCycleFromDinner(dinner);
 }
 
 /**
