@@ -1,6 +1,7 @@
 import {
   DEFAULT_DINNER_INTERVAL_MONTHS,
   OVERDUE_POLL_HORIZON_DAYS,
+  SCHEDULED_DINNER_STATUSES,
 } from "./constants";
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -184,3 +185,10 @@ export function computeUrgency(input: {
   if (input.daysLeft <= warn) return "warning";
   return "ok";
 }
+
+/** True if any dinner status is still scheduled (setup or active). */
+export function hasScheduledDinner(statuses: string[]): boolean {
+  const scheduled: readonly string[] = SCHEDULED_DINNER_STATUSES;
+  return statuses.some((s) => scheduled.includes(s));
+}
+

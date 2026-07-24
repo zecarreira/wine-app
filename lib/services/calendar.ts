@@ -10,8 +10,10 @@ import {
 } from "@/lib/schema";
 import {
   defaultPollWindow,
+  hasScheduledDinner,
   isExtraDinner as computeIsExtraDinner,
   isSeasonFull,
+  MIN_AVAILABLE_FOR_SCHEDULED_DINNER,
   nextDinnerNumber,
   organizerAlreadyUsed,
   requireDateString,
@@ -320,9 +322,43 @@ export async function chooseDate(input: {
   }
 
   const seasonDinners = await db
-    .select({ organizer_id: dinners.organizer_id })
+    .select({
+      organizer_id: dinners.organizer_id,
+      status: dinners.status,
+    })
     .from(dinners)
     .where(eq(dinners.season_id, activeSeason.id));
+
+  if (hasScheduledDinner(seasonDinners.map((d) => d.status))) {
+    throw new Error(
+      "Já existe um jantar marcado. Só podes marcar o próximo depois de o actual terminar."
+    );
+  }
+
+  // Count founder|admin with submitted "Posso" on this date
+  const availableRows = await db
+    .select({ user_id: availability_responses.user_id })
+    .from(availability_responses)
+    .innerJoin(
+      availability_days,
+      eq(availability_days.response_id, availability_responses.id)
+    )
+    .innerJoin(users, eq(users.id, availability_responses.user_id))
+    .where(
+      and(
+        eq(availability_responses.poll_id, input.pollId),
+        eq(availability_responses.status, "submitted"),
+        eq(availability_days.day, input.date),
+        inArray(users.role, ["founder", "admin"])
+      )
+    );
+
+  const availableCount = new Set(availableRows.map((r) => r.user_id)).size;
+  if (availableCount < MIN_AVAILABLE_FOR_SCHEDULED_DINNER) {
+    throw new Error(
+      "São necessários pelo menos 6 membros disponíveis (Posso) neste dia."
+    );
+  }
 
   if (isSeasonFull(seasonDinners.length)) {
     throw new Error("Temporada cheia (máx. 8 jantares)");

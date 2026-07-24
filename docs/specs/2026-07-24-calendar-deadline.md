@@ -521,6 +521,52 @@ Lazy entrypoint: `ensureDeadlineState(now)` chamado nos GET de status/banner.
 |------|---------|
 | 2026-07-23/24 | Grill inicial |
 | 2026-07-24 | Revisão: R1–R7 incorporados no corpo do spec |
+| 2026-07-24 | Amendments: max 1 scheduled dinner; poll ≥6 Posso; deadline card UI |
+
+---
+
+
+
+---
+
+## Amendments 2026-07-24
+
+Product clarification after v1 implementation.
+
+### A1. Max 1 scheduled dinner at a time
+
+- **Scheduled** = dinner `status` in `setup` | `active` (not yet ended/realized).
+- Enforce on:
+  - `POST /api/dinners` (create dinner without poll)
+  - `chooseDate` in calendar service (admin marks date from poll)
+- Error PT: *«Já existe um jantar marcado. Só podes marcar o próximo depois de o actual terminar.»*
+- Domain: `SCHEDULED_DINNER_STATUSES`, helper `hasScheduledDinner(statuses)`.
+
+### A2. Poll is helper only — does not auto-mark
+
+- Poll does **not** auto-create a dinner.
+- Admin confirmation (`choose-date`) creates dinner **only if** that day has ≥ **6** members who **submitted** and marked **"Posso"** (day in `availability_days`).
+- Count users with role `founder` OR `admin` (admin counts as founder).
+- Constant: `MIN_AVAILABLE_FOR_SCHEDULED_DINNER = 6`.
+- Error if &lt; 6: *«São necessários pelo menos 6 membros disponíveis (Posso) neste dia.»*
+
+### A3. Create dinner without poll still allowed
+
+- Only rule A1 applies (max 1 scheduled). No availability threshold on direct create.
+
+### A4. Calendar UI — deadline limit always visible
+
+- Keep `DeadlineBanner` at top.
+- Also show card **«Limite de marcação do próximo jantar»** with deadline date / days left even when no poll (fetch `/api/deadline/status`).
+- If no cycle: *«Sem prazo activo (ainda não há jantar realizado).»*
+
+### A5. Calendar UI — choose-date UX
+
+- Day buttons show count of «Posso» (`day_counts`, submitted only).
+- Admin «Escolher» only enabled when `count >= 6` (greyed + tooltip otherwise).
+- Confirm: *«Confirmar marcação do jantar em {date}? ({n} membros disponíveis)»*
+- Copy: poll = disponibilidade; marcação só com confirmação admin e ≥6 Posso.
+- Poll is not the only path to create a dinner.
 
 ---
 

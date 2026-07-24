@@ -6,6 +6,7 @@ import {
   computeUrgency,
   daysBetween,
   defaultPollWindow,
+  hasScheduledDinner,
   periodDeadlineDate,
   periodsDue,
   requireDateString,
@@ -154,6 +155,21 @@ describe("computeUrgency", () => {
     expect(
       computeUrgency({ hasCycle: true, daysLeft: 60, pausePenalties: false })
     ).toBe("ok");
+  });
+});
+
+describe("hasScheduledDinner", () => {
+  it("true when any status is setup or active", () => {
+    expect(hasScheduledDinner(["ended", "setup"])).toBe(true);
+    expect(hasScheduledDinner(["active"])).toBe(true);
+    expect(hasScheduledDinner(["completed", "active", "ended"])).toBe(true);
+  });
+
+  it("false when none are scheduled", () => {
+    expect(hasScheduledDinner([])).toBe(false);
+    expect(hasScheduledDinner(["ended", "completed", "revealing"])).toBe(
+      false
+    );
   });
 });
 

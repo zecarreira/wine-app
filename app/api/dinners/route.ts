@@ -5,6 +5,7 @@ import { eq, desc } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { requireFounder, requireAuth } from "@/lib/middleware";
 import {
+  hasScheduledDinner,
   isSeasonFull,
   nextDinnerNumber,
   isExtraDinner as computeIsExtraDinner,
@@ -104,9 +105,22 @@ export async function POST(request: NextRequest) {
     }
 
     const seasonDinners = await db
-      .select({ organizer_id: dinners.organizer_id })
+      .select({
+        organizer_id: dinners.organizer_id,
+        status: dinners.status,
+      })
       .from(dinners)
       .where(eq(dinners.season_id, activeSeason.id));
+
+    if (hasScheduledDinner(seasonDinners.map((d) => d.status))) {
+      return NextResponse.json(
+        {
+          error:
+            "Já existe um jantar marcado. Só podes marcar o próximo depois de o actual terminar.",
+        },
+        { status: 400 }
+      );
+    }
 
     if (isSeasonFull(seasonDinners.length)) {
       return NextResponse.json(

@@ -9,6 +9,7 @@ import { useAuth } from "@/components/AuthProvider";
 import { useToast } from "@/components/ToastProvider";
 import { apiFetch, ApiError } from "@/lib/api-client";
 import DeadlineBanner from "@/components/DeadlineBanner";
+import { MIN_AVAILABLE_FOR_SCHEDULED_DINNER } from "@/lib/domain/constants";
 
 type Poll = {
   id: string;
@@ -38,6 +39,14 @@ type Penalty = {
   status: string;
   period_index: number;
   period_deadline: string | null;
+};
+
+type DeadlineStatus = {
+  has_cycle: boolean;
+  urgency: string;
+  deadline_at: string | null;
+  days_left: number | null;
+  organizer: { id: string; name: string } | null;
 };
 
 function eachDay(start: string, end: string): string[] {
@@ -83,6 +92,9 @@ export default function CalendarPage() {
   const [fineInput, setFineInput] = useState("20");
   const [windowStart, setWindowStart] = useState("");
   const [windowEnd, setWindowEnd] = useState("");
+  const [deadlineStatus, setDeadlineStatus] = useState<DeadlineStatus | null>(
+    null
+  );
 
   const load = useCallback(async () => {
     if (!user || !isFounder) {
@@ -111,6 +123,16 @@ export default function CalendarPage() {
       } else {
         setMyDays(new Set());
         setMyStatus(null);
+      }
+
+      try {
+        const dl = await apiFetch<{
+          success: boolean;
+          status: DeadlineStatus;
+        }>("/api/deadline/status");
+        setDeadlineStatus(dl.status);
+      } catch {
+        setDeadlineStatus(null);
       }
 
       if (isAdmin) {
@@ -258,9 +280,17 @@ export default function CalendarPage() {
 
   async function handleChooseDate(date: string) {
     if (!poll) return;
+    const n = dayCounts[date] ?? 0;
+    if (n < MIN_AVAILABLE_FOR_SCHEDULED_DINNER) {
+      showToast(
+        `São necessários pelo menos ${MIN_AVAILABLE_FOR_SCHEDULED_DINNER} membros disponíveis (Posso) neste dia.`,
+        "error"
+      );
+      return;
+    }
     if (
       !confirm(
-        `Criar jantar na data ${formatPt(date)}? O organizador será recalculado pela rotação.`
+        `Confirmar marcação do jantar em ${formatPt(date)}? (${n} membros disponíveis)`
       )
     ) {
       return;
@@ -358,16 +388,56 @@ export default function CalendarPage() {
       <div className="container mx-auto px-4 py-6 max-w-lg">
         <h1 className="text-2xl font-bold text-white mb-1">Calendário</h1>
         <p className="text-purple-200 text-sm mb-4">
-          Disponibilidade e prazo entre jantares
+          Poll de disponibilidade e limite de marcação do próximo jantar
         </p>
 
         <DeadlineBanner />
+
+        {/* Deadline limit card — always visible */}
+        <Card className="p-4 mb-4">
+          <h2 className="text-white font-semibold mb-2 flex items-center gap-2">
+            <span>⏳</span> Limite de marcação do próximo jantar
+          </h2>
+          {deadlineStatus?.has_cycle && deadlineStatus.deadline_at ? (
+            <div className="text-sm space-y-1">
+              <p className="text-white/90">
+                Prazo:{" "}
+                <span className="font-semibold text-white">
+                  {formatPt(deadlineStatus.deadline_at)}
+                </span>
+              </p>
+              <p className="text-purple-200">
+                {deadlineStatus.days_left == null
+                  ? "—"
+                  : deadlineStatus.days_left < 0
+                    ? `Em atraso há ${Math.abs(deadlineStatus.days_left)} dia(s)`
+                    : deadlineStatus.days_left === 0
+                      ? "É hoje o limite"
+                      : `Faltam ${deadlineStatus.days_left} dia(s)`}
+                {deadlineStatus.organizer?.name
+                  ? ` · Organizador da vez: ${deadlineStatus.organizer.name}`
+                  : ""}
+              </p>
+            </div>
+          ) : (
+            <p className="text-sm text-white/60">
+              Sem prazo activo (ainda não há jantar realizado).
+            </p>
+          )}
+        </Card>
 
         {/* Poll section */}
         <Card className="p-4 mb-4">
           <h2 className="text-white font-semibold mb-2 flex items-center gap-2">
             <span>🗓️</span> Poll de disponibilidade
           </h2>
+          <p className="text-xs text-white/50 mb-3">
+            O poll serve só para indicar disponibilidade. A marcação do jantar
+            exige confirmação do admin e pelo menos{" "}
+            {MIN_AVAILABLE_FOR_SCHEDULED_DINNER} membros com &quot;Posso&quot;
+            nesse dia. Também podes criar um jantar sem poll (máx. 1 jantar
+            marcado de cada vez).
+          </p>
 
           {!poll ? (
             <div className="text-white/60 text-sm space-y-3">
@@ -423,6 +493,8 @@ export default function CalendarPage() {
                 {(days ?? []).map((day) => {
                   const selected = myDays.has(day);
                   const count = dayCounts[day] ?? 0;
+                  const canChoose =
+                    isAdmin && count >= MIN_AVAILABLE_FOR_SCHEDULED_DINNER;
                   return (
                     <button
                       key={day}
@@ -436,23 +508,35 @@ export default function CalendarPage() {
                     >
                       <div className="font-semibold">{formatPt(day).slice(0, 5)}</div>
                       <div className="text-[10px] opacity-80 mt-0.5">
-                        {count} disp.
+                        {count} Posso
                       </div>
                       {isAdmin && (
                         <span
                           role="button"
-                          tabIndex={0}
+                          tabIndex={canChoose ? 0 : -1}
+                          title={
+                            canChoose
+                              ? `Confirmar marcação (${count} disponíveis)`
+                              : `Precisas de pelo menos ${MIN_AVAILABLE_FOR_SCHEDULED_DINNER} Posso (tens ${count})`
+                          }
+                          aria-disabled={!canChoose}
                           onClick={(e) => {
                             e.stopPropagation();
+                            if (!canChoose) return;
                             void handleChooseDate(day);
                           }}
                           onKeyDown={(e) => {
                             if (e.key === "Enter") {
                               e.stopPropagation();
+                              if (!canChoose) return;
                               void handleChooseDate(day);
                             }
                           }}
-                          className="mt-1 block text-[10px] text-amber-300 underline"
+                          className={`mt-1 block text-[10px] ${
+                            canChoose
+                              ? "text-amber-300 underline cursor-pointer"
+                              : "text-white/30 cursor-not-allowed no-underline"
+                          }`}
                         >
                           Escolher
                         </span>
@@ -463,8 +547,12 @@ export default function CalendarPage() {
               </div>
 
               <p className="text-xs text-white/50">
-                Marca só os dias em que podes. 0 dias é submit válido.
-                {myStatus === "submitted" ? " · Já submeteste (podes alterar)." : ""}
+                Marca só os dias em que podes (&quot;Posso&quot;). 0 dias é
+                submit válido. A marcação do jantar só com confirmação admin e ≥
+                {MIN_AVAILABLE_FOR_SCHEDULED_DINNER} Posso.
+                {myStatus === "submitted"
+                  ? " · Já submeteste (podes alterar)."
+                  : ""}
               </p>
 
               <Button

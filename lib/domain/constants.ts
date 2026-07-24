@@ -15,6 +15,10 @@ export const DEFAULT_DEADLINE_FINE = 20;
 export const OVERDUE_POLL_HORIZON_DAYS = 45;
 /** Banner warning threshold (days left). */
 export const DEADLINE_WARNING_DAYS = 30;
+/** Min members (founder|admin) with submitted "Posso" required before admin can mark a date from poll. */
+export const MIN_AVAILABLE_FOR_SCHEDULED_DINNER = 6;
+/** Dinner statuses that count as "scheduled" (not yet ended/realized). Max 1 at a time. */
+export const SCHEDULED_DINNER_STATUSES = ["setup", "active"] as const;
 
 export type DinnerStatus =
   | "setup"
