@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useAuth } from "@/components/AuthProvider";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
+import DeadlineBanner from "@/components/DeadlineBanner";
 
 export default function Home() {
   const { user, loading } = useAuth();
@@ -41,6 +42,7 @@ export default function Home() {
               </div>
             ) : user ? (
               <>
+                <DeadlineBanner />
                 <Link
                   href="/dinners"
                   className="block w-full bg-linear-to-r from-purple-600 to-pink-600 text-white text-center px-5 py-3.5 rounded-xl font-bold text-base shadow-xl hover:shadow-purple-500/50 transform hover:scale-105 transition-[colors,transform,box-shadow] duration-200 active:scale-95"
@@ -48,6 +50,16 @@ export default function Home() {
                   <div className="flex items-center justify-center gap-2">
                     <span className="text-lg">🍽️</span>
                     <span>Ver Jantares</span>
+                  </div>
+                </Link>
+
+                <Link
+                  href="/calendar"
+                  className="block w-full bg-linear-to-r from-indigo-600 to-violet-600 text-white text-center px-5 py-3.5 rounded-xl font-bold text-base shadow-xl hover:shadow-indigo-500/50 transform hover:scale-105 transition-[colors,transform,box-shadow] duration-200 active:scale-95"
+                >
+                  <div className="flex items-center justify-center gap-2">
+                    <span className="text-lg">📅</span>
+                    <span>Calendário</span>
                   </div>
                 </Link>
 

@@ -12,6 +12,7 @@ import {
   useCloseSeason,
   useCreateSeason,
 } from "@/lib/hooks/useApi";
+import DeadlineBanner from "@/components/DeadlineBanner";
 
 export default function DinnersPage() {
   const { showToast } = useToast();
@@ -108,6 +109,7 @@ export default function DinnersPage() {
       <Header useBackButton />
 
       <div className="container mx-auto px-4 py-6">
+        <DeadlineBanner />
         {/* Header Actions */}
         <div className="mb-4">
           <div className="mb-3">

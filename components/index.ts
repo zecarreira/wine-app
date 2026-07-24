@@ -9,3 +9,4 @@ export { ToastProvider, useToast } from "./ToastProvider";
 export * from "./Skeletons";
 export { PaymentsSection } from "./PaymentsSection";
 export { BottleCard } from "./BottleCard";
+export { default as DeadlineBanner } from "./DeadlineBanner";

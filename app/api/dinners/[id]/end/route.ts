@@ -4,6 +4,7 @@ import { dinners } from "@/lib/schema";
 import { eq } from "drizzle-orm";
 import { requireAuth } from "@/lib/middleware";
 import { canEndDinner, isDinnerHost } from "@/lib/domain";
+import { onDinnerRealized } from "@/lib/services/deadline";
 
 // POST /api/dinners/:id/end - End dinner and prepare for reveal
 export async function POST(
@@ -39,6 +40,12 @@ export async function POST(
         .where(eq(dinners.id, dinnerId))
         .returning();
 
+      try {
+        await onDinnerRealized(updatedDinner);
+      } catch (err) {
+        console.error("onDinnerRealized error:", err);
+      }
+
       return NextResponse.json({
         success: true,
         message: "Jantar extra concluído! 🎉",
@@ -51,6 +58,12 @@ export async function POST(
       .set({ status: "ended", ended_at: new Date(), is_completed: true, updated_at: new Date() })
       .where(eq(dinners.id, dinnerId))
       .returning();
+
+    try {
+      await onDinnerRealized(updatedDinner);
+    } catch (err) {
+      console.error("onDinnerRealized error:", err);
+    }
 
     return NextResponse.json({
       success: true,

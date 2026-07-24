@@ -6,6 +6,10 @@ import { alias } from "drizzle-orm/pg-core";
 import { requireAuth, requireAdmin } from "@/lib/middleware";
 import { parseBody } from "@/lib/api/parse-body";
 import { paymentCreateSchema } from "@/lib/validations";
+import {
+  attachPendingPenaltiesForDinner,
+  attachPendingPenaltiesForUser,
+} from "@/lib/services/deadline";
 
 // GET /api/dinners/:id/payments - Listar todos os pagamentos de um jantar
 export async function GET(
@@ -17,6 +21,12 @@ export async function GET(
     if (auth instanceof NextResponse) return auth;
 
     const { id: dinnerId } = await params;
+
+    try {
+      await attachPendingPenaltiesForDinner(dinnerId);
+    } catch (err) {
+      console.error("attachPendingPenaltiesForDinner error:", err);
+    }
 
     const paymentUser = alias(users, "payment_user");
 
@@ -68,6 +78,7 @@ export async function GET(
     // Agregar fines por payment (single pass group)
     const finesByPayment = new Map<string, typeof allFines>();
     for (const f of allFines) {
+      if (!f.payment_id) continue;
       const list = finesByPayment.get(f.payment_id) ?? [];
       list.push(f);
       finesByPayment.set(f.payment_id, list);
@@ -155,6 +166,14 @@ export async function POST(
       .insert(payments)
       .values({ dinner_id: dinnerId, user_id, base_amount, status: "pending" })
       .returning();
+
+    try {
+      await attachPendingPenaltiesForUser(user_id, dinnerId, {
+        createdBy: auth.userId,
+      });
+    } catch (err) {
+      console.error("attachPendingPenaltiesForUser error:", err);
+    }
 
     return NextResponse.json(
       { success: true, message: "Payment created successfully", payment: newPayment },

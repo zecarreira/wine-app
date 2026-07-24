@@ -6,3 +6,4 @@ export * from "./blind";
 export * from "./bottles";
 export * from "./seasons";
 export * from "./dinner-lifecycle";
+export * from "./deadline";

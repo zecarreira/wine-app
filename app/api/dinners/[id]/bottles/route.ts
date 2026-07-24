@@ -4,6 +4,7 @@ import { bottles, dinners, payments } from "@/lib/schema";
 import { eq, and, desc, count } from "drizzle-orm";
 import { requireAuth } from "@/lib/middleware";
 import { BASE_PIPAS, canAddBottle, nextBottlePosition } from "@/lib/domain";
+import { attachPendingPenaltiesForUser } from "@/lib/services/deadline";
 import { parseBody } from "@/lib/api/parse-body";
 import { addBottleSchema } from "@/lib/validations";
 
@@ -114,6 +115,14 @@ export async function POST(
         .insert(payments)
         .values({ dinner_id: dinnerId, user_id: auth.userId, base_amount: BASE_PIPAS, status: "pending" })
         .returning();
+    }
+
+    try {
+      await attachPendingPenaltiesForUser(auth.userId, dinnerId, {
+        createdBy: auth.userId,
+      });
+    } catch (err) {
+      console.error("attachPendingPenaltiesForUser error:", err);
     }
 
     return NextResponse.json(
